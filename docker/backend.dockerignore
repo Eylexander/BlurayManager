@@ -1,0 +1,23 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+bluray-server
+
+# Test files
+*_test.go
+
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store

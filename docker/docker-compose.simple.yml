@@ -1,0 +1,13 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: bluray-mongodb
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      MONGO_INITDB_DATABASE: bluray_manager
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/mongodb:/data/db
+    command: --bind_ip 127.0.0.1 --port 27017

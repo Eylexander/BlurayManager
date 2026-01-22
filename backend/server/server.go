@@ -1,0 +1,151 @@
+package server
+
+import (
+	"eylexander/bluraymanager/api"
+	"eylexander/bluraymanager/controller"
+	"eylexander/bluraymanager/datastore"
+	"eylexander/bluraymanager/models"
+	"eylexander/bluraymanager/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Server handles HTTP routing
+type Server struct {
+	router               *gin.Engine
+	api                  *api.API
+	ctrl                 *controller.Controller
+	passwordResetHandler *controller.PasswordResetHandler
+}
+
+// NewServer creates a new server
+func NewServer(ds datastore.Datastore) *Server {
+	gin.SetMode(gin.ReleaseMode)
+
+	ctrl := controller.NewController(ds)
+	apiHandler := api.NewAPI(ctrl)
+	emailService := services.NewEmailService()
+	passwordResetHandler := ctrl.NewPasswordResetHandler(ds, emailService)
+
+	router := gin.Default()
+	router.Use(ctrl.CORSMiddleware())
+
+	s := &Server{
+		router:               router,
+		api:                  apiHandler,
+		ctrl:                 ctrl,
+		passwordResetHandler: passwordResetHandler,
+	}
+
+	s.setupRoutes()
+	return s
+}
+
+func (s *Server) setupRoutes() {
+	// Health check
+	s.router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	// API v1
+	v1 := s.router.Group("/api/v1")
+	{
+		// Setup routes (public, for initial installation)
+		setup := v1.Group("/setup")
+		{
+			setup.GET("/check", s.api.CheckSetup)
+			setup.POST("/install", s.api.InitialSetup)
+		}
+
+		// Public routes
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", s.api.Register)
+			auth.POST("/login", s.api.Login)
+			auth.POST("/forgot-password", s.passwordResetHandler.RequestPasswordReset)
+			auth.POST("/reset-password", s.passwordResetHandler.ResetPassword)
+		}
+
+		// Protected routes
+		protected := v1.Group("")
+		protected.Use(s.ctrl.AuthMiddleware())
+		{
+			// User routes
+			user := protected.Group("/user")
+			{
+				user.GET("/me", s.api.GetCurrentUser)
+				user.PUT("/settings", s.api.UpdateUserSettings)
+				user.PUT("/username", s.api.UpdateUsername)
+				user.PUT("/password", s.api.UpdatePassword)
+			}
+
+			// Bluray routes (all users can view)
+			blurays := protected.Group("/blurays")
+			{
+				blurays.GET("", s.api.ListBlurays)
+				blurays.GET("/search", s.api.SearchBlurays)
+				blurays.GET("/:id", s.api.GetBluray)
+				blurays.GET("/export", s.api.ExportBlurays)
+
+				// Only admins and moderators can create/update/delete
+				blurays.POST("", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.CreateBluray)
+				blurays.POST("/import", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.ImportBlurays)
+				blurays.PUT("/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.UpdateBluray)
+				blurays.DELETE("/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.DeleteBluray)
+			}
+
+			// Tag routes
+			tags := protected.Group("/tags")
+			{
+				tags.GET("", s.api.ListTags)
+				tags.GET("/:id", s.api.GetTag)
+
+				// Only users and admins can create/update/delete tags
+				tags.POST("", s.ctrl.RequireRole(models.RoleUser, models.RoleAdmin), s.api.CreateTag)
+				tags.PUT("/:id", s.ctrl.RequireRole(models.RoleUser, models.RoleAdmin), s.api.UpdateTag)
+				tags.DELETE("/:id", s.ctrl.RequireRole(models.RoleUser, models.RoleAdmin), s.api.DeleteTag)
+			}
+
+			// Statistics routes (all authenticated users can view)
+			protected.GET("/statistics", s.api.GetStatistics)
+
+			// TMDB routes (all authenticated users can search)
+			tmdb := protected.Group("/tmdb")
+			{
+				tmdb.GET("/search", s.api.SearchTMDB)
+				tmdb.GET("/:type/:id", s.api.GetTMDBDetails)
+			}
+
+			// Barcode lookup route (all authenticated users can use)
+			protected.GET("/barcode/:barcode", s.api.LookupBarcode)
+
+			// Notification routes
+			notifications := protected.Group("/notifications")
+			{
+				notifications.GET("", s.api.GetNotifications)
+				notifications.PUT("/:id/read", s.api.MarkNotificationRead)
+				notifications.PUT("/read-all", s.api.MarkAllNotificationsRead)
+			}
+
+			// Admin-only routes
+			admin := protected.Group("/admin")
+			admin.Use(s.ctrl.RequireRole("admin"))
+			{
+				users := admin.Group("/users")
+				{
+					users.GET("", s.api.ListUsers)
+					users.GET("/:id", s.api.GetUser)
+					users.POST("", s.api.CreateUser)
+					users.PUT("/:id", s.api.UpdateUser)
+					users.DELETE("/:id", s.api.DeleteUser)
+					users.PUT("/:id/role", s.api.UpdateUserRole)
+				}
+			}
+		}
+	}
+}
+
+// Start starts the HTTP server
+func (s *Server) Start(port string) error {
+	return s.router.Run(":" + port)
+}

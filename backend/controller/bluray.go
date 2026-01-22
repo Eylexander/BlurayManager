@@ -1,0 +1,40 @@
+package controller
+
+import (
+	"context"
+	"errors"
+
+	"eylexander/bluraymanager/models"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+func (c *Controller) CreateBluray(ctx context.Context, bluray *models.Bluray) error {
+	if bluray.Title == "" {
+		return errors.New("title is required")
+	}
+	return c.ds.CreateBluray(ctx, bluray)
+}
+
+func (c *Controller) GetBlurayByID(ctx context.Context, id primitive.ObjectID) (*models.Bluray, error) {
+	return c.ds.GetBlurayByID(ctx, id)
+}
+
+func (c *Controller) UpdateBluray(ctx context.Context, bluray *models.Bluray) error {
+	if bluray.Title == "" {
+		return errors.New("title is required")
+	}
+	return c.ds.UpdateBluray(ctx, bluray)
+}
+
+func (c *Controller) DeleteBluray(ctx context.Context, id primitive.ObjectID) error {
+	return c.ds.DeleteBluray(ctx, id)
+}
+
+func (c *Controller) ListBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.Bluray, error) {
+	return c.ds.ListBlurays(ctx, filters, skip, limit)
+}
+
+func (c *Controller) SearchBlurays(ctx context.Context, query string, skip, limit int) ([]*models.Bluray, error) {
+	return c.ds.SearchBlurays(ctx, query, skip, limit)
+}

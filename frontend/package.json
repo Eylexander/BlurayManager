@@ -1,0 +1,43 @@
+{
+  "name": "bluray-manager-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@swc/wasm": "^1.15.10",
+    "@zxing/library": "^0.21.3",
+    "axios": "^1.6.5",
+    "date-fns": "^3.2.0",
+    "formatjs": "^0.1.1",
+    "framer-motion": "^12.27.1",
+    "js-cookie": "^3.0.5",
+    "lucide-react": "^0.312.0",
+    "next-intl": "^4.7.0",
+    "next-themes": "^0.4.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.4.1",
+    "recharts": "^3.7.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/estree": "^1.0.8",
+    "@types/js-cookie": "^3.0.6",
+    "@types/json-schema": "^7.0.15",
+    "@types/node": "^20.19.30",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.4",
+    "next": "^15.1.0",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3"
+  }
+}
