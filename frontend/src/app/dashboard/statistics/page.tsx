@@ -3,13 +3,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
-  Cell, PieChart, Pie, CartesianGrid 
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  Cell, PieChart, Pie, CartesianGrid
 } from 'recharts';
-import { 
-  BarChart3, Euro, Star, Film, Tv, 
-  Package, Clock, HardDrive, ArrowUpRight, Award, History 
+import {
+  BarChart3, Euro, Star, Film, Tv,
+  Package, Clock, HardDrive, ArrowUpRight, Award, History
 } from 'lucide-react';
 
 import { apiClient } from '@/lib/api-client';
@@ -54,6 +54,15 @@ export default function StatisticsPage() {
     };
 
     fetchStats();
+  }, []);
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile(); // Check on mount
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Prepare data for charts
@@ -131,18 +140,25 @@ export default function StatisticsPage() {
               <BarChart data={genreData} layout="vertical" margin={{ left: 40 }} style={{ outline: 'none' }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.1} />
                 <XAxis type="number" hide />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  axisLine={false} 
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  axisLine={false}
                   tickLine={false}
                   tick={{ fill: 'currentColor', fontSize: 12 }}
                 />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                {!isMobile && (
+                  <Tooltip
+                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                )}
+                <Bar
+                  dataKey="value"
+                  radius={[0, 4, 4, 0]}
+                  barSize={24}
+                  activeBar={isMobile ? false : undefined}
+                >
                   {genreData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
@@ -161,12 +177,14 @@ export default function StatisticsPage() {
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
+                activeShape={isMobile ? false : undefined}
               >
                 {typeData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+
+              {!isMobile && <Tooltip />}
             </PieChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-6 mt-[-40px]">
@@ -231,7 +249,7 @@ export default function StatisticsPage() {
                 <p className="text-sm text-gray-500">{t('statistics.oldest')}</p>
                 <p className="font-bold">{stats.oldest_bluray?.title}</p>
               </div>
-              <span className="text-2xl font-black text-gray-700 dark:text-gray-200">{stats.oldest_bluray?.release_year}</span>
+              <span className="text-2xl font-black">{stats.oldest_bluray?.release_year}</span>
             </div>
             <div className="h-px bg-gray-100 dark:bg-gray-700 w-full" />
             <div className="flex justify-between items-center">
@@ -239,7 +257,7 @@ export default function StatisticsPage() {
                 <p className="text-sm text-gray-500">{t('statistics.newest')}</p>
                 <p className="font-bold">{stats.newest_bluray?.title}</p>
               </div>
-              <span className="text-2xl font-black text-gray-700 dark:text-gray-200">{stats.newest_bluray?.release_year}</span>
+              <span className="text-2xl font-black">{stats.newest_bluray?.release_year}</span>
             </div>
           </div>
         </div>

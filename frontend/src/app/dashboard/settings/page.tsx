@@ -41,8 +41,8 @@ const OptionButton = ({ icon, label, isSelected, onClick }: {
   <button
     onClick={onClick}
     className={`relative group p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 ${isSelected
-        ? 'border-blue-500 bg-gradient-to-br from-blue-500/10 to-blue-600/10 shadow-lg'
-        : 'border-gray-700/50 bg-gray-700/30 hover:border-blue-500/50 hover:bg-gray-700/50'
+      ? 'border-blue-500 bg-gradient-to-br from-blue-500/10 to-blue-600/10 shadow-lg'
+      : 'border-gray-700/50 bg-gray-700/30 hover:border-blue-500/50 hover:bg-gray-700/50'
       }`}
   >
     <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
@@ -208,7 +208,7 @@ export default function SettingsPage() {
         <p className="text-gray-400 text-sm sm:text-lg">{t('settings.subtitle')}</p>
       </div>
 
-      <div className="space-y-6 sm:space-y-8">
+      <div className="space-y-8">
         {/* Account Settings Section - Hide for Guest */}
         {user?.role !== 'guest' && (
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-700/50 shadow-xl">

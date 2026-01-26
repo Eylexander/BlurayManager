@@ -104,7 +104,7 @@ export default function BlurayDetailPage() {
       )}
 
       {/* Back Button */}
-      <div className="py-6">
+      <div className="py-3 sm:py-6">
         <button
           onClick={() => router.back()}
           className="group flex items-center gap-2 text-gray-400 hover:text-white transition-all duration-200"
@@ -132,7 +132,7 @@ export default function BlurayDetailPage() {
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
         {/* Poster - overlapping backdrop */}
-        <div className="lg:col-span-1 -mt-24 sm:-mt-32 md:-mt-40 px-4 sm:px-6 md:px-8">
+        <div className="lg:col-span-1 -mt-32 sm:-mt-32 md:-mt-40 px-16 sm:px-6 md:px-6">
           {bluray.cover_image_url && (
             <div className="relative group">
               <Image
@@ -162,11 +162,11 @@ export default function BlurayDetailPage() {
                   <Tv className="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-purple-400" />
                 </div>
               )}
-              <span className="text-xs sm:text-xs md:text-sm font-semibold text-gray-400 uppercase tracking-wider">
+              <span className="text-xs md:text-sm font-semibold text-gray-400 uppercase tracking-wider">
                 {t(`common.${bluray.type}`)}
               </span>
               <a
-                href={bluray.tmdb_id 
+                href={bluray.tmdb_id
                   ? `https://www.themoviedb.org/${bluray.type === 'movie' ? 'movie' : 'tv'}/${bluray.tmdb_id}`
                   : `https://www.themoviedb.org/search?query=${encodeURIComponent(bluray.title)}`
                 }
@@ -178,11 +178,13 @@ export default function BlurayDetailPage() {
                 <ExternalLink className="w-3.5 sm:w-4 md:w-5 h-3.5 sm:h-4 md:h-5 text-blue-400 group-hover:text-blue-300" />
               </a>
             </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight tracking-tight">{bluray.title}</h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight tracking-tight">
+              {bluray.title}
+            </h1>
 
             {/* Genres */}
             {bluray.genre && bluray.genre.length > 0 && (
-              <div className="flex flex-wrap gap-1 sm:gap-1.5 md:gap-2">
+              <div className="flex flex-wrap gap-1 md:gap-2">
                 {bluray.genre.map((g, i) => (
                   <span
                     key={i}
@@ -202,176 +204,176 @@ export default function BlurayDetailPage() {
                 {t('details.description')}
               </h2>
               <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
-                {typeof bluray.description === 'string' 
-                  ? bluray.description 
+                {typeof bluray.description === 'string'
+                  ? bluray.description
                   : getLocalizedText(bluray.description, locale)}
               </p>
             </div>
           )}
 
-              {/* Movie Details */}
-              {bluray.type === 'movie' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {bluray.release_year && (
-                    <div className="bg-gradient-to-br from-gray-800 to-gray-800/80 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50">
-                      <div className="flex items-center gap-2 text-gray-400 mb-2">
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-sm font-medium uppercase tracking-wide">{t('details.releaseYear')}</span>
-                      </div>
-                      <p className="text-2xl font-bold text-white">{bluray.release_year}</p>
-                    </div>
-                  )}
-                  {bluray.director && (
-                    <div className="bg-gradient-to-br from-gray-800 to-gray-800/80 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50">
-                      <div className="flex items-center gap-2 text-gray-400 mb-2">
-                        <User className="w-5 h-5" />
-                        <span className="text-sm font-medium uppercase tracking-wide">{t('details.director')}</span>
-                      </div>
-                      <p className="text-2xl font-bold text-white">{bluray.director}</p>
-                    </div>
-                  )}
-                  {bluray.runtime && (
-                    <div className="bg-gradient-to-br from-gray-800 to-gray-800/80 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50">
-                      <div className="flex items-center gap-2 text-gray-400 mb-2">
-                        <Clock className="w-5 h-5" />
-                        <span className="text-sm font-medium uppercase tracking-wide">{t('details.runtime')}</span>
-                      </div>
-                      <p className="text-2xl font-bold text-white">{bluray.runtime} min</p>
-                    </div>
-                  )}
+          {/* Movie Details */}
+          {bluray.type === 'movie' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {bluray.release_year && (
+                <div className="bg-gradient-to-br from-gray-800 to-gray-800/80 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50">
+                  <div className="flex items-center gap-2 text-gray-400 mb-2">
+                    <Calendar className="w-5 h-5" />
+                    <span className="text-xs sm:text-sm font-medium uppercase tracking-wide">{t('details.releaseYear')}</span>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold text-white">{bluray.release_year}</p>
+                </div>
+              )}
+              {bluray.director && (
+                <div className="bg-gradient-to-br from-gray-800 to-gray-800/80 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50">
+                  <div className="flex items-center gap-2 text-gray-400 mb-2">
+                    <User className="w-5 h-5" />
+                    <span className="text-xs sm:text-sm font-medium uppercase tracking-wide">{t('details.director')}</span>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold text-white">{bluray.director}</p>
+                </div>
+              )}
+              {bluray.runtime && (
+                <div className="bg-gradient-to-br from-gray-800 to-gray-800/80 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50">
+                  <div className="flex items-center gap-2 text-gray-400 mb-2">
+                    <Clock className="w-5 h-5" />
+                    <span className="text-xs sm:text-sm font-medium uppercase tracking-wide">{t('details.runtime')}</span>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold text-white">{bluray.runtime} min</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Series Seasons */}
+          {bluray.type === 'series' && bluray.seasons && bluray.seasons.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-white mb-4">{t('details.seasons')}</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {bluray.seasons.map((season) => (
+                  <div key={season.number} className="group bg-gradient-to-br from-purple-900/20 to-gray-800 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:scale-[1.02]">
+                    <div className="text-purple-400 font-bold text-lg mb-1 group-hover:text-purple-300 transition-colors">{t('details.seasons')} {season.number}</div>
+                    <div className="text-gray-300 text-sm font-medium">{season.episode_count} {t('details.episodes')}</div>
+                    {season.year && <div className="text-gray-500 text-xs mt-1">{season.year}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Collection Info */}
+          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-gray-700/50 shadow-xl">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 sm:mb-6 flex items-center gap-2">
+              <div className="w-1 h-5 sm:h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+              {t('details.collectionInfo')}
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+              {bluray.purchase_price > 0 && (
+                <div className="space-y-1 sm:space-y-2">
+                  <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
+                    <DollarSign className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
+                    <span>{t('details.purchasePrice')}</span>
+                  </div>
+                  <p className="text-white font-bold text-lg sm:text-xl">${bluray.purchase_price.toFixed(2)}</p>
                 </div>
               )}
 
-              {/* Series Seasons */}
-              {bluray.type === 'series' && bluray.seasons && bluray.seasons.length > 0 && (
-                <div>
-                  <h2 className="text-2xl font-semibold text-white mb-4">{t('details.seasons')}</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {bluray.seasons.map((season) => (
-                      <div key={season.number} className="group bg-gradient-to-br from-purple-900/20 to-gray-800 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:scale-[1.02]">
-                        <div className="text-purple-400 font-bold text-lg mb-1 group-hover:text-purple-300 transition-colors">{t('details.seasons')} {season.number}</div>
-                        <div className="text-gray-300 text-sm font-medium">{season.episode_count} {t('details.episodes')}</div>
-                        {season.year && <div className="text-gray-500 text-xs mt-1">{season.year}</div>}
-                      </div>
-                    ))}
+              {isValidPurchaseDate(bluray.purchase_date) && (
+                <div className="space-y-1 sm:space-y-2">
+                  <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
+                    <Calendar className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
+                    <span>{t('details.purchaseDate')}</span>
                   </div>
+                  <p className="text-white font-bold text-lg sm:text-xl">
+                    {formatPurchaseDate(bluray.purchase_date)}
+                  </p>
                 </div>
               )}
 
-              {/* Collection Info */}
-              <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl border border-gray-700/50 shadow-xl">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 sm:mb-6 flex items-center gap-2">
-                  <div className="w-1 h-5 sm:h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-                  {t('details.collectionInfo')}
-                </h2>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
-                  {bluray.purchase_price > 0 && (
-                    <div className="space-y-1 sm:space-y-2">
-                      <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
-                        <DollarSign className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
-                        <span>{t('details.purchasePrice')}</span>
-                      </div>
-                      <p className="text-white font-bold text-lg sm:text-xl">${bluray.purchase_price.toFixed(2)}</p>
-                    </div>
-                  )}
-
-                  {isValidPurchaseDate(bluray.purchase_date) && (
-                    <div className="space-y-1 sm:space-y-2">
-                      <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
-                        <Calendar className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
-                        <span>{t('details.purchaseDate')}</span>
-                      </div>
-                      <p className="text-white font-bold text-lg sm:text-xl">
-                        {formatPurchaseDate(bluray.purchase_date)}
-                      </p>
-                    </div>
-                  )}
-
-                  {bluray.location && (
-                    <div className="space-y-1 sm:space-y-2">
-                      <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
-                        <MapPin className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
-                        <span>{t('details.location')}</span>
-                      </div>
-                      <p className="text-white font-bold text-lg sm:text-xl break-words">{bluray.location}</p>
-                    </div>
-                  )}
-
-                  {bluray.rating > 0 && (
-                    <div className="space-y-1 sm:space-y-2">
-                      <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
-                        <Star className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
-                        <span>{t('details.rating')}</span>
-                      </div>
-                      <p className="text-white font-bold text-lg sm:text-xl flex items-center gap-1">
-                        <span className="text-yellow-400">{bluray.rating}</span>/10
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Tags */}
-                <div className="border-t border-gray-700/50 pt-4 sm:pt-6">
-                  <div className="flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 flex-wrap sm:flex-nowrap">
-                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                      <TagIcon className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 flex-shrink-0" />
-                      <span className="text-base sm:text-lg font-semibold text-white whitespace-nowrap">{t('details.tags')}</span>
-                    </div>
-                    {canModify && (
-                      <Button
-                        variant="primary"
-                        onClick={() => setEditingTags(true)}
-                        icon={<Edit className="w-3.5 sm:w-4 h-3.5 sm:h-4 group-hover:rotate-12 transition-transform" />}
-                        size="sm"
-                      >
-                        {t('bluray.editTags')}
-                      </Button>
-                    )}
+              {bluray.location && (
+                <div className="space-y-1 sm:space-y-2">
+                  <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
+                    <MapPin className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
+                    <span>{t('details.location')}</span>
                   </div>
-
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {bluray.tags && bluray.tags.length > 0 ? (
-                      bluray.tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-400 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium border border-blue-500/30 hover:border-blue-400/50 hover:from-blue-500/20 hover:to-blue-600/20 transition-all duration-200"
-                        >
-                          {tag}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-500 text-xs sm:text-sm italic">No tags</span>
-                    )}
-                  </div>
+                  <p className="text-white font-bold text-lg sm:text-xl break-words">{bluray.location}</p>
                 </div>
+              )}
+
+              {bluray.rating > 0 && (
+                <div className="space-y-1 sm:space-y-2">
+                  <div className="flex items-center gap-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">
+                    <Star className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
+                    <span>{t('details.rating')}</span>
+                  </div>
+                  <p className="text-white font-bold text-lg sm:text-xl flex items-center gap-1">
+                    <span className="text-yellow-400">{bluray.rating}</span>/10
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div className="border-t border-gray-700/50 pt-4 sm:pt-6">
+              <div className="flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                  <TagIcon className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 flex-shrink-0" />
+                  <span className="text-base sm:text-lg font-semibold text-white whitespace-nowrap">{t('details.tags')}</span>
+                </div>
+                {canModify && (
+                  <Button
+                    variant="primary"
+                    onClick={() => setEditingTags(true)}
+                    icon={<Edit className="w-3.5 sm:w-4 h-3.5 sm:h-4 group-hover:rotate-12 transition-transform" />}
+                    size="sm"
+                  >
+                    {t('bluray.editTags')}
+                  </Button>
+                )}
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 sm:gap-3 md:gap-4 justify-end mt-6 sm:mt-8 flex-wrap-reverse">
-                {canModify && (
-                  <>
-                    <Button
-                      variant="primary"
-                      onClick={() => router.push(`/dashboard/blurays/${bluray.id}/edit`)}
-                      icon={<Edit className="w-3.5 sm:w-4 md:w-5 h-3.5 sm:h-4 md:h-5 group-hover:rotate-12 transition-transform" />}
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {bluray.tags && bluray.tags.length > 0 ? (
+                  bluray.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-400 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium border border-blue-500/30 hover:border-blue-400/50 hover:from-blue-500/20 hover:to-blue-600/20 transition-all duration-200"
                     >
-                      {t('details.edit')}
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      icon={<Trash2 className="w-3.5 sm:w-4 md:w-5 h-3.5 sm:h-4 md:h-5 group-hover:scale-110 transition-transform" />}
-                    >
-                      {deleting ? t('details.deleting') : t('details.delete')}
-                    </Button>
-                  </>
+                      {tag}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-gray-500 text-xs sm:text-sm italic">No tags</span>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 sm:gap-3 md:gap-4 justify-end mt-6 sm:mt-8 flex-wrap">
+            {canModify && (
+              <>
+                <Button
+                  variant="primary"
+                  onClick={() => router.push(`/dashboard/blurays/${bluray.id}/edit`)}
+                  icon={<Edit className="w-3.5 sm:w-4 md:w-5 h-3.5 sm:h-4 md:h-5 group-hover:rotate-12 transition-transform" />}
+                >
+                  {t('details.edit')}
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  icon={<Trash2 className="w-3.5 sm:w-4 md:w-5 h-3.5 sm:h-4 md:h-5 group-hover:scale-110 transition-transform" />}
+                >
+                  {deleting ? t('details.deleting') : t('details.delete')}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-        
+      </div>
+    </div>
+
   );
 }

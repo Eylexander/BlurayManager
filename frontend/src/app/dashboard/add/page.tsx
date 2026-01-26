@@ -649,7 +649,7 @@ export default function AddBlurayPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 pb-12 pt-6 space-y-8">
       {showTagModal && (
         <TagModal
           initialSelectedTags={selectedTags}
@@ -660,7 +660,7 @@ export default function AddBlurayPage() {
 
       <div className="flex items-center space-x-3">
         <Film className="w-8 h-8 text-blue-500" />
-        <h1 className="text-3xl font-bold text-white">{t('add.title')}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">{t('add.title')}</h1>
       </div>
 
       {/* Main Form Section */}

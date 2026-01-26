@@ -135,7 +135,7 @@ export default function Navbar() {
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
                   </div>
-                  
+
                 ) : (
                   <div className="py-2">
                     {searchResults.map((bluray) => (
@@ -211,8 +211,8 @@ export default function Navbar() {
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className={`relative p-2.5 rounded-lg transition-all duration-300 ${showNotifications
-                  ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 shadow-lg shadow-blue-500/20 scale-105'
-                  : 'lg:hover:bg-gray-100 lg:dark:hover:bg-dark-800 text-gray-600 dark:text-gray-400 lg:hover:text-blue-500 lg:dark:hover:text-blue-400'
+                ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 shadow-lg shadow-blue-500/20 scale-105'
+                : 'lg:hover:bg-gray-100 lg:dark:hover:bg-dark-800 text-gray-600 dark:text-gray-400 lg:hover:text-blue-500 lg:dark:hover:text-blue-400'
                 } lg:hover:scale-110 active:scale-95`}
               title="Notifications"
             >
@@ -250,8 +250,8 @@ export default function Navbar() {
                         key={notification.id}
                         onClick={() => markAsRead(notification.id)}
                         className={`p-3 sm:p-4 border-b border-gray-200 dark:border-dark-700 ${!notification.read
-                            ? 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                            : 'hover:bg-gray-50 dark:hover:bg-dark-700'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                          : 'hover:bg-gray-50 dark:hover:bg-dark-700'
                           } transition-all duration-200 cursor-pointer active:scale-95 transform hover:pl-4 sm:hover:pl-5 active:bg-opacity-75`}
                         style={{
                           animationDelay: `${index * 50}ms`,
@@ -290,11 +290,11 @@ export default function Navbar() {
 
           {user?.role === 'guest' ? (
             <div
-              className="flex items-center space-x-2 px-2.5 sm:px-3 py-2 rounded-lg bg-gray-100 dark:bg-dark-800 text-gray-600 dark:text-gray-400 transition-all duration-200 cursor-default opacity-60"
+              className="hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-dark-800 text-gray-600 dark:text-gray-400 opacity-60"
               title="Profile unavailable for guests"
             >
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-              <div className="text-xs sm:text-sm hidden sm:block">
+              <User className="w-5 h-5" />
+              <div className="text-sm">
                 <div className="font-semibold text-gray-900 dark:text-white leading-tight">{user?.username}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 capitalize leading-tight">{user?.role}</div>
               </div>
@@ -302,11 +302,10 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => router.push('/dashboard/settings')}
-              className="flex items-center space-x-2 px-2.5 sm:px-3 py-2 rounded-lg bg-gray-100 dark:bg-dark-800 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-blue-600/10 dark:hover:from-blue-500/20 dark:hover:to-blue-600/20 hover:border hover:border-blue-500/30 dark:hover:border-blue-400/30 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-blue-500/10 active:scale-95"
-              title="Settings"
+              className="hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-dark-800 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-blue-600/10 dark:hover:from-blue-500/20 dark:hover:to-blue-600/20 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
             >
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-              <div className="text-xs sm:text-sm hidden sm:block">
+              <User className="w-5 h-5" />
+              <div className="text-sm">
                 <div className="font-semibold text-gray-900 dark:text-white leading-tight">{user?.username}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 capitalize leading-tight">{user?.role}</div>
               </div>
