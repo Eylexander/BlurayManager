@@ -5,17 +5,20 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/authStore';
 import { Home, BarChart3, Settings, Plus, Users, LogOut, Github, MoreHorizontal, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink } from '@/components/common/NavLink';
 
 export default function MobileNav() {
   const t = useTranslations();
-  const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const [showMenu, setShowMenu] = useState(false);
   
   const canModify = user?.role === 'admin' || user?.role === 'moderator';
   const isGuest = user?.role === 'guest';
+
+  const closeMenu = () => {
+    setShowMenu(false);
+  };
 
   const handleLogout = () => {
     setShowMenu(false);
@@ -28,7 +31,7 @@ export default function MobileNav() {
       {showMenu && (
         <div
           className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-md z-[60] transition-opacity duration-300"
-          onClick={() => setShowMenu(false)}
+          onClick={closeMenu}
         />
       )}
 
@@ -52,30 +55,30 @@ export default function MobileNav() {
             </div>
 
             <div className="grid grid-cols-1 gap-2">
-              <NavLink href="/dashboard" icon={Home} label="nav.home" />
+              <NavLink href="/dashboard" icon={Home} label="nav.home" onClick={closeMenu} />
               {!isGuest && (
                 <>
-                  <NavLink href="/dashboard/statistics" icon={BarChart3} label="nav.statistics" />
-                  <NavLink href="/dashboard/settings" icon={Settings} label="nav.settings" />
+                  <NavLink href="/dashboard/statistics" icon={BarChart3} label="nav.statistics" onClick={closeMenu} />
+                  <NavLink href="/dashboard/settings" icon={Settings} label="nav.settings" onClick={closeMenu} />
                 </>
               )}
               
               {user?.role === 'admin' && (
-                <NavLink href="/dashboard/users" icon={Users} label="nav.users" />
+                <NavLink href="/dashboard/users" icon={Users} label="nav.users" onClick={closeMenu} />
               )}
 
-              <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
+              <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-4 px-4 py-.5 rounded-2xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all active:scale-95"
+                className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all active:scale-95"
               >
                 <LogOut className="w-5 h-5" />
                 <span className="font-semibold text-sm">{t('nav.logout')}</span>
               </button>
             </div>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-1 flex justify-center">
               <a
                 href="https://github.com/Eylexander/BlurayManager"
                 target="_blank"

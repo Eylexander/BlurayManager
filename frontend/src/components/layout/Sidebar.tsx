@@ -1,12 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/authStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useTheme } from 'next-themes';
 import { Home, Film, Tv, BarChart3, Settings, Plus, Tag, LogOut, Users, Github, FileDown } from 'lucide-react';
 
 export default function Sidebar() {
@@ -33,11 +30,9 @@ export default function Sidebar() {
     : baseMenuItems;
 
   const isActive = (href: string) => {
-    // For homepage, require exact match to avoid matching sub-pages
     if (href === '/dashboard') {
       return pathname === '/dashboard';
     }
-    // For other pages, allow both exact match and sub-routes
     return pathname === href || pathname.startsWith(href + '/');
   };
 

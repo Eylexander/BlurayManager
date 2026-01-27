@@ -11,6 +11,7 @@
     "add": "Ajouter",
     "search": "Rechercher",
     "searchResults": "Résultats de recherche",
+    "clearSearch": "Effacer la recherche",
     "filter": "Filtrer",
     "close": "Fermer",
     "back": "Retour",
@@ -20,7 +21,8 @@
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément ?",
     "done": "Terminé",
     "movie": "film",
-    "series": "série"
+    "series": "série",
+    "unknownDirector": "Réalisateur inconnu"
   },
   "filter": {
     "recentlyAdded": "Ajoutés récemment",

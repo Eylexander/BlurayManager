@@ -132,7 +132,7 @@ export default function BlurayDetailPage() {
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
         {/* Poster - overlapping backdrop */}
-        <div className="lg:col-span-1 -mt-32 sm:-mt-32 md:-mt-40 px-16 sm:px-6 md:px-6">
+        <div className="lg:col-span-1 -mt-32 sm:-mt-32 md:-mt-48 lg:-mt-32 xl:-mt-40 px-16 sm:px-6 md:px-2 xl:px-6">
           {bluray.cover_image_url && (
             <div className="relative group">
               <Image

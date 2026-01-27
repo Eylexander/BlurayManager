@@ -6,11 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Bluray } from '@/types/bluray';
-import { Star, Calendar, Edit3, Trash2, Tag as TagIcon, ExternalLink } from 'lucide-react';
+import { Star, Calendar, Edit3, Trash2, Tag as TagIcon, ExternalLink, MoreVertical } from 'lucide-react';
 import ContextMenu, { ContextMenuOption } from '@/components/common/ContextMenu';
 import TagModal from '@/components/modals/TagModal';
-import { apiClient } from '@/lib/api-client';
-import toast from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
+import { useBlurayTools } from '@/hooks/useBlurayTools';
 
 interface BlurayCardProps {
   bluray: Bluray;
@@ -18,161 +18,113 @@ interface BlurayCardProps {
 }
 
 export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
+  const t = useTranslations();
   const router = useRouter();
   const { user } = useAuthStore();
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  const [showTagModal, setShowTagModal] = useState(false);
-  const [currentBluray, setCurrentBluray] = useState(bluray);
   const canModify = user?.role === 'admin' || user?.role === 'moderator';
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    if (!canModify) return;
-    e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${currentBluray.title}"?`)) return;
-    
-    try {
-      await apiClient.deleteBluray(currentBluray.id);
-      toast.success('Deleted successfully!');
-      if (onUpdate) onUpdate();
-    } catch (error) {
-      console.error('Failed to delete:', error);
-      toast.error('Failed to delete');
-    }
-  };
-
-  const handleTagUpdate = (tags: string[]) => {
-    setCurrentBluray({ ...currentBluray, tags });
-    if (onUpdate) onUpdate();
-  };
-
-  const contextMenuOptions: ContextMenuOption[] = [
-    {
-      label: 'View Details',
-      icon: <ExternalLink className="w-4 h-4" />,
-      onClick: () => router.push(`/dashboard/blurays/${currentBluray.id}`),
-    },
-    {
-      label: 'Edit Tags',
-      icon: <TagIcon className="w-4 h-4" />,
-      onClick: () => setShowTagModal(true),
-    },
-    {
-      label: 'Edit',
-      icon: <Edit3 className="w-4 h-4" />,
-      onClick: () => router.push(`/dashboard/blurays/${currentBluray.id}/edit`),
-    },
-    {
-      label: 'Delete',
-      icon: <Trash2 className="w-4 h-4" />,
-      onClick: handleDelete,
-      variant: 'danger',
-      divider: true,
-    },
-  ];
+  const {
+    currentBluray, showTagModal, setShowTagModal,
+    contextMenu, setContextMenu, handleTagUpdate, menuOptions
+  } = useBlurayTools(bluray, onUpdate);
 
   return (
     <>
-      <div onContextMenu={handleContextMenu} className="h-full w-full min-w-0">
+      <div
+        onContextMenu={(e) => { e.preventDefault(); if (canModify) setContextMenu({ x: e.clientX, y: e.clientY }); }}
+        className="relative group h-full w-full perspective-1000"
+      >
         <Link href={`/dashboard/blurays/${currentBluray.id}`} className="block h-full w-full">
-          <div className="relative overflow-hidden rounded-lg sm:rounded-xl shadow-md sm:hover:shadow-2xl transition-all duration-300 group h-full w-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 sm:hover:border-primary-500/50 sm:transform sm:hover:scale-105 sm:hover:-translate-y-1">
+          <div className="
+            relative flex flex-col h-full w-full 
+            bg-dark-800/40 backdrop-blur-md 
+            border border-white/5 
+            rounded-2xl overflow-hidden
+            transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
+            md:group-hover:scale-[1.02] md:group-hover:-translate-y-2 
+            md:group-hover:border-primary-500/40 md:group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]
+            active:scale-[0.97]
+          ">
             {/* Image Container */}
-            <div className="relative aspect-[2/3] overflow-hidden bg-gray-900">
-              {currentBluray.cover_image_url ? (
-                <Image
-                  src={currentBluray.cover_image_url}
-                  alt={currentBluray.title}
-                  fill
-                  className="object-cover sm:group-hover:scale-110 transition-transform duration-500"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 20vw, (max-width: 1536px) 16vw, 14vw"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                  <span className="text-white text-3xl sm:text-4xl">🎬</span>
+            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-t-2xl">
+              {/* Motion Wrapper: Both image and gradient live here */}
+              <div className="relative w-full h-full transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1) md:group-hover:scale-110">
+                {currentBluray.cover_image_url ? (
+                  <Image
+                    src={currentBluray.cover_image_url}
+                    alt={currentBluray.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 50vw, 20vw"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-dark-700 to-dark-900 flex items-center justify-center">
+                    <span className="text-4xl opacity-40">🎬</span>
+                  </div>
+                )}
+
+                {/* Premium Gradient Overlay: Now inside the scaling wrapper */}
+                <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-transparent to-black/20" />
+              </div>
+
+              {/* Quick Actions: Outside the scaling wrapper so they don't grow with the image */}
+              {canModify && (
+                <div className="hidden md:flex absolute top-3 right-3 flex-col gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out z-10">
+                  <button
+                    onClick={(e) => { e.preventDefault(); setShowTagModal(true); }}
+                    className="p-2.5 bg-dark-950/90 backdrop-blur-xl hover:bg-primary-500 text-white rounded-xl border border-white/20 shadow-2xl transition-colors"
+                  >
+                    <TagIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.preventDefault(); router.push(`/dashboard/blurays/${currentBluray.id}/edit`); }}
+                    className="p-2.5 bg-dark-950/90 backdrop-blur-xl hover:bg-primary-500 text-white rounded-xl border border-white/20 shadow-2xl transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
                 </div>
               )}
-              
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent sm:opacity-0 sm:group-hover:opacity-100 opacity-100 transition-opacity duration-300 flex flex-col justify-between p-2 sm:p-3">
-                {/* Top Action Buttons - Only for admin/moderator */}
-                {canModify && (
-                <div className="flex gap-1.5 sm:gap-2 justify-end sm:opacity-0 sm:group-hover:opacity-100 opacity-100 transition-all duration-300">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowTagModal(true);
-                    }}
-                    className="p-1.5 sm:p-2 bg-blue-500/80 hover:bg-blue-600 rounded-md sm:rounded-lg transition-all duration-200 text-white hover:scale-110"
-                    title="Edit Tags"
-                  >
-                    <TagIcon className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      router.push(`/dashboard/blurays/${currentBluray.id}/edit`);
-                    }}
-                    className="p-1.5 sm:p-2 bg-purple-500/80 hover:bg-purple-600 rounded-md sm:rounded-lg transition-all duration-200 text-white hover:scale-110"
-                    title="Edit"
-                  >
-                    <Edit3 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDelete();
-                    }}
-                    className="p-1.5 sm:p-2 bg-red-500/80 hover:bg-red-600 rounded-md sm:rounded-lg transition-all duration-200 text-white hover:scale-110"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-                  </button>
-                </div>
-                )}
-                
-                {/* Bottom Info */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-white text-xs sm:text-sm flex-wrap">
-                    {currentBluray.rating > 0 && (
-                      <div className="flex items-center gap-1 bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm">
-                        <Star className="w-3 sm:w-3.5 h-3 sm:h-3.5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold">{currentBluray.rating.toFixed(1)}</span>
-                      </div>
-                    )}
-                    {currentBluray.release_year && (
-                      <div className="flex items-center gap-1 bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm">
-                        <Calendar className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
-                        <span>{currentBluray.release_year}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Type Badge */}
-                  <div className="inline-block">
-                    <span className={`px-2 sm:px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-md backdrop-blur-sm ${
-                      currentBluray.type === 'movie'
-                        ? 'bg-blue-500/80 text-white'
-                        : 'bg-purple-500/80 text-white'
-                    }`}>
-                      {currentBluray.type === 'movie' ? 'Film' : 'Série'}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
-            
-            {/* Info Section */}
-            <div className="p-2.5 sm:p-3.5 space-y-1.5 sm:space-y-2 sm:group-hover:bg-gray-800/80 transition-colors duration-300 bg-gray-800/80">
-              <h3 className="font-bold text-xs sm:text-sm line-clamp-2 text-white sm:group-hover:text-primary-400 transition-colors truncate">{currentBluray.title}</h3>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400 capitalize">{currentBluray.type}</span>
-                {currentBluray.tags && currentBluray.tags.length > 0 && (
-                  <span className="text-xs bg-gray-700/50 text-gray-300 px-2 py-1 rounded-full">
-                    {currentBluray.tags.length}
-                  </span>
+
+            {/* Details Section */}
+            <div className="p-3 sm:p-4 flex-1 flex flex-col bg-gradient-to-b from-transparent to-dark-900/50">
+              <div className="flex-1">
+                <h3 className="font-bold text-sm sm:text-base text-white line-clamp-1 group-hover:text-primary-400 transition-colors">
+                  {currentBluray.title}
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 font-medium opacity-70">
+                  {currentBluray.director || t('common.unknownDirector')}
+                </p>
+              </div>
+
+              {/* Bottom Meta Row */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-3">
+                  {currentBluray.rating > 0 && (
+                    <div className="flex items-center gap-1 text-yellow-500 text-xs font-bold">
+                      <Star className="w-3 h-3 fill-current" />
+                      <span>{currentBluray.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {currentBluray.release_year && (
+                    <div className="flex items-center gap-1 text-gray-500 text-[11px]">
+                      <Calendar className="w-3 h-3" />
+                      <span>{currentBluray.release_year}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile More Trigger */}
+                {canModify && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setContextMenu({ x: e.clientX - 100, y: e.clientY });
+                    }}
+                    className="md:hidden p-1 text-gray-500"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
                 )}
               </div>
             </div>
@@ -180,14 +132,13 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
         </Link>
       </div>
 
-      {contextMenu && canModify && (
+      {contextMenu &&
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          options={contextMenuOptions}
+          options={menuOptions}
           onClose={() => setContextMenu(null)}
-        />
-      )}
+        />}
 
       {showTagModal && (
         <TagModal

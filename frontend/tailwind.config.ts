@@ -60,7 +60,7 @@ const config: Config = {
         },
       },
       screens: {
-        'vsm': '340px',
+        'vsm': '380px',
       },
     },
   },

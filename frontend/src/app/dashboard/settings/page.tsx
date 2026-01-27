@@ -212,7 +212,7 @@ export default function SettingsPage() {
         {/* Account Settings Section - Hide for Guest */}
         {user?.role !== 'guest' && (
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-700/50 shadow-xl">
-            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="flex items-center gap-4 mb-4 sm:mb-6">
               <div className="p-1.5 sm:p-2 bg-blue-500/10 rounded-lg">
                 <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
               </div>
@@ -224,7 +224,7 @@ export default function SettingsPage() {
 
             {/* Current User Info */}
             <div className="mb-4 sm:mb-6 p-3 sm:p-5 bg-gray-700/30 rounded-xl border border-gray-600/30">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t('settings.currentUsername')}</p>
                   <p className="font-semibold text-white text-lg">{user?.username}</p>
@@ -242,10 +242,10 @@ export default function SettingsPage() {
 
             {/* Username Change */}
             <div className="border-t border-gray-700/50 pt-4 sm:pt-6">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2 sm:mb-3">
+              <label htmlFor="username" className="block text-sm font-sm text-gray-300 mb-2 sm:mb-3">
                 {t('settings.newUsername')}
               </label>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 <input
                   id="username"
                   type="text"
@@ -271,12 +271,12 @@ export default function SettingsPage() {
         {/* Password Change Section - Hide for Guest */}
         {user?.role !== 'guest' && (
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-700/50 shadow-xl">
-            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="flex items-center gap-4 mb-4 sm:mb-6">
               <div className="p-1.5 sm:p-2 bg-red-500/10 rounded-lg">
                 <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-semibold text-white">{t('settings.updatePassword')}</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold text-white mb-1.5 sm:mb-0.5">{t('settings.updatePassword')}</h2>
                 <p className="text-xs sm:text-sm text-gray-400">{t('settings.updatePasswordSubtitle')}</p>
               </div>
             </div>

@@ -67,6 +67,19 @@ export default function DashboardPage() {
 		fetchData();
 	}, [fetchData]);
 
+	useEffect(() => {
+		const handleResize = () => {
+			if (window.innerWidth < 380) {
+				setViewMode('list');
+			}
+		};
+
+		handleResize();
+
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
+	}, []);
+
 	const handleUpdate = () => {
 		// Refetch data when an item is updated or deleted
 		setLoading(true);
@@ -157,7 +170,7 @@ export default function DashboardPage() {
 					</div>
 					<div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
 						{/* View Mode Toggle */}
-						<div className="flex items-center gap-1 bg-gray-100 dark:bg-dark-800 rounded-lg p-0.5 sm:p-1 border border-gray-300 dark:border-dark-700">
+						<div className="hidden vsm:flex items-center gap-1 bg-gray-100 dark:bg-dark-800 rounded-lg p-0.5 sm:p-1 border border-gray-300 dark:border-dark-700">
 							<button
 								onClick={() => setViewMode('grid')}
 								className={`p-1.5 sm:p-2 rounded transition-colors ${viewMode === 'grid'
@@ -193,7 +206,7 @@ export default function DashboardPage() {
 								className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
 							>
 								<X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-								<span className="hidden md:inline">Clear search</span>
+								<span className="hidden md:inline">{t('common.clearSearch')}</span>
 							</button>
 						)}
 					</div>
@@ -205,13 +218,13 @@ export default function DashboardPage() {
 				) : (
 					<>
 						{viewMode === 'grid' ? (
-							<div className="w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols- auto-rows-max gap-4 sm:p-4 md:p-2">
+							<div className="w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 auto-rows-max gap-4 sm:gap-6 sm:p-4 md:p-2">
 								{sortedBlurays.map((bluray) => (
 									<BlurayCard key={bluray.id} bluray={bluray} onUpdate={handleUpdate} />
 								))}
 							</div>
 						) : (
-							<div className="space-y-2 sm:space-y-3">
+							<div className="space-y-2 sm:space-y-3 p-0 sm:p-1">
 								{sortedBlurays.map((bluray) => (
 									<BlurayListItem key={bluray.id} bluray={bluray} onUpdate={handleUpdate} />
 								))}
