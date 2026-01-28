@@ -1,16 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Bluray } from '@/types/bluray';
-import { Star, Calendar, Play, Edit3, Trash2, Tag as TagIcon, ExternalLink, MoreVertical } from 'lucide-react';
-import ContextMenu, { ContextMenuOption } from '@/components/common/ContextMenu';
-import TagModal from '@/components/modals/TagModal';
-import { apiClient } from '@/lib/api-client';
-import toast from 'react-hot-toast';
+import { Star, Calendar, Play, Tag, MoreVertical } from 'lucide-react';
+import ContextMenu from '@/components/common/ContextMenu';
+import AddTagModal from '@/components/modals/AddTagModal';
 import { useBlurayTools } from '@/hooks/useBlurayTools';
 
 interface BlurayListItemProps {
@@ -19,7 +15,6 @@ interface BlurayListItemProps {
 }
 
 export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps) {
-  const router = useRouter();
   const { user } = useAuthStore();
 
   const canModify = user?.role === 'admin' || user?.role === 'moderator';
@@ -118,7 +113,7 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
               e.preventDefault();
               setContextMenu({ x: e.clientX - 100, y: e.clientY });
             }}
-            className="md:hidden absolute top-2 right-2 p-2 text-gray-400 hover:text-white"
+            className="md:hidden absolute top-2 right-2 p-2 text-gray-400 hover:text-white ease-in-out transition-colors"
           >
             <MoreVertical className="w-4 h-4" />
           </button>
@@ -134,7 +129,7 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
         />}
 
       {showTagModal && (
-        <TagModal
+        <AddTagModal
           blurayId={currentBluray.id}
           blurayTitle={currentBluray.title}
           initialSelectedTags={currentBluray.tags || []}

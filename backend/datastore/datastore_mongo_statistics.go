@@ -65,6 +65,8 @@ func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics
 		}
 		switch b.Type {
 		case models.MediaTypeSeries:
+			stats.TotalSeasons += len(b.Seasons)
+
 			for _, season := range b.Seasons {
 				stats.TotalEpisodes += season.EpisodeCount
 			}
@@ -130,6 +132,35 @@ func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics
 				Type:   string(b.Type),
 				Rating: b.Rating,
 			})
+		}
+	}
+
+	return stats, nil
+}
+
+func (ds *MongoDatastore) GetSimplifiedStatistics(ctx context.Context) (*models.SimplifiedStatistics, error) {
+	stats := &models.SimplifiedStatistics{}
+
+	total, _ := ds.blurays.CountDocuments(ctx, bson.M{})
+	stats.TotalBlurays = int(total)
+
+	movieCount, _ := ds.blurays.CountDocuments(ctx, bson.M{"type": "movie"})
+	seriesCount, _ := ds.blurays.CountDocuments(ctx, bson.M{"type": "series"})
+	stats.TotalMovies = int(movieCount)
+	stats.TotalSeries = int(seriesCount)
+
+	cursor, err := ds.blurays.Find(ctx, bson.M{})
+	if err != nil {
+		return stats, nil
+	}
+	defer cursor.Close(ctx)
+
+	var blurays []*models.Bluray
+	cursor.All(ctx, &blurays)
+
+	for _, b := range blurays {
+		if b.Type == models.MediaTypeSeries {
+			stats.TotalSeasons += len(b.Seasons)
 		}
 	}
 

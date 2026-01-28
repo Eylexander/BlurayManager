@@ -5,6 +5,7 @@ type Statistics struct {
 	TotalBlurays         int            `json:"total_blurays"`
 	TotalMovies          int            `json:"total_movies"`
 	TotalSeries          int            `json:"total_series"`
+	TotalSeasons         int            `json:"total_seasons"`
 	TotalEpisodes        int            `json:"total_episodes"`
 	TotalSpent           float64        `json:"total_spent"`
 	AveragePrice         float64        `json:"average_price"`
@@ -19,6 +20,13 @@ type Statistics struct {
 	YearDistribution     map[int]int    `json:"year_distribution"`
 	AverageRating        float64        `json:"average_rating"`
 	TopRated             []BlurayStats  `json:"top_rated"`
+}
+
+type SimplifiedStatistics struct {
+	TotalBlurays int `json:"total_blurays"`
+	TotalMovies  int `json:"total_movies"`
+	TotalSeries  int `json:"total_series"`
+	TotalSeasons int `json:"total_seasons"`
 }
 
 // BlurayStats is a simplified bluray info for statistics

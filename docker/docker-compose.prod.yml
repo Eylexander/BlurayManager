@@ -1,12 +1,12 @@
 services:
   bluray_database:
     image: mongo:7.0
-    container_name: bluray-mongodb-prod
+    container_name: bluray_database
     restart: always
     environment:
       MONGO_INITDB_DATABASE: bluray_manager
     volumes:
-      - mongodb_data_prod:/data/db
+      - bluray_database_data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 30s
@@ -14,18 +14,17 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - bluray-network
+      - bluray_network
 
   bluray_backend:
     image: eylexander/bluray-backend:latest
-    container_name: bluray-backend-prod
+    container_name: bluray_backend
     restart: always
-    ports:
-      - "8080:8080"
     environment:
       DB_NAME: bluray_manager
       JWT_SECRET: ${JWT_SECRET}
       TMDB_API_KEY: ${TMDB_API_KEY}
+      MONGODB_URI: mongodb://bluray_database:27017/bluray_manager
 
       # SMTP Configuration
       SMTP_HOST: ${SMTP_HOST}
@@ -35,10 +34,10 @@ services:
       SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Bluray Manager}
     depends_on:
-      mongodb:
+      bluray_database:
         condition: service_healthy
     networks:
-      - bluray-network
+      - bluray_network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/health"]
       interval: 30s
@@ -48,18 +47,15 @@ services:
 
   bluray_frontend:
     image: eylexander/bluray-frontend:latest
-    container_name: bluray-frontend-prod
+    container_name: bluray_frontend
     restart: always
-    ports:
-      - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
       NODE_ENV: production
     depends_on:
-      backend:
+      bluray_backend:
         condition: service_healthy
     networks:
-      - bluray-network
+      - bluray_network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 30s
@@ -70,21 +66,19 @@ services:
 
   bluray_nginx:
     image: nginx:latest
-    container_name: bluray-nginx-prod
+    container_name: bluray_nginx
     restart: always
-    ports:
-      - "8000:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      frontend:
+      bluray_frontend:
         condition: service_healthy
     networks:
-      - bluray-network
+      - bluray_network
 
 volumes:
-  mongodb_data_prod:
+  bluray_database_data:
 
 networks:
-  bluray-network:
+  bluray_network:
     driver: bridge

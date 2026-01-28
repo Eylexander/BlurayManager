@@ -38,3 +38,7 @@ func (c *Controller) ListBlurays(ctx context.Context, filters map[string]interfa
 func (c *Controller) SearchBlurays(ctx context.Context, query string, skip, limit int) ([]*models.Bluray, error) {
 	return c.ds.SearchBlurays(ctx, query, skip, limit)
 }
+
+func (c *Controller) ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.SimplifiedBluray, error) {
+	return c.ds.ListSimplifiedBlurays(ctx, filters, skip, limit)
+}

@@ -78,7 +78,7 @@ export default function StatisticsPage() {
     if (!stats) return [];
     return [
       { name: t('statistics.totalMovies'), value: stats.total_movies || 0 },
-      { name: t('statistics.totalSeries'), value: stats.total_series || 0 },
+      { name: t('statistics.totalSeasons'), value: stats.total_seasons || 0 },
     ];
   }, [stats, t]);
 
@@ -119,8 +119,8 @@ export default function StatisticsPage() {
           color="purple"
         />
         <StatsCard
-          title={t('statistics.totalSeries')}
-          value={stats.total_series || 0}
+          title={t('statistics.totalSeasons')}
+          value={stats.total_seasons || 0}
           icon={<Tv className="w-6 h-6 sm:w-8 sm:h-8" />}
           color="pink"
         />

@@ -4,26 +4,95 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/authStore';
-import { Home, BarChart3, Settings, Plus, Users, LogOut, Github, MoreHorizontal, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { NavLink } from '@/components/common/NavLink';
+import { Home, BarChart3, Settings, Plus, Users, LogOut, Github, MoreHorizontal, X, TagIcon, FileDown, LucideIcon } from 'lucide-react';
+import { useState } from 'react';
+
+interface MobileLinkProps {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}
+
+const MobileLink = ({ href, icon: Icon, label, onClick }: MobileLinkProps) => {
+  const t = useTranslations();
+  const pathname = usePathname();
+  
+  // Strict check for home, partial check for sub-routes
+  const active = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
+  
+  const baseStyles = "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all active:scale-95";
+  const activeStyles = "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400";
+  const idleStyles = "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300";
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`${baseStyles} ${active ? activeStyles : idleStyles}`}
+    >
+      <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+      <span className="font-semibold text-sm">{t(label)}</span>
+    </Link>
+  );
+};
 
 export default function MobileNav() {
   const t = useTranslations();
   const { user, logout } = useAuthStore();
   const [showMenu, setShowMenu] = useState(false);
   
-  const canModify = user?.role === 'admin' || user?.role === 'moderator';
-  const isGuest = user?.role === 'guest';
+  const role = user?.role;
+  const isAdmin = role === 'admin';
+  const canModify = role === 'admin' || role === 'moderator';
+  const isGuest = role === 'guest';
 
-  const closeMenu = () => {
-    setShowMenu(false);
-  };
+  const closeMenu = () => setShowMenu(false);
 
   const handleLogout = () => {
     setShowMenu(false);
     logout();
   };
+
+  // Centralized Link Configuration
+  const navLinks = [
+    { 
+      href: '/dashboard', 
+      label: 'nav.home', 
+      icon: Home, 
+      show: true 
+    },
+    { 
+      href: '/dashboard/statistics', 
+      label: 'nav.statistics', 
+      icon: BarChart3, 
+      show: !isGuest 
+    },
+    { 
+      href: '/dashboard/settings', 
+      label: 'nav.settings', 
+      icon: Settings, 
+      show: !isGuest 
+    },
+    { 
+      href: '/dashboard/users', 
+      label: 'nav.users', 
+      icon: Users, 
+      show: isAdmin 
+    },
+    { 
+      href: '/dashboard/tags', 
+      label: 'nav.tags', 
+      icon: TagIcon, 
+      show: isAdmin 
+    },
+    { 
+      href: '/dashboard/import-export', 
+      label: 'nav.importExport', 
+      icon: FileDown, 
+      show: isAdmin 
+    },
+  ];
 
   return (
     <>
@@ -43,6 +112,7 @@ export default function MobileNav() {
       >
         <div className="mx-6 mb-32 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden">
           <div className="p-8">
+            
             {/* Header / User Profile */}
             <div className="flex items-center gap-4 mb-6 px-2">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
@@ -50,22 +120,21 @@ export default function MobileNav() {
               </div>
               <div className="flex-1">
                 <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">{user?.username}</h3>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wider">{user?.role}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wider">{role}</p>
               </div>
             </div>
 
+            {/* Navigation Links Grid */}
             <div className="grid grid-cols-1 gap-2">
-              <NavLink href="/dashboard" icon={Home} label="nav.home" onClick={closeMenu} />
-              {!isGuest && (
-                <>
-                  <NavLink href="/dashboard/statistics" icon={BarChart3} label="nav.statistics" onClick={closeMenu} />
-                  <NavLink href="/dashboard/settings" icon={Settings} label="nav.settings" onClick={closeMenu} />
-                </>
-              )}
-              
-              {user?.role === 'admin' && (
-                <NavLink href="/dashboard/users" icon={Users} label="nav.users" onClick={closeMenu} />
-              )}
+              {navLinks
+                .filter(link => link.show)
+                .map((link) => (
+                  <MobileLink 
+                    key={link.href}
+                    {...link}
+                    onClick={closeMenu}
+                  />
+                ))}
 
               <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
 
@@ -78,6 +147,7 @@ export default function MobileNav() {
               </button>
             </div>
 
+            {/* Footer */}
             <div className="mt-1 flex justify-center">
               <a
                 href="https://github.com/Eylexander/BlurayManager"
@@ -124,7 +194,9 @@ export default function MobileNav() {
             ) : (
               <MoreHorizontal className="w-6 h-6" />
             )}
-            <span className="text-sm font-bold pr-1">{showMenu ? 'Close' : 'Menu'}</span>
+            <span className="text-sm font-bold pr-1">
+              {showMenu ? t("common.close") : t("common.menu")}
+            </span>
           </button>
         </nav>
       </div>

@@ -28,6 +28,10 @@ func (api *API) SearchTMDB(c *gin.Context) {
 		return
 	}
 
+	if mediaType == "series" {
+		mediaType = "tv"
+	}
+
 	// Make request to TMDB
 	url := fmt.Sprintf("%s/search/%s?api_key=%s&query=%s", tmdbBaseURL, mediaType, apiKey, query)
 	resp, err := http.Get(url)
@@ -67,6 +71,10 @@ func (api *API) GetTMDBDetails(c *gin.Context) {
 	if apiKey == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "TMDB API key not configured"})
 		return
+	}
+
+	if mediaType == "series" {
+		mediaType = "tv"
 	}
 
 	// Fetch English version

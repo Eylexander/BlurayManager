@@ -79,9 +79,9 @@ export default function UsersPage() {
 	return (
 		<div className="max-w-4xl mx-auto px-3 sm:px-4 pb-12">
 			{/* User Modal */}
-			<AddUserModal 
-				isOpen={showModal} 
-				onClose={() => setShowModal(false)} 
+			<AddUserModal
+				isOpen={showModal}
+				onClose={() => setShowModal(false)}
 				editingUser={editingUser}
 				onRefresh={fetchUsers}
 			/>

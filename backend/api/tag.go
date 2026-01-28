@@ -15,6 +15,20 @@ func (api *API) CreateTag(c *gin.Context) {
 		return
 	}
 
+	userIDstr, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDstr.(string))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	tag.CreatedBy = userID
+
 	if err := api.ctrl.CreateTag(c.Request.Context(), &tag); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

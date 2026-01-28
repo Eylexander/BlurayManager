@@ -43,7 +43,7 @@ func NewServer(ds datastore.Datastore) *Server {
 
 func (s *Server) setupRoutes() {
 	// Health check
-	s.router.GET("/health", func(c *gin.Context) {
+	s.router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
@@ -83,6 +83,7 @@ func (s *Server) setupRoutes() {
 			blurays := protected.Group("/blurays")
 			{
 				blurays.GET("", s.api.ListBlurays)
+				blurays.GET("/simplified", s.api.ListSimplifiedBlurays)
 				blurays.GET("/search", s.api.SearchBlurays)
 				blurays.GET("/:id", s.api.GetBluray)
 				blurays.GET("/export", s.api.ExportBlurays)
@@ -91,6 +92,7 @@ func (s *Server) setupRoutes() {
 				blurays.POST("", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.CreateBluray)
 				blurays.POST("/import", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.ImportBlurays)
 				blurays.PUT("/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.UpdateBluray)
+				blurays.PUT("/:id/tags", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.UpdateBlurayTags)
 				blurays.DELETE("/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.DeleteBluray)
 			}
 
@@ -100,24 +102,28 @@ func (s *Server) setupRoutes() {
 				tags.GET("", s.api.ListTags)
 				tags.GET("/:id", s.api.GetTag)
 
-				// Only users and admins can create/update/delete tags
-				tags.POST("", s.ctrl.RequireRole(models.RoleUser, models.RoleAdmin), s.api.CreateTag)
-				tags.PUT("/:id", s.ctrl.RequireRole(models.RoleUser, models.RoleAdmin), s.api.UpdateTag)
-				tags.DELETE("/:id", s.ctrl.RequireRole(models.RoleUser, models.RoleAdmin), s.api.DeleteTag)
+				// Only and admins and moderators can create/update/delete tags
+				tags.POST("", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.CreateTag)
+				tags.PUT("/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.UpdateTag)
+				tags.DELETE("/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.DeleteTag)
 			}
 
 			// Statistics routes (all authenticated users can view)
-			protected.GET("/statistics", s.api.GetStatistics)
-
-			// TMDB routes (all authenticated users can search)
-			tmdb := protected.Group("/tmdb")
+			stats := protected.Group("/statistics")
 			{
-				tmdb.GET("/search", s.api.SearchTMDB)
-				tmdb.GET("/:type/:id", s.api.GetTMDBDetails)
+				stats.GET("", s.api.GetStatistics)
+				stats.GET("/simplified", s.api.GetSimplifiedStatistics)
 			}
 
-			// Barcode lookup route (all authenticated users can use)
-			protected.GET("/barcode/:barcode", s.api.LookupBarcode)
+			// TMDB routes (only authenticated users who can add blurays can use)
+			tmdb := protected.Group("/tmdb")
+			{
+				tmdb.GET("/search", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.SearchTMDB)
+				tmdb.GET("/:type/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.GetTMDBDetails)
+			}
+
+			// Barcode lookup route (only authenticated users who can add blurays can use)
+			protected.GET("/barcode/:barcode", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.LookupBarcode)
 
 			// Notification routes
 			notifications := protected.Group("/notifications")
@@ -143,9 +149,16 @@ func (s *Server) setupRoutes() {
 			}
 		}
 	}
+
+	s.router.NoRoute(s.DefaultResponse)
 }
 
 // Start starts the HTTP server
 func (s *Server) Start(port string) error {
 	return s.router.Run(":" + port)
+}
+
+// Default response return for unhandled routes
+func (s *Server) DefaultResponse(c *gin.Context) {
+	c.JSON(404, gin.H{"error": "not found"})
 }

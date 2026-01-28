@@ -8,7 +8,7 @@ import useRouteProtection from '@/hooks/useRouteProtection';
 import { apiClient } from '@/lib/api-client';
 import { Film, Tv, Calendar, Tag as TagIcon, Check, Loader, ArrowLeft, Save, Plus, X, Edit, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import TagModal from '@/components/modals/TagModal';
+import AddTagModal from '@/components/modals/AddTagModal';
 import { I18nText } from '@/types/bluray';
 import { Button } from '@/components/common';
 import { 
@@ -300,7 +300,7 @@ export default function EditBlurayPage() {
     <div className="max-w-4xl mx-auto px-4 pb-12">
       {/* Tag Edit Modal */}
       {showTagModal && (
-        <TagModal
+        <AddTagModal
           initialSelectedTags={selectedTags}
           onClose={() => setShowTagModal(false)}
           onSave={(tags) => setSelectedTags(tags)}

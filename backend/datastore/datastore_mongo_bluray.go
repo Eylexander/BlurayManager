@@ -92,3 +92,17 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 	}
 	return blurays, nil
 }
+
+func (ds *MongoDatastore) ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.SimplifiedBluray, error) {
+	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
+	cursor, err := ds.blurays.Find(ctx, filters, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var blurays []*models.SimplifiedBluray
+	if err := cursor.All(ctx, &blurays); err != nil {
+		return nil, err
+	}
+	return blurays, nil
+}

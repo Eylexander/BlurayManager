@@ -116,6 +116,11 @@ class ApiClient {
     return response.data.blurays || [];
   }
 
+  async getSimplifiedBlurays(params?: { type?: string; tags?: string[]; skip?: number; limit?: number }) {
+    const response = await this.client.get('/blurays/simplified', { params });
+    return response.data.blurays || [];
+  }
+
   async getBluray(id: string) {
     const response = await this.client.get(`/blurays/${id}`);
     return response.data.bluray || response.data;
@@ -132,6 +137,11 @@ class ApiClient {
 
   async updateBluray(id: string, data: any) {
     const response = await this.client.put(`/blurays/${id}`, data);
+    return response.data;
+  }
+
+  async updateBlurayTags(id: string, data: { title: string; tags: string[] }) {
+    const response = await this.client.put(`/blurays/${id}/tags`, data);
     return response.data;
   }
 
@@ -154,7 +164,7 @@ class ApiClient {
   // Tag endpoints
   async getTags() {
     const response = await this.client.get('/tags');
-    return response.data;
+    return response.data.tags || [];
   }
 
   async getTag(id: string) {
@@ -164,12 +174,12 @@ class ApiClient {
 
   async createTag(data: any) {
     const response = await this.client.post('/tags', data);
-    return response.data;
+    return response.data.tag;
   }
 
   async updateTag(id: string, data: any) {
     const response = await this.client.put(`/tags/${id}`, data);
-    return response.data;
+    return response.data.tag;
   }
 
   async deleteTag(id: string) {
@@ -180,6 +190,11 @@ class ApiClient {
   // Statistics endpoint
   async getStatistics() {
     const response = await this.client.get('/statistics');
+    return response.data.statistics || response.data;
+  }
+
+  async getSimplifiedStatistics() {
+    const response = await this.client.get('/statistics/simplified');
     return response.data.statistics || response.data;
   }
 

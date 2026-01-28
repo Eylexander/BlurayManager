@@ -82,6 +82,36 @@ func (api *API) UpdateBluray(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"bluray": bluray})
 }
 
+func (api *API) UpdateBlurayTags(c *gin.Context) {
+	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var req struct {
+		Tags []string `json:"tags"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	bluray, err := api.ctrl.GetBlurayByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "bluray not found"})
+		return
+	}
+
+	bluray.Tags = req.Tags
+	if err := api.ctrl.UpdateBluray(c.Request.Context(), bluray); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"bluray": bluray})
+}
+
 func (api *API) DeleteBluray(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
@@ -353,4 +383,26 @@ func (api *API) ImportBlurays(c *gin.Context) {
 		"failed":  failed,
 		"errors":  errors,
 	})
+}
+
+func (api *API) ListSimplifiedBlurays(c *gin.Context) {
+	skip, _ := strconv.Atoi(c.DefaultQuery("skip", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	filters := make(map[string]interface{})
+	if mediaType := c.Query("type"); mediaType != "" {
+		filters["type"] = mediaType
+	}
+	if genre := c.Query("genre"); genre != "" {
+		filters["genre"] = genre
+	}
+
+	blurays, err := api.ctrl.ListSimplifiedBlurays(c.Request.Context(), filters, skip, limit)
+	if err != nil {
+		log.Printf("ERROR ListBlurays: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"blurays": blurays})
 }

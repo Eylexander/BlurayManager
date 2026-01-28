@@ -8,7 +8,7 @@ import { apiClient } from '@/lib/api-client';
 import useRouteProtection from '@/hooks/useRouteProtection';
 import { Film, Tv, Search, Calendar, Tag as TagIcon, Check, X, Loader, ChevronLeft, Plus, Edit, Camera } from 'lucide-react';
 // import BarcodeScanner from '@/components/barcode/BarcodeScanner';
-import TagModal from '@/components/modals/TagModal';
+import AddTagModal from '@/components/modals/AddTagModal';
 import toast from 'react-hot-toast';
 import { I18nText } from '@/types/bluray';
 import { Button } from '@/components/common';
@@ -39,6 +39,8 @@ interface TMDBResult {
 interface Tag {
   id: string;
   name: string;
+  color?: string;
+  icon?: string;
 }
 
 /**
@@ -329,7 +331,7 @@ export default function AddBlurayPage() {
   };
 
   const renderInitialForm = () => (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Type Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-3">
@@ -370,7 +372,7 @@ export default function AddBlurayPage() {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={t('add.titlePlaceholder')}
+          placeholder={type === 'movie' ? t('add.movieTitlePlaceholder') : t('add.seriesTitlePlaceholder')}
           className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -413,11 +415,13 @@ export default function AddBlurayPage() {
           <Button
             variant="primary"
             onClick={() => setPurchaseDate(new Date().toISOString().split('T')[0])}
-            icon={<Calendar className="w-4 h-4 inline mr-1.5 group-hover:scale-110 transition-transform" />}
             size="md"
             className='min-w-0'
           >
-            {t('add.today')}
+            <Calendar className="w-4 h-4 inline vsm:hidden" />
+            <span className="hidden vsm:inline">
+              {t('add.today')}
+            </span>
           </Button>
         </div>
       </div>
@@ -450,6 +454,7 @@ export default function AddBlurayPage() {
                   key={tag.id}
                   className="px-4 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
                 >
+                  {tag.icon && <TagIcon className="w-4 h-4 inline mr-1.5" />}
                   {tag.name}
                 </span>
               ))}
@@ -593,7 +598,7 @@ export default function AddBlurayPage() {
                 </p>
               )}
             </div>
-            <p className="text-sm text-gray-400 mt-3">{selectedMovie.overview}</p>
+            <p className="text-sm text-gray-400 mt-3">{selectedMovie.overview_fr || selectedMovie.overview}</p>
           </div>
         </div>
 
@@ -651,10 +656,13 @@ export default function AddBlurayPage() {
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-4 pb-12 pt-6 space-y-8">
       {showTagModal && (
-        <TagModal
+        <AddTagModal
           initialSelectedTags={selectedTags}
           onClose={() => setShowTagModal(false)}
-          onSave={(tags) => setSelectedTags(tags)}
+          onSave={(ids, updatedAvailableTags) => {
+            setSelectedTags(ids);
+            setAvailableTags(updatedAvailableTags);
+          }}
         />
       )}
 
@@ -683,7 +691,7 @@ export default function AddBlurayPage() {
                 {t('add.barcodeScanDesc')}
               </p>
             </div>
-            
+
             <button
               onClick={() => {
                 setIsCameraOpen(true);

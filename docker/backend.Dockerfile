@@ -6,7 +6,7 @@ FROM golang:trixie AS builder
 
 LABEL maintainer="Eylexander <me@eylexander.fr>"
 
-ENV MONGODB_URI="mongodb://bluray-database:27017" \
+ENV MONGODB_URI="mongodb://bluray_manager:27017" \
     DB_NAME="bluray_manager" \
     PORT="8080"
 

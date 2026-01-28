@@ -56,6 +56,27 @@ type Bluray struct {
 	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
+// SimplifiedBluray is a simplified version of Bluray for listings
+type SimplifiedBluray struct {
+	ID    primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Title string             `bson:"title" json:"title" binding:"required"`
+	Type  MediaType          `bson:"type" json:"type" binding:"required"`
+
+	// For movies
+	ReleaseYear int    `bson:"release_year,omitempty" json:"release_year,omitempty"`
+	Director    string `bson:"director,omitempty" json:"director,omitempty"`
+
+	// For series
+	Seasons       []Season `bson:"seasons,omitempty" json:"seasons,omitempty"`
+	TotalEpisodes int      `bson:"total_episodes,omitempty" json:"total_episodes,omitempty"`
+
+	// Common fields
+	Genre         []string `bson:"genre" json:"genre"`
+	CoverImageURL string   `bson:"cover_image_url" json:"cover_image_url"`
+	BackdropURL   string   `bson:"backdrop_url" json:"backdrop_url"`
+	Rating        float64  `bson:"rating" json:"rating"`
+}
+
 // Season represents a season in a series
 type Season struct {
 	Number       int      `bson:"number" json:"number"`

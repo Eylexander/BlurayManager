@@ -11,17 +11,18 @@ interface Tag {
   id: string;
   name: string;
   color?: string;
+  icon?: string;
 }
 
 interface TagModalProps {
   initialSelectedTags?: string[];
   onClose: () => void;
-  onSave?: (selectedTags: string[]) => void;
+  onSave?: (selectedTagsIds: string[], updatedAvailableTags: Tag[]) => void;
   blurayId?: string;
   blurayTitle?: string;
 }
 
-export default function TagModal({
+export default function AddTagModal({
   initialSelectedTags = [],
   onClose,
   onSave,
@@ -29,6 +30,7 @@ export default function TagModal({
   blurayTitle,
 }: TagModalProps) {
   const t = useTranslations();
+
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
   const [newTag, setNewTag] = useState('');
@@ -59,7 +61,7 @@ export default function TagModal({
       setAvailableTags(Array.isArray(tags) ? tags : []);
     } catch (error) {
       console.error('Failed to fetch tags:', error);
-      toast.error('Failed to load tags');
+      toast.error(t('add.failedToLoadTags'));
     }
   };
 
@@ -73,7 +75,7 @@ export default function TagModal({
     if (!newTag.trim()) return;
 
     try {
-      const tag = await apiClient.createTag({ name: newTag.trim(), color: '#3B82F6' });
+      const tag = await apiClient.createTag({ name: newTag.trim(), color: '#3B82F6', icon: 'TagIcon' });
       setAvailableTags([...availableTags, tag]);
       setSelectedTags([...selectedTags, tag.id]);
       setNewTag('');
@@ -85,23 +87,22 @@ export default function TagModal({
   };
 
   const handleDone = async () => {
+    // If blurayId is provided, update the bluray tags directly, otherwise just call onSave
     if (blurayId) {
-      // If blurayId is provided, update the bluray tags directly
       setLoading(true);
       try {
-        await apiClient.updateBluray(blurayId, { tags: selectedTags });
-        toast.success('Tags updated successfully!');
-        if (onSave) onSave(selectedTags);
+        await apiClient.updateBlurayTags(blurayId, { title: blurayTitle || '', tags: selectedTags });
+        toast.success(t('add.tagsUpdated'));
+        if (onSave) onSave(selectedTags, availableTags);
         onClose();
       } catch (error) {
         console.error('Failed to update tags:', error);
-        toast.error('Failed to update tags');
+        toast.error(t('add.failedToUpdateTags'));
       } finally {
         setLoading(false);
       }
     } else {
-      // Otherwise, just return the selected tags
-      if (onSave) onSave(selectedTags);
+      if (onSave) onSave(selectedTags, availableTags);
       onClose();
     }
   };
@@ -160,6 +161,7 @@ export default function TagModal({
                   }`}
                 >
                   {selectedTags.includes(tag.id) && <Check className="w-4 h-4 inline mr-1.5" />}
+                  {tag.icon && <TagIcon className="w-4 h-4 inline mr-1.5" />}
                   {tag.name}
                 </button>
               ))}

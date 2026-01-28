@@ -16,9 +16,9 @@ import { useSearchParams } from 'next/navigation';
 import SortDropdown from '@/components/common/SortDropdown';
 import { LoaderCircle } from '@/components/common/LoaderCircle';
 import Link from 'next/link';
+import { useSettingsStore } from '@/store/settingsStore';
 
 type SortOption = 'recent' | 'name' | 'release_date';
-type ViewMode = 'grid' | 'list';
 
 export default function DashboardPage() {
 	const t = useTranslations();
@@ -26,11 +26,12 @@ export default function DashboardPage() {
 	const { user } = useAuthStore();
 	const searchParams = useSearchParams();
 	const searchQuery = searchParams.get('search') || '';
+	const { viewMode, setViewMode } = useSettingsStore();
+
 	const [recentBlurays, setRecentBlurays] = useState<Bluray[]>([]);
 	const [stats, setStats] = useState<Statistics | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [sortBy, setSortBy] = useState<SortOption>('recent');
-	const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
 	// Use route protection
 	useRouteProtection(pathname);
@@ -39,8 +40,8 @@ export default function DashboardPage() {
 	const fetchData = useCallback(async () => {
 		try {
 			const [bluraysData, statsData] = await Promise.all([
-				apiClient.getBlurays({ limit: searchQuery ? 100 : 12 }),
-				apiClient.getStatistics(),
+				apiClient.getSimplifiedBlurays({ limit: searchQuery !== "" ? 100 : 12 }),
+				apiClient.getSimplifiedStatistics(),
 			]);
 
 			// Filter blurays by search query if present
@@ -52,6 +53,8 @@ export default function DashboardPage() {
 					bluray.director?.toLowerCase().includes(query) ||
 					bluray.genre?.some((g: string) => g.toLowerCase().includes(query))
 				);
+
+				// filteredBlurays = await apiClient.searchBlurays(query, 0, 100);
 			}
 
 			setRecentBlurays(filteredBlurays);
@@ -123,36 +126,50 @@ export default function DashboardPage() {
 
 	return (
 		<div className="w-full overflow-x-hidden space-y-4 sm:space-y-6 md:space-y-8">
-			{/* Welcome Section - Hidden on mobile */}
-			<div className="hidden md:block jellyfin-gradient rounded-lg p-6 sm:p-8 text-white">
-				<h1 className="text-4xl font-bold mb-2">
-					{t('welcome.greeting', { username: user?.username || 'Guest' })} 👋
-				</h1>
-				<p className="text-lg opacity-90">
-					{t('welcome.subtitle', { count: stats?.total_blurays || 0 })}
-				</p>
-			</div>
-
-			{/* Quick Stats */}
-			{stats && (
-				<div className="grid grid-cols-2 gap-4 sm:gap-4 md:gap-6 lg:gap-4 !mt-0 sm:!mt-2 md:!mt-6">
-					<Link href="/dashboard/statistics" >
-						<StatsCard
-							title={t('statistics.totalMovies')}
-							value={stats.total_movies || 0}
-							icon={<Film className="w-6 h-6 sm:w-8 sm:h-8" />}
-							color="blue"
-						/>
-					</Link>
-					<Link href="/dashboard/statistics" >
-						<StatsCard
-							title={t('statistics.totalSeries')}
-							value={stats.total_series || 0}
-							icon={<Tv className="w-6 h-6 sm:w-8 sm:h-8" />}
-							color="purple"
-						/>
-					</Link>
+			{/* Homepage header */}
+			{user?.role === 'guest' ? (
+				<>
+				<div className="hidden md:block jellyfin-gradient rounded-lg p-6 sm:p-8 text-white">
+					<h1 className="text-4xl font-bold mb-2">
+						{t('welcome.guestGreeting')}
+					</h1>
+					<p className="text-lg opacity-90">
+						{t('welcome.guestSubtitle', { movies: stats?.total_movies || 0, seasons: stats?.total_seasons || 0 })}
+					</p>
 				</div>
+				</>
+			) : (
+				<>
+					<div className="hidden md:block jellyfin-gradient rounded-lg p-6 sm:p-8 text-white">
+						<h1 className="text-4xl font-bold mb-2">
+							{t('welcome.greeting', { username: user?.username || 'User' })} 👋
+						</h1>
+						<p className="text-lg opacity-90">
+							{t('welcome.subtitle', { count: stats?.total_blurays || 0 })}
+						</p>
+					</div>
+
+					{stats && (
+						<div className="grid grid-cols-2 gap-4 sm:gap-4 md:gap-6 lg:gap-4 !mt-0 sm:!mt-2 md:!mt-6">
+							<Link href="/dashboard/statistics" >
+								<StatsCard
+									title={t('statistics.totalMovies')}
+									value={stats.total_movies || 0}
+									icon={<Film className="w-6 h-6 sm:w-8 sm:h-8" />}
+									color="blue"
+								/>
+							</Link>
+							<Link href="/dashboard/statistics" >
+								<StatsCard
+									title={t('statistics.totalSeasons')}
+									value={stats.total_seasons || 0}
+									icon={<Tv className="w-6 h-6 sm:w-8 sm:h-8" />}
+									color="purple"
+								/>
+							</Link>
+						</div>
+					)}
+				</>
 			)}
 
 			{/* Recent Blurays */}

@@ -47,12 +47,15 @@ export default function Navbar() {
       if (searchQuery.trim().length >= 1) {
         setSearchLoading(true);
         try {
-          const blurays = await apiClient.getBlurays({ limit: 50 });
+          // const blurays = await apiClient.getBlurays({ limit: 50 });
+          // const query = searchQuery.toLowerCase();
+          // const filtered = blurays.filter((bluray: Bluray) =>
+          //   bluray.title.toLowerCase().includes(query) ||
+          //   bluray.director?.toLowerCase().includes(query)
+          // ).slice(0, 8);
+
           const query = searchQuery.toLowerCase();
-          const filtered = blurays.filter((bluray: Bluray) =>
-            bluray.title.toLowerCase().includes(query) ||
-            bluray.director?.toLowerCase().includes(query)
-          ).slice(0, 8);
+          const filtered = await apiClient.searchBlurays(query, 0, 8);
           setSearchResults(filtered);
           setShowSearchResults(filtered.length > 0);
         } catch (error) {

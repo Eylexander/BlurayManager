@@ -14,6 +14,7 @@
     "clearSearch": "Clear search",
     "filter": "Filter",
     "close": "Close",
+    "menu": "Menu",
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
@@ -119,7 +120,9 @@
   },
   "welcome": {
     "greeting": "Welcome back, {username}!",
+    "guestGreeting": "Welcome to Bluray Manager!",
     "subtitle": "The collection has {count} blurays",
+    "guestSubtitle": "The collection has {movies} movies and {seasons} seasons",
     "quickStats": "Quick Stats",
     "recentAdditions": "Recently Added",
     "viewAll": "View All",
@@ -161,7 +164,9 @@
     "deleteSuccess": "Item deleted successfully",
     "deleteError": "Failed to delete item",
     "notFound": "Item not found",
-    "backToDashboard": "Back to Dashboard"
+    "backToDashboard": "Back to Dashboard",
+    "noTags": "No tags assigned",
+    "viewOnTMDB": "View on TMDB"
   },
   "bluray": {
     "title": "Title",
@@ -203,6 +208,7 @@
     "totalBlurays": "Total Blurays",
     "totalMovies": "Movies",
     "totalSeries": "Series",
+    "totalSeasons": "Seasons",
     "totalEpisodes": "Episodes",
     "totalSpent": "Total Spent",
     "averagePrice": "Average Price",
@@ -237,7 +243,8 @@
     "movie": "Movie",
     "series": "TV Series",
     "titleField": "Title",
-    "titlePlaceholder": "Enter movie or series title",
+    "movieTitlePlaceholder": "Enter movie title",
+    "seriesTitlePlaceholder": "Enter series title",
     "releaseYear": "Release Year",
     "firstAirYear": "First Air Year",
     "year": "Year",
@@ -293,7 +300,8 @@
     "failedToSearchTMDB": "Failed to search TMDB",
     "failedToFetchDetails": "Failed to fetch details",
     "addedToCollection": "Added {title} to your collection!",
-    "failedToAddToCollection": "Failed to add to collection"
+    "failedToAddToCollection": "Failed to add to collection",
+    "tagsUpdated": "Tags updated successfully!"
   },
   "barcode": {
     "title": "Scan Barcode",
@@ -345,7 +353,29 @@
     "deleteSuccess": "Tag deleted successfully!",
     "addError": "Failed to create tag",
     "updateError": "Failed to update tag",
-    "deleteError": "Failed to delete tag"
+    "deleteError": "Failed to delete tag",
+    "confirmDelete": "Are you sure you want to delete the tag \"{name}\"?",
+    "noTags": "No tags created yet",
+    "namePlaceholder": "e.g. Documentation",
+    "iconPlaceholder": "e.g. smile",
+    "labelName": "Tag Name",
+    "labelIcon": "Icon",
+    "labelColor": "Color",
+    "labelDescription": "Description",
+    "colorInfo": "Choose a color that represents this tag",
+    "descriptionInfo": "Optional: provide a brief description for this tag",
+    "selectTags": "Select Tags",
+    "availableTags": "Available Tags",
+    "createNewTag": "Create New Tag",
+    "addTag": "Add Tag",
+    "enterTagName": "Enter tag name",
+    "createTagButton": "Create Tag",
+    "tagCreated": "Tag created!",
+    "title": "Tag Management",
+    "totalTags": "total tags",
+    "searchPlaceholder": "Search tags by name or description...",
+    "descriptionPlaceholder": "e.g. This tag is for documenting movies",
+    "noTagsFound": "No tags found matching your search"
   },
   "users": {
     "title": "User Management",

@@ -7,9 +7,9 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/store/authStore';
 import useRouteProtection from '@/hooks/useRouteProtection';
 import { apiClient } from '@/lib/api-client';
-import { Film, Tv, Calendar, DollarSign, Star, MapPin, Tag as TagIcon, Clock, User, Edit, Trash2, ArrowLeft, Check, X, Plus, ExternalLink } from 'lucide-react';
+import { Film, Tv, Calendar, DollarSign, Star, MapPin, Tag as TagIcon, Clock, User, Edit, Trash2, ArrowLeft, Check, X, Plus, ExternalLink, Hash } from 'lucide-react';
 import toast from 'react-hot-toast';
-import TagModal from '@/components/modals/TagModal';
+import AddTagModal from '@/components/modals/AddTagModal';
 import { Bluray } from '@/types/bluray';
 import { getLocalizedText, isValidPurchaseDate, formatPurchaseDate } from '@/lib/bluray-utils';
 import { Button } from '@/components/common';
@@ -22,10 +22,14 @@ export default function BlurayDetailPage() {
   const t = useTranslations();
   const locale = useLocale() as 'en' | 'fr';
   const { user } = useAuthStore();
+
   const [bluray, setBluray] = useState<Bluray | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [editingTags, setEditingTags] = useState(false);
+
+  const [allTags, setAllTags] = useState<{ id: string; name: string; color: string }[]>([]);
+
   const canModify = user?.role === 'admin' || user?.role === 'moderator';
 
   // Use route protection
@@ -44,8 +48,18 @@ export default function BlurayDetailPage() {
       }
     };
 
+    const fetchAllTags = async () => {
+      try {
+        const tags = await apiClient.getTags();
+        setAllTags(Array.isArray(tags) ? tags : []);
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+      }
+    };
+
     if (params.id) {
       fetchBluray();
+      fetchAllTags();
     }
   }, [params.id]);
 
@@ -90,7 +104,7 @@ export default function BlurayDetailPage() {
     <div className="max-w-full mx-auto px-4 pb-12">
       {/* Tag Edit Modal */}
       {editingTags && (
-        <TagModal
+        <AddTagModal
           blurayId={params.id as string}
           initialSelectedTags={bluray?.tags || []}
           onClose={() => setEditingTags(false)}
@@ -173,7 +187,7 @@ export default function BlurayDetailPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ml-auto p-1 sm:p-1.5 md:p-2 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors group flex-shrink-0"
-                title={bluray.tmdb_id ? "View on TMDB" : "Search on TMDB"}
+                title={bluray.tmdb_id ? t('details.viewOnTMDB') : t('details.viewOnTMDB') + ` (${t('details.notFound')})`}
               >
                 <ExternalLink className="w-3.5 sm:w-4 md:w-5 h-3.5 sm:h-4 md:h-5 text-blue-400 group-hover:text-blue-300" />
               </a>
@@ -332,18 +346,38 @@ export default function BlurayDetailPage() {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              <div className="flex flex-wrap gap-2">
                 {bluray.tags && bluray.tags.length > 0 ? (
-                  bluray.tags.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-400 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium border border-blue-500/30 hover:border-blue-400/50 hover:from-blue-500/20 hover:to-blue-600/20 transition-all duration-200"
-                    >
-                      {tag}
-                    </span>
-                  ))
+                  bluray.tags.map((tagId) => {
+                    const fullTag = allTags.find((t) => t.id === tagId);
+
+                    if (!fullTag) return null;
+
+                    return (
+                      <span
+                        key={fullTag.id}
+                        style={{
+                          backgroundColor: `${fullTag.color}15`,
+                          borderColor: `${fullTag.color}30`,
+                          color: fullTag.color,
+                        }}
+                        className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all duration-300 hover:scale-105"
+                      >
+                        <Hash size={14} strokeWidth={2.5} className="opacity-80" />
+
+                        {fullTag.name}
+
+                        <div
+                          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity blur-md -z-10"
+                          style={{ backgroundColor: `${fullTag.color}20` }}
+                        />
+                      </span>
+                    );
+                  })
                 ) : (
-                  <span className="text-gray-500 text-xs sm:text-sm italic">No tags</span>
+                  <span className="text-gray-500 text-xs sm:text-sm italic">
+                    {t('details.noTags')}
+                  </span>
                 )}
               </div>
             </div>

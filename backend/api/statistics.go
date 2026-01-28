@@ -15,3 +15,13 @@ func (api *API) GetStatistics(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"statistics": stats})
 }
+
+func (api *API) GetSimplifiedStatistics(c *gin.Context) {
+	stats, err := api.ctrl.GetSimplifiedStatistics(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"statistics": stats})
+}

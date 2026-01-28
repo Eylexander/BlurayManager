@@ -6,7 +6,7 @@
 
 FROM cosmtrek/air:v1.64.2
 
-ENV MONGODB_URI=mongodb://database:27017/portfolio
+ENV MONGODB_URI=mongodb://database:27017/bluray_manager
 
 RUN apt-get update \
   && apt-get install openssh-client -y

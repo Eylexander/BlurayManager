@@ -11,6 +11,7 @@ export interface Statistics {
   total_blurays: number;
   total_movies: number;
   total_series: number;
+  total_seasons: number;
   total_episodes: number;
   total_spent: number;
   average_price: number;

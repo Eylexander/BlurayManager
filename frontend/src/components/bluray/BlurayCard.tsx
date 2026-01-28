@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Bluray } from '@/types/bluray';
-import { Star, Calendar, Edit3, Trash2, Tag as TagIcon, ExternalLink, MoreVertical } from 'lucide-react';
-import ContextMenu, { ContextMenuOption } from '@/components/common/ContextMenu';
-import TagModal from '@/components/modals/TagModal';
+import { Star, Calendar, Edit3, Tag as TagIcon, MoreVertical } from 'lucide-react';
+import ContextMenu from '@/components/common/ContextMenu';
+import AddTagModal from '@/components/modals/AddTagModal';
 import { useTranslations } from 'next-intl';
 import { useBlurayTools } from '@/hooks/useBlurayTools';
 
@@ -67,6 +66,16 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-transparent to-black/20" />
               </div>
 
+              {/* Floating Badge (Top Left) */}
+              <div className="absolute top-3 left-3">
+                <span className={`
+                  px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full backdrop-blur-md border border-white/10
+                  ${currentBluray.type === 'movie' ? 'bg-blue-500/60 text-blue-50' : 'bg-purple-500/60 text-purple-50'}
+                `}>
+                  {currentBluray.type === 'movie' ? t('common.movie') : t('common.series')}
+                </span>
+              </div>
+
               {/* Quick Actions: Outside the scaling wrapper so they don't grow with the image */}
               {canModify && (
                 <div className="hidden md:flex absolute top-3 right-3 flex-col gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out z-10">
@@ -114,22 +123,22 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                   )}
                 </div>
 
-                {/* Mobile More Trigger */}
-                {canModify && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setContextMenu({ x: e.clientX - 100, y: e.clientY });
-                    }}
-                    className="md:hidden p-1 text-gray-500"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             </div>
           </div>
         </Link>
+        {/* Mobile More Trigger */}
+        {canModify && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              setContextMenu({ x: e.clientX - 100, y: e.clientY });
+            }}
+            className="md:hidden absolute bottom-1.5 right-1 p-2 text-gray-500 z-20 hover:text-white ease-in-out transition-colors"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {contextMenu &&
@@ -141,7 +150,7 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
         />}
 
       {showTagModal && (
-        <TagModal
+        <AddTagModal
           blurayId={currentBluray.id}
           blurayTitle={currentBluray.title}
           initialSelectedTags={currentBluray.tags || []}
