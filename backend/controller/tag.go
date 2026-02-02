@@ -11,11 +11,11 @@ import (
 
 func (c *Controller) CreateTag(ctx context.Context, tag *models.Tag) error {
 	if tag.Name == "" {
-		return errors.New("tag name is required")
+		return errors.New(c.i18n.T("tag.nameRequired"))
 	}
 	// Check if tag already exists
 	if _, err := c.ds.GetTagByName(ctx, tag.Name); err == nil {
-		return errors.New("tag already exists")
+		return errors.New(c.i18n.T("tag.duplicateTagName"))
 	}
 	return c.ds.CreateTag(ctx, tag)
 }
@@ -30,7 +30,7 @@ func (c *Controller) GetTagByName(ctx context.Context, name string) (*models.Tag
 
 func (c *Controller) UpdateTag(ctx context.Context, tag *models.Tag) error {
 	if tag.Name == "" {
-		return errors.New("tag name is required")
+		return errors.New(c.i18n.T("tag.nameRequired"))
 	}
 	return c.ds.UpdateTag(ctx, tag)
 }

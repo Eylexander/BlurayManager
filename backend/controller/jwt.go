@@ -61,7 +61,7 @@ func (c *Controller) ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	if !token.Valid {
-		return nil, errors.New("invalid token")
+		return nil, errors.New(c.i18n.T("jwt.invalid"))
 	}
 
 	return claims, nil

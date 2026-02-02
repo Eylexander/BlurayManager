@@ -27,3 +27,10 @@ export interface Statistics {
   average_rating: number;
   top_rated: BlurayStats[];
 }
+
+export interface SimplifiedStatistics {
+  total_blurays: number;
+  total_movies: number;
+  total_series: number;
+  total_seasons: number;
+}

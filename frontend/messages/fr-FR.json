@@ -251,7 +251,7 @@
     "runtime": "Durée",
     "minutes": "minutes",
     "genres": "Genres",
-    "rating": "Note personnelle",
+    "rating": "Note",
     "season": "Saison",
     "episodes": "épisodes",
     "seasons": "Saisons",
@@ -298,7 +298,9 @@
     "failedToSearchTMDB": "Échec de la recherche TMDB",
     "failedToFetchDetails": "Échec de la récupération des détails",
     "addedToCollection": "{title} ajouté à votre collection !",
-    "failedToAddToCollection": "Échec de l'ajout à la collection"
+    "failedToAddToCollection": "Échec de l'ajout à la collection",
+    "tagsUpdated": "Étiquettes mises à jour !",
+    "firstAirDate": "Date de première diffusion"
   },
   "barcode": {
     "title": "Scanner le code-barres",

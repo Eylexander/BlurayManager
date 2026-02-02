@@ -11,7 +11,7 @@ import { Film, Tv, Calendar, DollarSign, Star, MapPin, Tag as TagIcon, Clock, Us
 import toast from 'react-hot-toast';
 import AddTagModal from '@/components/modals/AddTagModal';
 import { Bluray } from '@/types/bluray';
-import { getLocalizedText, isValidPurchaseDate, formatPurchaseDate } from '@/lib/bluray-utils';
+import { getLocalizedText, getLocalizedTextArray, isValidPurchaseDate, formatPurchaseDate } from '@/lib/bluray-utils';
 import { Button } from '@/components/common';
 import { LoaderCircle } from '@/components/common/LoaderCircle';
 
@@ -20,7 +20,7 @@ export default function BlurayDetailPage() {
   const params = useParams();
   const pathname = usePathname();
   const t = useTranslations();
-  const locale = useLocale() as 'en' | 'fr';
+  const locale = useLocale() as 'en-US' | 'fr-FR';
   const { user } = useAuthStore();
 
   const [bluray, setBluray] = useState<Bluray | null>(null);
@@ -197,9 +197,9 @@ export default function BlurayDetailPage() {
             </h1>
 
             {/* Genres */}
-            {bluray.genre && bluray.genre.length > 0 && (
+            {bluray.genre && getLocalizedTextArray(bluray.genre, locale).length > 0 && (
               <div className="flex flex-wrap gap-1 md:gap-2">
-                {bluray.genre.map((g, i) => (
+                {getLocalizedTextArray(bluray.genre, locale).map((g, i) => (
                   <span
                     key={i}
                     className="px-2 sm:px-3 md:px-4 py-0.5 sm:py-1 md:py-1.5 bg-gradient-to-r from-gray-800 to-gray-700 text-gray-200 rounded-full text-xs sm:text-xs md:text-sm font-medium hover:from-gray-700 hover:to-gray-600 transition-all duration-200"
@@ -261,6 +261,7 @@ export default function BlurayDetailPage() {
           {/* Series Seasons */}
           {bluray.type === 'series' && bluray.seasons && bluray.seasons.length > 0 && (
             <div>
+              {/* Seasons tab */}
               <h2 className="text-2xl font-semibold text-white mb-4">{t('details.seasons')}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {bluray.seasons.map((season) => (
@@ -271,6 +272,9 @@ export default function BlurayDetailPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Series data */}
+              
             </div>
           )}
 

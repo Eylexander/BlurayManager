@@ -38,10 +38,6 @@ export default function AddTagModal({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchTags();
-  }, []);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab' || e.key === 'Escape') {
         e.preventDefault();
@@ -55,15 +51,21 @@ export default function AddTagModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const fetchTags = async () => {
-    try {
-      const tags = await apiClient.getTags();
-      setAvailableTags(Array.isArray(tags) ? tags : []);
-    } catch (error) {
-      console.error('Failed to fetch tags:', error);
-      toast.error(t('add.failedToLoadTags'));
-    }
-  };
+
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const tags = await apiClient.getTags();
+        setAvailableTags(Array.isArray(tags) ? tags : []);
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+        toast.error(t('add.failedToLoadTags'));
+      }
+    };
+
+    fetchTags();
+  }, [t]);
 
   const toggleTag = (tagId: string) => {
     setSelectedTags((prev) =>
@@ -108,7 +110,7 @@ export default function AddTagModal({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -154,11 +156,10 @@ export default function AddTagModal({
                   key={tag.id}
                   type="button"
                   onClick={() => toggleTag(tag.id)}
-                  className={`group px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    selectedTags.includes(tag.id)
+                  className={`group px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${selectedTags.includes(tag.id)
                       ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 scale-105'
                       : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 border border-gray-600/50 hover:border-gray-500'
-                  }`}
+                    }`}
                 >
                   {selectedTags.includes(tag.id) && <Check className="w-4 h-4 inline mr-1.5" />}
                   {tag.icon && <TagIcon className="w-4 h-4 inline mr-1.5" />}

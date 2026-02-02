@@ -1,8 +1,13 @@
 export type MediaType = 'movie' | 'series';
 
 export interface I18nText {
-  en?: string;
-  fr?: string;
+  "en-US"?: string;
+  "fr-FR"?: string;
+}
+
+export interface I18nTextArray {
+  "en-US"?: string[];
+  "fr-FR"?: string[];
 }
 
 export interface Season {
@@ -22,7 +27,7 @@ export interface Bluray {
   seasons?: Season[];
   total_episodes?: number;
   description: I18nText;
-  genre: string[];
+  genre: I18nTextArray;
   cover_image_url: string;
   backdrop_url: string;
   purchase_price: number;
@@ -45,7 +50,7 @@ export interface CreateBlurayRequest {
   runtime?: number;
   seasons?: Season[];
   description: I18nText;
-  genre: string[];
+  genre: I18nTextArray;
   cover_image_url: string;
   backdrop_url: string;
   purchase_price: number;

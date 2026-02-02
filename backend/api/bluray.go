@@ -27,6 +27,8 @@ func (api *API) CreateBluray(c *gin.Context) {
 		return
 	}
 
+	bluray.AddedBy = id
+
 	if err := api.ctrl.CreateBluray(c.Request.Context(), &bluray); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -216,8 +218,8 @@ func (api *API) ExportBlurays(c *gin.Context) {
 		}
 
 		genre := ""
-		if len(bluray.Genre) > 0 {
-			for i, g := range bluray.Genre {
+		if len(bluray.Genre.En) > 0 {
+			for i, g := range bluray.Genre.En {
 				if i > 0 {
 					genre += ";"
 				}
@@ -353,7 +355,9 @@ func (api *API) ImportBlurays(c *gin.Context) {
 		bluray := &models.Bluray{
 			Title: fields[0],
 			Type:  mediaType,
-			Genre: genre,
+			Genre: models.I18nTextArray{
+				En: genre,
+			},
 			Description: models.I18nText{
 				En: fields[3],
 				Fr: fields[4],

@@ -7,11 +7,19 @@
  * Falls back to available languages if preferred locale is not available
  */
 export const getLocalizedText = (
-  text: { en?: string; fr?: string } | undefined,
-  locale: 'en' | 'fr'
+  text: { "en-US"?: string; "fr-FR"?: string } | undefined,
+  locale: 'en-US' | 'fr-FR'
 ): string => {
   if (!text) return '';
-  return text[locale] || text.en || text.fr || '';
+  return text[locale] || text["en-US"] || text["fr-FR"] || '';
+};
+
+export const getLocalizedTextArray = (
+  textArray: { "en-US"?: string[]; "fr-FR"?: string[] } | undefined,
+  locale: 'en-US' | 'fr-FR'
+): string[] => {
+  if (!textArray) return [];
+  return textArray[locale] || textArray["en-US"] || textArray["fr-FR"] || [];
 };
 
 /**

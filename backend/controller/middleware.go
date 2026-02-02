@@ -13,7 +13,7 @@ func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "authorization header required"})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.authorizationHeaderRequired")})
 			ctx.Abort()
 			return
 		}
@@ -21,7 +21,7 @@ func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 		// Extract token from "Bearer <token>" format
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header format"})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.invalidAuthorizationHeaderFormat")})
 			ctx.Abort()
 			return
 		}
@@ -29,7 +29,7 @@ func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 		tokenString := tokenParts[1]
 		claims, err := c.ValidateToken(tokenString)
 		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.invalid")})
 			ctx.Abort()
 			return
 		}
@@ -50,7 +50,7 @@ func (c *Controller) RequireRole(allowedRoles ...models.UserRole) gin.HandlerFun
 	return func(ctx *gin.Context) {
 		claimsInterface, exists := ctx.Get("claims")
 		if !exists {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.unauthorized")})
 			ctx.Abort()
 			return
 		}
@@ -67,7 +67,7 @@ func (c *Controller) RequireRole(allowedRoles ...models.UserRole) gin.HandlerFun
 		}
 
 		if !allowed {
-			ctx.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+			ctx.JSON(http.StatusForbidden, gin.H{"error": c.i18n.T("jwt.insufficientPermissions")})
 			ctx.Abort()
 			return
 		}

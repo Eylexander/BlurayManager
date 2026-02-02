@@ -1,22 +1,22 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Film, Tv, X, LayoutGrid, List } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { apiClient } from '@/lib/api-client';
+import { getLocalizedTextArray } from '@/lib/bluray-utils';
 import { Bluray } from '@/types/bluray';
-import { Statistics } from '@/types/statistics';
-import useRouteProtection from '@/hooks/useRouteProtection';
+import { SimplifiedStatistics } from '@/types/statistics';
 import BlurayCard from '@/components/bluray/BlurayCard';
 import BlurayListItem from '@/components/bluray/BlurayListItem';
 import StatsCard from '@/components/common/StatsCard';
 import SortDropdown from '@/components/common/SortDropdown';
 import { LoaderCircle } from '@/components/common/LoaderCircle';
+import useRouteProtection from '@/hooks/useRouteProtection';
 
 type SortOption = 'recent' | 'name' | 'release_date';
 
@@ -27,9 +27,10 @@ export default function DashboardPage() {
 	const searchParams = useSearchParams();
 	const searchQuery = searchParams.get('search') || '';
 	const { viewMode, setViewMode } = useSettingsStore();
+	const locale = useLocale() as 'en-US' | 'fr-FR';
 
 	const [recentBlurays, setRecentBlurays] = useState<Bluray[]>([]);
-	const [stats, setStats] = useState<Statistics | null>(null);
+	const [stats, setStats] = useState<SimplifiedStatistics>();
 	const [loading, setLoading] = useState(true);
 	const [sortBy, setSortBy] = useState<SortOption>('recent');
 
@@ -51,20 +52,20 @@ export default function DashboardPage() {
 				filteredBlurays = bluraysData.filter((bluray: Bluray) =>
 					bluray.title.toLowerCase().includes(query) ||
 					bluray.director?.toLowerCase().includes(query) ||
-					bluray.genre?.some((g: string) => g.toLowerCase().includes(query))
+					getLocalizedTextArray(bluray.genre, locale).some(g => g.toLowerCase().includes(query))
 				);
 
 				// filteredBlurays = await apiClient.searchBlurays(query, 0, 100);
 			}
 
-			setRecentBlurays(filteredBlurays);
 			setStats(statsData);
+			setRecentBlurays(filteredBlurays);
 		} catch (error) {
 			console.error('Failed to fetch dashboard data:', error);
 		} finally {
 			setLoading(false);
 		}
-	}, [searchQuery]);
+	}, [searchQuery, locale]);
 
 	useEffect(() => {
 		fetchData();
@@ -81,7 +82,7 @@ export default function DashboardPage() {
 
 		window.addEventListener('resize', handleResize);
 		return () => window.removeEventListener('resize', handleResize);
-	}, []);
+	}, [viewMode, setViewMode]);
 
 	const handleUpdate = () => {
 		// Refetch data when an item is updated or deleted
@@ -129,14 +130,14 @@ export default function DashboardPage() {
 			{/* Homepage header */}
 			{user?.role === 'guest' ? (
 				<>
-				<div className="hidden md:block jellyfin-gradient rounded-lg p-6 sm:p-8 text-white">
-					<h1 className="text-4xl font-bold mb-2">
-						{t('welcome.guestGreeting')}
-					</h1>
-					<p className="text-lg opacity-90">
-						{t('welcome.guestSubtitle', { movies: stats?.total_movies || 0, seasons: stats?.total_seasons || 0 })}
-					</p>
-				</div>
+					<div className="hidden md:block jellyfin-gradient rounded-lg p-6 sm:p-8 text-white">
+						<h1 className="text-4xl font-bold mb-2">
+							{t('welcome.guestGreeting')}
+						</h1>
+						<p className="text-lg opacity-90">
+							{t('welcome.guestSubtitle', { movies: stats?.total_movies || 0, seasons: stats?.total_seasons || 0 })}
+						</p>
+					</div>
 				</>
 			) : (
 				<>
