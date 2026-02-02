@@ -16,8 +16,13 @@ const (
 
 // I18nText represents text in multiple languages
 type I18nText struct {
-	En string `bson:"en,omitempty" json:"en,omitempty"`
-	Fr string `bson:"fr,omitempty" json:"fr,omitempty"`
+	En string `bson:"en-US,omitempty" json:"en-US,omitempty"`
+	Fr string `bson:"fr-FR,omitempty" json:"fr-FR,omitempty"`
+}
+
+type I18nTextArray struct {
+	En []string `bson:"en-US,omitempty" json:"en-US,omitempty"`
+	Fr []string `bson:"fr-FR,omitempty" json:"fr-FR,omitempty"`
 }
 
 // Bluray represents a physical bluray in the collection
@@ -36,15 +41,15 @@ type Bluray struct {
 	TotalEpisodes int      `bson:"total_episodes,omitempty" json:"total_episodes,omitempty"`
 
 	// Common fields
-	Description   I18nText  `bson:"description" json:"description"`
-	Genre         []string  `bson:"genre" json:"genre"`
-	CoverImageURL string    `bson:"cover_image_url" json:"cover_image_url"`
-	BackdropURL   string    `bson:"backdrop_url" json:"backdrop_url"`
-	PurchasePrice float64   `bson:"purchase_price" json:"purchase_price"`
-	PurchaseDate  time.Time `bson:"purchase_date" json:"purchase_date"`
-	Location      string    `bson:"location" json:"location"` // Physical location in storage
-	Tags          []string  `bson:"tags" json:"tags"`
-	Rating        float64   `bson:"rating" json:"rating"` // Personal rating
+	Description   I18nText      `bson:"description" json:"description"`
+	Genre         I18nTextArray `bson:"genre" json:"genre"`
+	CoverImageURL string        `bson:"cover_image_url" json:"cover_image_url"`
+	BackdropURL   string        `bson:"backdrop_url" json:"backdrop_url"`
+	PurchasePrice float64       `bson:"purchase_price" json:"purchase_price"`
+	PurchaseDate  time.Time     `bson:"purchase_date" json:"purchase_date"`
+	Location      string        `bson:"location" json:"location"` // Physical location in storage
+	Tags          []string      `bson:"tags" json:"tags"`
+	Rating        float64       `bson:"rating" json:"rating"` // Personal rating
 
 	// External IDs
 	TMDBID string `bson:"tmdb_id,omitempty" json:"tmdb_id,omitempty"`
@@ -71,18 +76,18 @@ type SimplifiedBluray struct {
 	TotalEpisodes int      `bson:"total_episodes,omitempty" json:"total_episodes,omitempty"`
 
 	// Common fields
-	Genre         []string `bson:"genre" json:"genre"`
-	CoverImageURL string   `bson:"cover_image_url" json:"cover_image_url"`
-	BackdropURL   string   `bson:"backdrop_url" json:"backdrop_url"`
-	Rating        float64  `bson:"rating" json:"rating"`
+	Genre         I18nTextArray `bson:"genre" json:"genre"`
+	CoverImageURL string        `bson:"cover_image_url" json:"cover_image_url"`
+	BackdropURL   string        `bson:"backdrop_url" json:"backdrop_url"`
+	Rating        float64       `bson:"rating" json:"rating"`
 }
 
 // Season represents a season in a series
 type Season struct {
-	Number       int      `bson:"number" json:"number"`
-	EpisodeCount int      `bson:"episode_count" json:"episode_count"`
-	Year         int      `bson:"year,omitempty" json:"year,omitempty"`
-	Description  I18nText `bson:"description,omitempty" json:"description,omitempty"`
+	Number       int    `bson:"number" json:"number"`
+	EpisodeCount int    `bson:"episode_count" json:"episode_count"`
+	Year         int    `bson:"year,omitempty" json:"year,omitempty"`
+	Description  string `bson:"description,omitempty" json:"description,omitempty"`
 }
 
 // CreateBlurayRequest is the request body for creating a bluray

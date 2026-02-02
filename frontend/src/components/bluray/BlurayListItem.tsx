@@ -8,6 +8,8 @@ import { Star, Calendar, Play, Tag, MoreVertical } from 'lucide-react';
 import ContextMenu from '@/components/common/ContextMenu';
 import AddTagModal from '@/components/modals/AddTagModal';
 import { useBlurayTools } from '@/hooks/useBlurayTools';
+import { getLocalizedTextArray } from '@/lib/bluray-utils';
+import { useLocale } from 'use-intl/react';
 
 interface BlurayListItemProps {
   bluray: Bluray;
@@ -16,6 +18,7 @@ interface BlurayListItemProps {
 
 export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps) {
   const { user } = useAuthStore();
+  const locale = useLocale() as 'en-US' | 'fr-FR';
 
   const canModify = user?.role === 'admin' || user?.role === 'moderator';
 
@@ -96,9 +99,9 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
                   </div>
                 )}
 
-                {currentBluray.genre?.[0] && (
+                {getLocalizedTextArray(currentBluray.genre, locale)?.[0] && (
                   <span className="hidden sm:block bg-primary-500/5 text-primary-400/80 px-2 py-0.5 rounded border border-primary-500/10">
-                    {currentBluray.genre[0]}
+                    {getLocalizedTextArray(currentBluray.genre, locale)[0]}
                   </span>
                 )}
               </div>

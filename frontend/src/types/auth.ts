@@ -9,7 +9,7 @@ export interface User {
 
 export interface UserSettings {
   theme: 'light' | 'dark';
-  language: 'en' | 'fr';
+  language: 'en-US' | 'fr-FR';
 }
 
 export interface LoginCredentials {

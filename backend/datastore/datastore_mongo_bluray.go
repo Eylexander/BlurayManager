@@ -66,15 +66,18 @@ func (ds *MongoDatastore) DeleteBluray(ctx context.Context, id primitive.ObjectI
 
 func (ds *MongoDatastore) ListBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.Bluray, error) {
 	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
+
 	cursor, err := ds.blurays.Find(ctx, filters, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
+
 	var blurays []*models.Bluray
 	if err := cursor.All(ctx, &blurays); err != nil {
 		return nil, err
 	}
+
 	return blurays, nil
 }
 

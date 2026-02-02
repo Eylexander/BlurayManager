@@ -54,7 +54,7 @@ func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics
 			totalRating += b.Rating
 			ratingCount++
 		}
-		for _, genre := range b.Genre {
+		for _, genre := range b.Genre.En {
 			stats.GenreDistribution[genre]++
 		}
 		for _, tag := range b.Tags {

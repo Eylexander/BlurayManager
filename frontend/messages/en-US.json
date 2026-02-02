@@ -301,7 +301,8 @@
     "failedToFetchDetails": "Failed to fetch details",
     "addedToCollection": "Added {title} to your collection!",
     "failedToAddToCollection": "Failed to add to collection",
-    "tagsUpdated": "Tags updated successfully!"
+    "tagsUpdated": "Tags updated successfully!",
+    "firstAirDate": "First Air Date"
   },
   "barcode": {
     "title": "Scan Barcode",

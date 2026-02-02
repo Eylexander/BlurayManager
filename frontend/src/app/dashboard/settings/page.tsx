@@ -62,7 +62,7 @@ export default function SettingsPage() {
   const { user, updateUser } = useAuthStore();
   const { language, setLanguage } = useSettingsStore();
   const [selectedTheme, setSelectedTheme] = useState(theme || 'dark');
-  const [selectedLanguage, setSelectedLanguage] = useState(locale || language || 'en');
+  const [selectedLanguage, setSelectedLanguage] = useState(locale || language || 'en-US');
   const [loading, setLoading] = useState(false);
 
   // Use route protection
@@ -94,7 +94,7 @@ export default function SettingsPage() {
       setTheme(selectedTheme);
 
       // Update language
-      setLanguage(selectedLanguage as 'en' | 'fr');
+      setLanguage(selectedLanguage as 'en-US' | 'fr-FR');
 
       // Save to backend if user is logged in
       if (user) {
@@ -108,7 +108,7 @@ export default function SettingsPage() {
           ...user,
           settings: {
             theme: selectedTheme as 'light' | 'dark',
-            language: selectedLanguage as 'en' | 'fr',
+            language: selectedLanguage as 'en-US' | 'fr-FR',
           },
         });
       }
@@ -357,16 +357,16 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <OptionButton
-              icon={<Globe className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedLanguage === 'en' ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`} />}
+              icon={<Globe className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedLanguage === 'en-US' ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`} />}
               label={t('settings.english')}
-              isSelected={selectedLanguage === 'en'}
-              onClick={() => setSelectedLanguage('en')}
+              isSelected={selectedLanguage === 'en-US'}
+              onClick={() => setSelectedLanguage('en-US')}
             />
             <OptionButton
-              icon={<Globe className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedLanguage === 'fr' ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`} />}
+              icon={<Globe className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedLanguage === 'fr-FR' ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400'}`} />}
               label={t('settings.french')}
-              isSelected={selectedLanguage === 'fr'}
-              onClick={() => setSelectedLanguage('fr')}
+              isSelected={selectedLanguage === 'fr-FR'}
+              onClick={() => setSelectedLanguage('fr-FR')}
             />
           </div>
         </div>

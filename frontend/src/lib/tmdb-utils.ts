@@ -1,44 +1,4 @@
 /**
- * Shared utility functions for TMDB integration
- */
-
-export interface TMDBDetails {
-  id: number;
-  title?: string;
-  name?: string;
-  release_date?: string;
-  first_air_date?: string;
-  poster_path?: string;
-  backdrop_path?: string;
-  overview?: string;
-  overview_fr?: string;
-  vote_average?: number;
-  runtime?: number;
-  genres?: { id: number; name: string }[];
-  director?: string;
-  number_of_seasons?: number;
-  seasons?: Array<{
-    season_number: number;
-    episode_count: number;
-    name: string;
-    air_date?: string;
-  }>;
-  credits?: {
-    crew?: Array<{ job: string; name: string }>;
-  };
-}
-
-export interface TMDBResult {
-  id: number;
-  title?: string;
-  name?: string;
-  release_date?: string;
-  first_air_date?: string;
-  poster_path?: string;
-  media_type: 'movie' | 'tv';
-}
-
-/**
  * TMDB image base URLs
  */
 export const TMDB_IMAGE_BASE = {
@@ -47,17 +7,6 @@ export const TMDB_IMAGE_BASE = {
   POSTER_W92: 'https://image.tmdb.org/t/p/w92',
   POSTER_W300: 'https://image.tmdb.org/t/p/w300',
 } as const;
-
-/**
- * Extract director name from TMDB credits
- */
-export const extractDirectorFromCredits = (details: TMDBDetails): string => {
-  if (details.credits?.crew) {
-    const director = details.credits.crew.find((c: any) => c.job === 'Director');
-    return director?.name || '';
-  }
-  return '';
-};
 
 /**
  * Build poster URL from TMDB path
