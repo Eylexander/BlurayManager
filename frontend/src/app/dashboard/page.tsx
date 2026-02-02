@@ -3,20 +3,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Film, Tv, X, LayoutGrid, List } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { apiClient } from '@/lib/api-client';
-import useRouteProtection from '@/hooks/useRouteProtection';
 import { Bluray } from '@/types/bluray';
 import { Statistics } from '@/types/statistics';
+import useRouteProtection from '@/hooks/useRouteProtection';
 import BlurayCard from '@/components/bluray/BlurayCard';
 import BlurayListItem from '@/components/bluray/BlurayListItem';
 import StatsCard from '@/components/common/StatsCard';
-import { Film, Tv, X, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
 import SortDropdown from '@/components/common/SortDropdown';
 import { LoaderCircle } from '@/components/common/LoaderCircle';
-import Link from 'next/link';
-import { useSettingsStore } from '@/store/settingsStore';
 
 type SortOption = 'recent' | 'name' | 'release_date';
 
@@ -235,7 +235,7 @@ export default function DashboardPage() {
 				) : (
 					<>
 						{viewMode === 'grid' ? (
-							<div className="w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 auto-rows-max gap-4 sm:gap-6 sm:p-4 md:p-2">
+							<div className="w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 auto-rows-max gap-4 sm:gap-6 sm:p-4 md:p-2">
 								{sortedBlurays.map((bluray) => (
 									<BlurayCard key={bluray.id} bluray={bluray} onUpdate={handleUpdate} />
 								))}

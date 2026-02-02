@@ -41,13 +41,14 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
             rounded-2xl overflow-hidden
             transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
             md:group-hover:scale-[1.02] md:group-hover:-translate-y-2 
+            3xl:group-hover:scale-[1.01]
             md:group-hover:border-primary-500/40 md:group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]
             active:scale-[0.97]
           ">
             {/* Image Container */}
             <div className="relative aspect-[2/3] w-full overflow-hidden rounded-t-2xl">
               {/* Motion Wrapper: Both image and gradient live here */}
-              <div className="relative w-full h-full transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1) md:group-hover:scale-110">
+              <div className="relative w-full h-full transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1) md:group-hover:scale-110 3xl:group-hover:scale-105">
                 {currentBluray.cover_image_url ? (
                   <Image
                     src={currentBluray.cover_image_url}

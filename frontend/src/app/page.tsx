@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import useRouteProtection from '@/hooks/useRouteProtection';
 import { apiClient } from '@/lib/api-client';
-import { Loader } from 'lucide-react';
 import { LoaderCircle } from '@/components/common/LoaderCircle';
 
 export default function Home() {
@@ -24,7 +23,7 @@ export default function Home() {
         const data = await apiClient.checkAdminExists();
         
         if (data.needsSetup) {
-          router.push('/install');
+          router.push('/auth/install');
           return;
         }
       } catch (err) {

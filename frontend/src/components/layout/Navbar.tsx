@@ -107,10 +107,10 @@ export default function Navbar() {
         {/* Logo */}
         <button
           onClick={() => router.push('/dashboard')}
-          className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 p-4 -m-2 rounded-lg lg:hover:scale-105 lg:hover:bg-gray-100 dark:lg:hover:bg-dark-800"
+          className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 p-4 -m-2 rounded-lg lg:hover:scale-[101%] lg:hover:bg-gray-100 dark:lg:hover:bg-dark-800"
           title="Go to home"
         >
-          <div className="text-xl sm:text-2xl lg:group-hover:scale-110 lg:group-hover:rotate-12 transition-all duration-300">
+          <div className="text-xl sm:text-2xl lg:group-hover:scale-105 lg:group-hover:rotate-12 transition-all duration-300">
             🎬
           </div>
           <h1 className="hidden sm:block text-base sm:text-xl font-bold text-gray-900 dark:text-white lg:group-hover:text-primary-600 dark:lg:group-hover:text-primary-400 transition-colors">

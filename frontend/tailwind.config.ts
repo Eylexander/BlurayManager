@@ -61,6 +61,8 @@ const config: Config = {
       },
       screens: {
         'vsm': '380px',
+        '3xl': '2000px',
+        '4xl': '2400px',
       },
     },
   },

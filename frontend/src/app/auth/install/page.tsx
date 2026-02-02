@@ -78,13 +78,8 @@ export default function InstallPage() {
 		);
 	}
 
-	if (success) {
-		toast.success(t('auth.installSuccess'));
-		return (
-			<div className="text-white text-xl text-center">{t('auth.installSuccess')}</div>
-		);
-	}
-
+	if (success) toast.success(t('auth.installSuccess'));
+	
 	return (
 		<>
 			<div className="mb-6">
@@ -145,7 +140,7 @@ export default function InstallPage() {
 							disabled={loading}
 							placeholder={t('auth.password')}
 							required
-							minLength={8}
+							minLength={6}
 							className='input'
 						/>
 					</div>
@@ -164,7 +159,7 @@ export default function InstallPage() {
 							disabled={loading}
 							placeholder={t('auth.confirmPassword')}
 							required
-							minLength={8}
+							minLength={6}
 							className='input'
 						/>
 					</div>
@@ -182,7 +177,6 @@ export default function InstallPage() {
 			<div className="mt-6 text-center text-sm text-gray-400">
 				<p>{t('auth.installNotice')}</p>
 			</div>
-
 		</>
 	)
 }
