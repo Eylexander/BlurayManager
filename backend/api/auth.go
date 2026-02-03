@@ -9,6 +9,7 @@ import (
 )
 
 func (api *API) Register(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	var req struct {
 		Username string          `json:"username" binding:"required"`
 		Email    string          `json:"email" binding:"required,email"`
@@ -37,7 +38,7 @@ func (api *API) Register(c *gin.Context) {
 
 	token, err := api.ctrl.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("api.failedToGenerateToken")})
 		return
 	}
 
@@ -48,6 +49,7 @@ func (api *API) Register(c *gin.Context) {
 }
 
 func (api *API) Login(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	var req struct {
 		Identifier string `json:"identifier"` // email or username
 		Password   string `json:"password" binding:"required"`
@@ -59,7 +61,7 @@ func (api *API) Login(c *gin.Context) {
 	}
 
 	if req.Identifier == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "identifier is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.identifierRequired")})
 		return
 	}
 
@@ -74,7 +76,7 @@ func (api *API) Login(c *gin.Context) {
 
 	token, err := api.ctrl.GenerateToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("api.failedToGenerateToken")})
 		return
 	}
 
@@ -85,18 +87,19 @@ func (api *API) Login(c *gin.Context) {
 }
 
 func (api *API) GetCurrentUser(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	userID, _ := c.Get("userID")
 	userIDStr := userID.(string)
 
 	id, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidUserID")})
 		return
 	}
 
 	user, err := api.ctrl.GetUserByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T("user.notFound")})
 		return
 	}
 
@@ -107,12 +110,13 @@ func (api *API) GetCurrentUser(c *gin.Context) {
 }
 
 func (api *API) UpdateUserSettings(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	userID, _ := c.Get("userID")
 	userIDStr := userID.(string)
 
 	id, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidUserID")})
 		return
 	}
 
@@ -124,7 +128,7 @@ func (api *API) UpdateUserSettings(c *gin.Context) {
 
 	user, err := api.ctrl.GetUserByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T("user.notFound")})
 		return
 	}
 
@@ -134,16 +138,17 @@ func (api *API) UpdateUserSettings(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "settings updated successfully", "settings": settings})
+	c.JSON(http.StatusOK, gin.H{"message": i18n.T("api.settingsUpdatedSuccessfully"), "settings": settings})
 }
 
 func (api *API) UpdateUsername(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	userID, _ := c.Get("userID")
 	userIDStr := userID.(string)
 
 	id, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidUserID")})
 		return
 	}
 
@@ -158,14 +163,14 @@ func (api *API) UpdateUsername(c *gin.Context) {
 
 	user, err := api.ctrl.GetUserByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T("user.notFound")})
 		return
 	}
 
 	// Check if username is already taken
 	existingUser, _ := api.ctrl.GetUserByUsername(c.Request.Context(), req.Username)
 	if existingUser != nil && existingUser.ID != user.ID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username already taken"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("user.usernameAlreadyTaken")})
 		return
 	}
 
@@ -176,16 +181,17 @@ func (api *API) UpdateUsername(c *gin.Context) {
 	}
 
 	user.PasswordHash = ""
-	c.JSON(http.StatusOK, gin.H{"message": "username updated successfully", "user": user})
+	c.JSON(http.StatusOK, gin.H{"message": i18n.T("api.usernameUpdatedSuccessfully"), "user": user})
 }
 
 func (api *API) UpdatePassword(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	userID, _ := c.Get("userID")
 	userIDStr := userID.(string)
 
 	id, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidUserID")})
 		return
 	}
 
@@ -201,13 +207,13 @@ func (api *API) UpdatePassword(c *gin.Context) {
 
 	user, err := api.ctrl.GetUserByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T("user.notFound")})
 		return
 	}
 
 	// Verify current password
 	if err := api.ctrl.VerifyPassword(user, req.CurrentPassword); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "current password is incorrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("api.invalidCurrentPassword")})
 		return
 	}
 
@@ -217,5 +223,5 @@ func (api *API) UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": i18n.T("api.passwordUpdatedSuccessfully")})
 }

@@ -2,7 +2,7 @@ package api
 
 import (
 	"eylexander/bluraymanager/controller"
-	"strings"
+	"eylexander/bluraymanager/i18n"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,11 +15,7 @@ func NewAPI(ctrl *controller.Controller) *API {
 	return &API{ctrl: ctrl}
 }
 
-func (api *API) getRequestedLanguage(c *gin.Context) string {
-	lang := c.GetHeader("Accept-Language")
-	if lang == "" {
-		return "en-US"
-	}
-	// Take the first language if it's a list (e.g., "fr-FR,fr;q=0.9")
-	return strings.Split(lang, ",")[0]
+// GetI18n retrieves the i18n instance from the Gin context
+func (api *API) GetI18n(c *gin.Context) *i18n.I18n {
+	return api.ctrl.GetI18n(c)
 }

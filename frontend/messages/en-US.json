@@ -10,6 +10,8 @@
     "edit": "Edit",
     "add": "Add",
     "search": "Search",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
     "searchResults": "Search Results",
     "clearSearch": "Clear search",
     "filter": "Filter",
@@ -23,7 +25,18 @@
     "movie": "movie",
     "series": "series",
     "unknownDirector": "Unknown Director",
-    "done": "Done"
+    "done": "Done",
+    "advancedSearch": "Advanced Search",
+    "searchTips": {
+      "title": "Advanced Search",
+      "searchByTitle": "Search by title",
+      "searchByDirector": "Search by director",
+      "searchByTag": "Search by tag",
+      "searchByGenre": "Search by genre",
+      "searchByYear": "Search by year",
+      "filterByType": "Filter by type",
+      "combine": "Combine"
+    }
   },
   "filter": {
     "recentlyAdded": "Recently Added",
@@ -146,17 +159,26 @@
   "details": {
     "overview": "Overview",
     "description": "Description",
+    "synopsis": "Synopsis",
     "collectionInfo": "Collection Info",
+    "libraryInfo": "Library Information",
     "releaseYear": "Release Year",
     "director": "Director",
+    "directedBy": "Directed by",
     "runtime": "Runtime",
     "purchasePrice": "Purchase Price",
     "purchaseDate": "Purchase Date",
     "location": "Location",
+    "noLocation": "No location specified",
     "rating": "Rating",
     "tags": "Tags",
     "seasons": "Seasons",
+    "season": "Season",
+    "episode": "episode",
     "episodes": "episodes",
+    "totalEpisodes": "Total Episodes",
+    "yearRange": "Year Range",
+    "noSeasons": "No seasons available",
     "edit": "Edit",
     "delete": "Delete",
     "deleting": "Deleting...",
@@ -166,7 +188,14 @@
     "notFound": "Item not found",
     "backToDashboard": "Back to Dashboard",
     "noTags": "No tags assigned",
-    "viewOnTMDB": "View on TMDB"
+    "viewOnTMDB": "View on TMDB",
+    "tmdb": "TMDB",
+    "manageSeasons": "Manage Seasons",
+    "editPurchaseInfo": "Edit Purchase Information",
+    "purchaseInfoUpdated": "Purchase information updated successfully",
+    "purchaseInfoUpdateError": "Failed to update purchase information",
+    "purchasePriceHelp": "Enter the purchase price in your currency",
+    "purchaseDateHelp": "Select when you purchased this item"
   },
   "bluray": {
     "title": "Title",
@@ -200,7 +229,24 @@
     "fetchOnlineData": "Fetch Online Data",
     "fetching": "Fetching...",
     "updateDetails": "Update your {type} details",
-    "addSeason": "Add Season"
+    "addSeason": "Add Season",
+    "addSeasonManually": "Add Season Manually",
+    "selectFromTMDB": "Select from TMDB",
+    "selectSeasons": "Select Seasons",
+    "seasonsSelected": "seasons selected",
+    "searchByTitleOrTmdbId": "Search by title or TMDB ID...",
+    "noSeasonsFound": "No seasons found",
+    "failedToFetchSeasons": "Failed to fetch seasons from TMDB",
+    "enterTitleOrTmdbId": "Please enter a title or TMDB ID",
+    "searchFailed": "Search failed",
+    "noSeasonsAvailable": "No seasons available",
+    "searchForSeasons": "Search for a series to view available seasons",
+    "noSeasonsYet": "No seasons added yet",
+    "seasonInfoReadOnly": "Season information is read-only. Use 'Select from TMDB' to update.",
+    "useSelectFromTMDB": "Click 'Select from TMDB' above to add seasons",
+    "titleReadOnly": "Title is read-only",
+    "seasonsUpdated": "Seasons updated successfully!",
+    "seasonsUpdateError": "Failed to update seasons"
   },
   "statistics": {
     "title": "Collection Statistics",
@@ -291,7 +337,7 @@
     "today": "Today",
     "barcodeScanDesc": "Scan the UPC/EAN barcode on your Bluray case for instant lookup",
     "yearPlaceholder": "2024",
-    "foundResults": "Found {count} TMDB result(s) - select one",
+    "foundResults": "Found {count} result(s)",
     "failedToSearch": "Failed to search with barcode",
     "searchFailed": "Search failed: {error}",
     "tagCreated": "Tag created!",
@@ -302,7 +348,9 @@
     "addedToCollection": "Added {title} to your collection!",
     "failedToAddToCollection": "Failed to add to collection",
     "tagsUpdated": "Tags updated successfully!",
-    "firstAirDate": "First Air Date"
+    "firstAirDate": "First Air Date",
+    "addToBatch": "Add to Batch",
+    "batchComplete": "Batch processing complete!"
   },
   "barcode": {
     "title": "Scan Barcode",
@@ -340,7 +388,10 @@
     "noResults": "No TMDB results for this title. Try manual search.",
     "notFound": "Barcode not found in database. Try searching by title instead.",
     "searchFailed": "Search failed",
-    "invalidBarcode": "Invalid barcode provided"
+    "invalidBarcode": "Invalid barcode provided",
+    "cameraError": "Failed to access camera. Please check permissions.",
+    "manualEntry": "Enter barcode manually",
+    "enterManually": "Enter Manually"
   },
   "tags": {
     "manageTags": "Manage Tags",

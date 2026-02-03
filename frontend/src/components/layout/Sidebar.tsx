@@ -1,10 +1,22 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useAuthStore } from '@/store/authStore';
-import { Home, BarChart3, Settings, Plus, LogOut, Users, Github, FileDown, TagIcon, LucideIcon } from 'lucide-react';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/store/authStore";
+import {
+  Home,
+  BarChart3,
+  Settings,
+  Plus,
+  LogOut,
+  Users,
+  Github,
+  FileDown,
+  TagIcon,
+  LucideIcon,
+} from "lucide-react";
+import { ROUTES } from "@/hooks/useRouteProtection";
 
 interface SidebarItemProps {
   href: string;
@@ -16,7 +28,8 @@ const SidebarItem = ({ href, icon: Icon, label }: SidebarItemProps) => {
   const t = useTranslations();
   const pathname = usePathname();
 
-  const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+  const isActive =
+    pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 
   return (
     <>
@@ -52,75 +65,71 @@ export default function Sidebar() {
   const { user, logout } = useAuthStore();
 
   const role = user?.role;
-  const isAdmin = role === 'admin';
-  const isGuest = role === 'guest';
-  const canModify = role === 'admin' || role === 'moderator';
+  const isAdmin = role === "admin";
+  const isGuest = role === "guest";
+  const canModify = role === "admin" || role === "moderator";
 
   // centralized Link Configuration
   const navLinks = [
     {
-      href: '/dashboard',
-      label: 'nav.home',
+      href: ROUTES.DASHBOARD.HOME,
+      label: "nav.home",
       icon: Home,
-      show: true
+      show: true,
     },
     {
-      href: '/dashboard/statistics',
-      label: 'nav.statistics',
+      href: ROUTES.DASHBOARD.STATISTICS,
+      label: "nav.statistics",
       icon: BarChart3,
-      show: !isGuest
+      show: !isGuest,
     },
     {
-      href: '/dashboard/settings',
-      label: 'nav.settings',
+      href: ROUTES.DASHBOARD.SETTINGS,
+      label: "nav.settings",
       icon: Settings,
-      show: !isGuest
+      show: !isGuest,
     },
     {
-      href: '/dashboard/users',
-      label: 'nav.users',
+      href: ROUTES.DASHBOARD.USERS,
+      label: "nav.users",
       icon: Users,
-      show: isAdmin
+      show: isAdmin,
     },
     {
-      href: '/dashboard/tags',
-      label: 'nav.tags',
+      href: ROUTES.DASHBOARD.TAGS,
+      label: "nav.tags",
       icon: TagIcon,
-      show: isAdmin
+      show: isAdmin,
     },
     {
-      href: '/dashboard/import-export',
-      label: 'nav.importExport',
+      href: ROUTES.DASHBOARD.IMPORT_EXPORT,
+      label: "nav.importExport",
       icon: FileDown,
-      show: isAdmin
+      show: isAdmin,
     },
   ];
 
   return (
     <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-dark-900 dark:to-dark-850 border-r border-gray-200 dark:border-dark-700/50 overflow-y-auto">
       <nav className="p-6 h-full flex flex-col">
-
         {/* Main Navigation Links */}
         <div className="space-y-4 flex-1">
           {navLinks
-            .filter(link => link.show)
+            .filter((link) => link.show)
             .map((link) => (
-              <SidebarItem
-                key={link.href}
-                {...link}
-              />
+              <SidebarItem key={link.href} {...link} />
             ))}
 
           {/* Add Button (Distinct Style) */}
           {canModify && (
             <Link
-              href="/dashboard/add"
+              href={ROUTES.DASHBOARD.ADD.ADD}
               className="group flex items-center space-x-3 px-4 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all duration-200 mt-8 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-95"
             >
               <div className="p-2 rounded-lg bg-white/20 group-hover:bg-white/30 transition-all duration-200">
                 <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
               </div>
-              <span className="font-semibold flex-1">{t('nav.add')}</span>
+              <span className="font-semibold flex-1">{t("nav.add")}</span>
             </Link>
           )}
         </div>
@@ -136,7 +145,7 @@ export default function Sidebar() {
                 <LogOut className="w-5 h-5 group-hover:translate-x-0.5 transition-transform duration-200" />
               </div>
               <span className="font-medium flex-1 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors duration-200">
-                {t('nav.logout')}
+                {t("nav.logout")}
               </span>
               <div className="w-1.5 h-1.5 rounded-full bg-red-500 transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
             </button>

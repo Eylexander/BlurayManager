@@ -414,3 +414,66 @@
   @apply sticky top-0 z-30 bg-white dark:bg-dark-900;
   padding-top: env(safe-area-inset-top);
 }
+
+/* Barcode Scanner Animations */
+@keyframes scan {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-scan {
+  animation: scan 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar for batch list */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-gray-800/30 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-gray-600/50 rounded-full hover:bg-gray-500/50;
+}
+
+/* Smooth transitions */
+.animate-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-from-bottom {
+  animation: slideInBottom 0.3s ease-out;
+}
+
+@keyframes slideInBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

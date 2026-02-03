@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -10,12 +11,13 @@ import (
 )
 
 func (c *Controller) RegisterUser(ctx context.Context, username, email, password string, role models.UserRole) (*models.User, error) {
+	i18n := i18n.GetI18nFromContext(ctx)
 	// Check if user already exists
 	if _, err := c.ds.GetUserByEmail(ctx, email); err == nil {
-		return nil, errors.New(c.i18n.T("user.emailAlreadyRegistered"))
+		return nil, errors.New(i18n.T("user.emailAlreadyRegistered"))
 	}
 	if _, err := c.ds.GetUserByUsername(ctx, username); err == nil {
-		return nil, errors.New(c.i18n.T("user.usernameAlreadyTaken"))
+		return nil, errors.New(i18n.T("user.usernameAlreadyTaken"))
 	}
 
 	// Hash password
@@ -39,6 +41,7 @@ func (c *Controller) RegisterUser(ctx context.Context, username, email, password
 }
 
 func (c *Controller) Login(ctx context.Context, identifier, password string) (*models.User, error) {
+	i18n := i18n.GetI18nFromContext(ctx)
 	// Try to find user by email or username
 	var user *models.User
 	var err error
@@ -47,13 +50,13 @@ func (c *Controller) Login(ctx context.Context, identifier, password string) (*m
 	if err != nil {
 		user, err = c.ds.GetUserByUsername(ctx, identifier)
 		if err != nil {
-			return nil, errors.New(c.i18n.T("user.invalidCredentials"))
+			return nil, errors.New(i18n.T("user.invalidCredentials"))
 		}
 	}
 
 	// Check password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return nil, errors.New(c.i18n.T("user.invalidCredentials"))
+		return nil, errors.New(i18n.T("user.invalidCredentials"))
 	}
 
 	return user, nil

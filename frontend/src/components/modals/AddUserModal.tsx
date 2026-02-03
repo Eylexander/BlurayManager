@@ -87,20 +87,20 @@ export function AddUserModal({ isOpen, onClose, editingUser, onRefresh }: AddUse
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
 			onClick={(e) => e.target === e.currentTarget && onClose()}
 		>
-			<div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 max-w-md w-full">
+			<div className="bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700/50 max-w-md w-full">
 				{/* Modal Header */}
-				<div className="bg-gray-800/95 backdrop-blur-sm border-b border-gray-700/50 p-6 flex items-center justify-between rounded-t-2xl">
+				<div className="bg-gray-50 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700/50 p-6 flex items-center justify-between rounded-t-2xl">
 					<div className="flex items-center gap-3">
-						<div className="p-2 rounded-lg bg-blue-500/20">
-							<UserIcon className="w-6 h-6 text-blue-400" />
+						<div className="p-2 rounded-lg bg-blue-500/20 dark:bg-blue-500/20">
+							<UserIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
 						</div>
-						<h2 className="text-2xl font-bold text-white">
+						<h2 className="text-2xl font-bold text-gray-900 dark:text-white">
 							{editingUser ? t('users.editUser') : t('users.createUser')}
 						</h2>
 					</div>
 					<button
 						onClick={onClose}
-						className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-lg"
+						className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
 					>
 						<X className="w-6 h-6" />
 					</button>
@@ -133,13 +133,13 @@ export function AddUserModal({ isOpen, onClose, editingUser, onRefresh }: AddUse
 					/>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-400 mb-2">
+						<label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
 							{t('users.role')} *
 						</label>
 						<select
 							value={formData.role}
 							onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-							className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-gray-700 transition-all duration-200"
+							className="w-full px-4 py-3 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600/50 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-gray-50 dark:focus:bg-gray-700 transition-all duration-200"
 						>
 							<option value="guest">{t('users.guest')}</option>
 							<option value="user">{t('users.user')}</option>
@@ -150,7 +150,7 @@ export function AddUserModal({ isOpen, onClose, editingUser, onRefresh }: AddUse
 				</div>
 
 				{/* Modal Footer */}
-				<div className="bg-gray-800/95 backdrop-blur-sm border-t border-gray-700/50 p-6 flex gap-3 rounded-b-2xl">
+				<div className="bg-gray-50 dark:bg-gray-800/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700/50 p-6 flex gap-3 rounded-b-2xl">
 					<Button
 						variant="primary"
 						onClick={handleSaveUser}

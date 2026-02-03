@@ -165,7 +165,7 @@ class ApiClient {
     const response = await this.client.get('/blurays/search', {
       params: { q: query, skip, limit },
     });
-    return response.data;
+    return response.data.blurays || [];
   }
 
   // Tag endpoints

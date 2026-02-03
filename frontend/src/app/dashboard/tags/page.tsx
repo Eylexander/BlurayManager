@@ -84,10 +84,10 @@ export default function TagsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 py-6 sm:py-8">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <TagIcon className="text-blue-500" /> {t('tags.title')}
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <TagIcon className="text-blue-600 dark:text-blue-500" /> {t('tags.title')}
           </h1>
-          <p className="text-gray-400 mt-1">{tags.length} {t('tags.totalTags')}</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">{tags.length} {t('tags.totalTags')}</p>
         </div>
         <Button variant="primary" onClick={() => { setEditingTag(null); setShowModal(true); }}>
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" /> {t('tags.createTag')}
@@ -96,25 +96,25 @@ export default function TagsPage() {
 
       {/* Search */}
       <div className="relative mb-6 sm:mb-8">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={t('tags.searchPlaceholder')}
-          className="w-full pl-12 pr-4 py-3 bg-gray-800/40 border border-gray-700/50 rounded-2xl text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+          className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800/40 border border-gray-300 dark:border-gray-700/50 rounded-2xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
         />
       </div>
 
       {/* Responsive Grid */}
       {filteredTags.length === 0 ? (
-        <div className="text-center py-20 bg-gray-900/20 rounded-3xl border border-dashed border-gray-800">
-          <p className="text-gray-500">{t('tags.noTagsFound')}</p>
+        <div className="text-center py-20 bg-gray-100 dark:bg-gray-900/20 rounded-3xl border border-dashed border-gray-300 dark:border-gray-800">
+          <p className="text-gray-500 dark:text-gray-500">{t('tags.noTagsFound')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTags.map((tag) => (
-            <div key={tag.id} className="group bg-gray-800/40 border border-gray-700/50 p-5 rounded-2xl hover:border-blue-500/50 transition-all">
+            <div key={tag.id} className="group bg-white dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/50 p-5 rounded-2xl hover:border-blue-500/50 transition-all shadow-sm">
               <div className="flex justify-between items-start mb-3">
                 <div 
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg"
@@ -132,10 +132,10 @@ export default function TagsPage() {
                 </div>
               </div>
               
-              <h3 className="text-white font-bold text-lg mb-1">{tag.name}</h3>
-              <p className="text-gray-400 text-sm line-clamp-2 mb-4 h-10">{tag.description || '...'}</p>
+              <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1">{tag.name}</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4 h-10">{tag.description || '...'}</p>
               
-              <div className="flex items-center justify-between pt-4 border-t border-gray-700/30 text-[11px] font-mono text-gray-500">
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700/30 text-[11px] font-mono text-gray-500 dark:text-gray-500">
                 <span className="flex items-center gap-1.5">
 									<Calendar size={12}/> {new Date(tag.created_at).toLocaleDateString()}
 								</span>

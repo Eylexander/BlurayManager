@@ -9,6 +9,7 @@ import (
 )
 
 func (api *API) CreateTag(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	var tag models.Tag
 	if err := c.ShouldBindJSON(&tag); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -17,13 +18,13 @@ func (api *API) CreateTag(c *gin.Context) {
 
 	userIDstr, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("user.notFound")})
 		return
 	}
 
 	userID, err := primitive.ObjectIDFromHex(userIDstr.(string))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidUserID")})
 		return
 	}
 
@@ -38,15 +39,16 @@ func (api *API) CreateTag(c *gin.Context) {
 }
 
 func (api *API) GetTag(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidID")})
 		return
 	}
 
 	tag, err := api.ctrl.GetTagByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tag not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T("tag.notFound")})
 		return
 	}
 
@@ -54,9 +56,10 @@ func (api *API) GetTag(c *gin.Context) {
 }
 
 func (api *API) UpdateTag(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidID")})
 		return
 	}
 
@@ -76,9 +79,10 @@ func (api *API) UpdateTag(c *gin.Context) {
 }
 
 func (api *API) DeleteTag(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("api.invalidID")})
 		return
 	}
 
@@ -87,7 +91,7 @@ func (api *API) DeleteTag(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "tag deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": i18n.T("tag.deletedSuccessfully")})
 }
 
 func (api *API) ListTags(c *gin.Context) {

@@ -14,12 +14,16 @@ const tmdbBaseURL = "https://api.themoviedb.org/3"
 
 // SearchTMDB handles the search endpoint
 func (api *API) SearchTMDB(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	mediaType := c.Query("type")
 	query := c.Query("query")
-	lang := api.getRequestedLanguage(c)
+	lang := c.GetHeader("Accept-Language")
+	if lang == "" {
+		lang = "en-US"
+	}
 
 	if mediaType == "" || query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "type and query parameters are required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("tmdb.typeAndQueryRequired")})
 		return
 	}
 	if mediaType == "series" {
@@ -35,7 +39,7 @@ func (api *API) SearchTMDB(c *gin.Context) {
 
 	result, err := api.fetchTMDB(reqURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search TMDB"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("tmdb.failedToSearch")})
 		return
 	}
 
@@ -44,12 +48,16 @@ func (api *API) SearchTMDB(c *gin.Context) {
 
 // GetTMDBDetails handles the details endpoint for movies and tv
 func (api *API) GetTMDBDetails(c *gin.Context) {
+	i18n := api.GetI18n(c)
 	mediaType := c.Param("type")
 	id := c.Param("id")
-	lang := api.getRequestedLanguage(c)
+	lang := c.GetHeader("Accept-Language")
+	if lang == "" {
+		lang = "en-US"
+	}
 
 	if mediaType == "" || id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "type and id are required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("tmdb.typeAndIDRequired")})
 		return
 	}
 
@@ -58,7 +66,7 @@ func (api *API) GetTMDBDetails(c *gin.Context) {
 	}
 
 	if mediaType != "movie" && mediaType != "tv" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "type must be 'movie' or 'tv'"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("tmdb.invalidType")})
 		return
 	}
 
@@ -75,13 +83,13 @@ func (api *API) GetTMDBDetails(c *gin.Context) {
 
 	result, err := api.fetchTMDB(reqURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch TMDB details"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("tmdb.failedToFetchDetails")})
 		return
 	}
 
 	result, err = api.enrichWithLocalization(result, mediaType, id, lang, apiKey)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enrich TMDB details with localization"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("tmdb.failedToEnrichDetails")})
 		return
 	}
 

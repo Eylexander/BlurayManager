@@ -111,7 +111,7 @@ export default function AddTagModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           setShowNewTagInput(false);
@@ -120,16 +120,16 @@ export default function AddTagModal({
         }
       }}
     >
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
-        <div className="sticky top-0 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700/50 p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-gray-50 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700/50 p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-500/20">
               <TagIcon className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">{t('add.selectTags')}</h2>
-              {blurayTitle && <p className="text-sm text-gray-400">{blurayTitle}</p>}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('add.selectTags')}</h2>
+              {blurayTitle && <p className="text-sm text-gray-600 dark:text-gray-400">{blurayTitle}</p>}
             </div>
           </div>
           <button
@@ -147,7 +147,7 @@ export default function AddTagModal({
         {/* Modal Body */}
         <div className="p-6 space-y-6">
           <div>
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">
               {t('add.availableTags')}
             </h3>
             <div className="flex flex-wrap gap-3">
@@ -158,7 +158,7 @@ export default function AddTagModal({
                   onClick={() => toggleTag(tag.id)}
                   className={`group px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${selectedTags.includes(tag.id)
                       ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 scale-105'
-                      : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 border border-gray-600/50 hover:border-gray-500'
+                      : 'bg-gray-200 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600/50 hover:border-gray-400 dark:hover:border-gray-500'
                     }`}
                 >
                   {selectedTags.includes(tag.id) && <Check className="w-4 h-4 inline mr-1.5" />}
@@ -170,15 +170,15 @@ export default function AddTagModal({
           </div>
 
           {/* Create New Tag Section */}
-          <div className="border-t border-gray-700/50 pt-6">
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+          <div className="border-t border-gray-200 dark:border-gray-700/50 pt-6">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">
               {t('add.createNewTag')}
             </h3>
             {!showNewTagInput ? (
               <button
                 type="button"
                 onClick={() => setShowNewTagInput(true)}
-                className="group w-full px-5 py-3 rounded-xl font-medium bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-400 hover:from-blue-500/20 hover:to-blue-600/20 border-2 border-dashed border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
+                className="group w-full px-5 py-3 rounded-xl font-medium bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-600 dark:text-blue-400 hover:from-blue-500/20 hover:to-blue-600/20 border-2 border-dashed border-blue-400 dark:border-blue-500/30 hover:border-blue-500 dark:hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
               >
                 <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                 <span>{t('add.addNewTag')}</span>
@@ -191,7 +191,7 @@ export default function AddTagModal({
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder={t('add.enterTagName')}
                   autoFocus
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-gray-700 transition-all duration-200"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600/50 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-gray-50 dark:focus:bg-gray-700 transition-all duration-200"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -228,7 +228,7 @@ export default function AddTagModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="sticky bottom-0 bg-gray-800/95 backdrop-blur-sm border-t border-gray-700/50 p-6 flex gap-3">
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-800/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700/50 p-6 flex gap-3">
           <Button
             variant="primary"
             onClick={handleDone}

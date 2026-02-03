@@ -4,7 +4,6 @@ import (
 	"eylexander/bluraymanager/api"
 	"eylexander/bluraymanager/controller"
 	"eylexander/bluraymanager/datastore"
-	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/models"
 	"eylexander/bluraymanager/services"
 
@@ -23,14 +22,14 @@ type Server struct {
 func NewServer(ds datastore.Datastore) *Server {
 	gin.SetMode(gin.ReleaseMode)
 
-	i18n := i18n.NewModule("en-US")
-	ctrl := controller.NewController(ds, i18n)
+	ctrl := controller.NewController(ds)
 	apiHandler := api.NewAPI(ctrl)
 	emailService := services.NewEmailService()
 	passwordResetHandler := ctrl.NewPasswordResetHandler(ds, emailService)
 
 	router := gin.Default()
 	router.Use(ctrl.CORSMiddleware())
+	router.Use(ctrl.LocaleMiddleware())
 
 	s := &Server{
 		router:               router,

@@ -4,14 +4,16 @@ import (
 	"context"
 	"errors"
 
+	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (c *Controller) CreateBluray(ctx context.Context, bluray *models.Bluray) error {
+	i18n := i18n.GetI18nFromContext(ctx)
 	if bluray.Title == "" {
-		return errors.New(c.i18n.T("bluray.titleRequired"))
+		return errors.New(i18n.T("bluray.titleRequired"))
 	}
 
 	// Check for duplicate TMDB ID
@@ -21,7 +23,7 @@ func (c *Controller) CreateBluray(ctx context.Context, bluray *models.Bluray) er
 			return err
 		}
 		if len(existingBlurays) > 0 {
-			return errors.New(c.i18n.T("bluray.duplicateTMDBID"))
+			return errors.New(i18n.T("bluray.duplicateTMDBID"))
 		}
 	}
 
@@ -33,8 +35,9 @@ func (c *Controller) GetBlurayByID(ctx context.Context, id primitive.ObjectID) (
 }
 
 func (c *Controller) UpdateBluray(ctx context.Context, bluray *models.Bluray) error {
+	i18n := i18n.GetI18nFromContext(ctx)
 	if bluray.Title == "" {
-		return errors.New(c.i18n.T("bluray.titleRequired"))
+		return errors.New(i18n.T("bluray.titleRequired"))
 	}
 	return c.ds.UpdateBluray(ctx, bluray)
 }

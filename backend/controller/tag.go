@@ -4,18 +4,20 @@ import (
 	"context"
 	"errors"
 
+	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (c *Controller) CreateTag(ctx context.Context, tag *models.Tag) error {
+	i18n := i18n.GetI18nFromContext(ctx)
 	if tag.Name == "" {
-		return errors.New(c.i18n.T("tag.nameRequired"))
+		return errors.New(i18n.T("tag.nameRequired"))
 	}
 	// Check if tag already exists
 	if _, err := c.ds.GetTagByName(ctx, tag.Name); err == nil {
-		return errors.New(c.i18n.T("tag.duplicateTagName"))
+		return errors.New(i18n.T("tag.duplicateTagName"))
 	}
 	return c.ds.CreateTag(ctx, tag)
 }
@@ -29,8 +31,9 @@ func (c *Controller) GetTagByName(ctx context.Context, name string) (*models.Tag
 }
 
 func (c *Controller) UpdateTag(ctx context.Context, tag *models.Tag) error {
+	i18n := i18n.GetI18nFromContext(ctx)
 	if tag.Name == "" {
-		return errors.New(c.i18n.T("tag.nameRequired"))
+		return errors.New(i18n.T("tag.nameRequired"))
 	}
 	return c.ds.UpdateTag(ctx, tag)
 }

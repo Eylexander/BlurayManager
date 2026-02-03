@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/models"
 	"net/http"
 	"strings"
@@ -8,12 +9,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// LocaleMiddleware detects language from Accept-Language header and sets i18n in context
+func (c *Controller) LocaleMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		acceptLang := ctx.GetHeader("Accept-Language")
+		lang := i18n.ParseAcceptLanguage(acceptLang)
+		i18nInstance := i18n.NewModule(lang)
+		ctx.Set("i18n", i18nInstance)
+
+		// Also store in the request context so it can be accessed by controller methods
+		newCtx := i18n.WithI18n(ctx.Request.Context(), i18nInstance)
+		ctx.Request = ctx.Request.WithContext(newCtx)
+
+		ctx.Next()
+	}
+}
+
 // AuthMiddleware validates JWT token and attaches claims to context
 func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		i18n := c.GetI18n(ctx)
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.authorizationHeaderRequired")})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("jwt.authorizationHeaderRequired")})
 			ctx.Abort()
 			return
 		}
@@ -21,7 +39,7 @@ func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 		// Extract token from "Bearer <token>" format
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.invalidAuthorizationHeaderFormat")})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("jwt.invalidAuthorizationHeaderFormat")})
 			ctx.Abort()
 			return
 		}
@@ -29,7 +47,7 @@ func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 		tokenString := tokenParts[1]
 		claims, err := c.ValidateToken(tokenString)
 		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.invalid")})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("jwt.invalid")})
 			ctx.Abort()
 			return
 		}
@@ -48,9 +66,10 @@ func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 // RequireRole checks if user has the required role
 func (c *Controller) RequireRole(allowedRoles ...models.UserRole) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		i18n := c.GetI18n(ctx)
 		claimsInterface, exists := ctx.Get("claims")
 		if !exists {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": c.i18n.T("jwt.unauthorized")})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("jwt.unauthorized")})
 			ctx.Abort()
 			return
 		}
@@ -67,7 +86,7 @@ func (c *Controller) RequireRole(allowedRoles ...models.UserRole) gin.HandlerFun
 		}
 
 		if !allowed {
-			ctx.JSON(http.StatusForbidden, gin.H{"error": c.i18n.T("jwt.insufficientPermissions")})
+			ctx.JSON(http.StatusForbidden, gin.H{"error": i18n.T("jwt.insufficientPermissions")})
 			ctx.Abort()
 			return
 		}

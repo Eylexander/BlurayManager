@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"eylexander/bluraymanager/datastore"
-	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/services"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +14,8 @@ import (
 
 type PasswordResetHandler struct {
 	store        datastore.Datastore
-	i18n         *i18n.I18n
 	emailService *services.EmailService
+	ctrl         *Controller
 }
 
 type RequestPasswordResetRequest struct {
@@ -32,21 +31,22 @@ func (c *Controller) NewPasswordResetHandler(store datastore.Datastore, emailSer
 	return &PasswordResetHandler{
 		store:        store,
 		emailService: emailService,
-		i18n:         c.i18n,
+		ctrl:         c,
 	}
 }
 
 // RequestPasswordReset handles password reset requests
 func (h *PasswordResetHandler) RequestPasswordReset(ctx *gin.Context) {
+	i18n := h.ctrl.GetI18n(ctx)
 	var req RequestPasswordResetRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": h.i18n.T("passwordReset.invalidRequest")})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("passwordReset.invalidRequest")})
 		return
 	}
 
 	// Check if SMTP is configured
 	if !h.emailService.IsConfigured() {
-		ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": h.i18n.T("passwordReset.emailServiceNotConfigured")})
+		ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": i18n.T("passwordReset.emailServiceNotConfigured")})
 		return
 	}
 
@@ -54,7 +54,7 @@ func (h *PasswordResetHandler) RequestPasswordReset(ctx *gin.Context) {
 	user, err := h.store.GetUserByEmail(ctx.Request.Context(), req.Email)
 	if err != nil {
 		// Don't reveal if email exists or not for security
-		ctx.JSON(http.StatusOK, gin.H{"message": h.i18n.T("passwordReset.resetLinkSent")})
+		ctx.JSON(http.StatusOK, gin.H{"message": i18n.T("passwordReset.resetLinkSent")})
 		return
 	}
 
@@ -65,7 +65,7 @@ func (h *PasswordResetHandler) RequestPasswordReset(ctx *gin.Context) {
 	// Store reset token
 	err = h.store.CreatePasswordResetToken(user.ID.Hex(), token, expiresAt)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": h.i18n.T("passwordReset.failedToCreateResetToken")})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("passwordReset.failedToCreateResetToken")})
 		return
 	}
 
@@ -77,39 +77,40 @@ func (h *PasswordResetHandler) RequestPasswordReset(ctx *gin.Context) {
 
 	err = h.emailService.SendPasswordResetEmail(user.Email, token, appURL)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": h.i18n.T("passwordReset.failedToSendResetEmail")})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("passwordReset.failedToSendResetEmail")})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": h.i18n.T("passwordReset.resetLinkSent")})
+	ctx.JSON(http.StatusOK, gin.H{"message": i18n.T("passwordReset.resetLinkSent")})
 }
 
 // ResetPassword handles password reset with token
 func (h *PasswordResetHandler) ResetPassword(ctx *gin.Context) {
+	i18n := h.ctrl.GetI18n(ctx)
 	var req ResetPasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": h.i18n.T("passwordReset.invalidRequest")})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("passwordReset.invalidRequest")})
 		return
 	}
 
 	// Verify reset token
 	userID, err := h.store.VerifyPasswordResetToken(req.Token)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": h.i18n.T("passwordReset.invalidOrExpiredToken")})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("passwordReset.invalidOrExpiredToken")})
 		return
 	}
 
 	// Update password
 	err = h.store.UpdateUserPassword(userID, req.NewPassword)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": h.i18n.T("passwordReset.failedToUpdatePassword")})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("passwordReset.failedToUpdatePassword")})
 		return
 	}
 
 	// Delete used token
 	h.store.DeletePasswordResetToken(req.Token)
 
-	ctx.JSON(http.StatusOK, gin.H{"message": h.i18n.T("passwordReset.passwordResetSuccessfully")})
+	ctx.JSON(http.StatusOK, gin.H{"message": i18n.T("passwordReset.passwordResetSuccessfully")})
 }
 
 func generateResetToken() string {

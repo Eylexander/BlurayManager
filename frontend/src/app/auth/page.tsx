@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import useRouteProtection from '@/hooks/useRouteProtection';
+import useRouteProtection, { ROUTES } from '@/hooks/useRouteProtection';
 import { apiClient } from '@/lib/api-client';
 import { LoaderCircle } from '@/components/common/LoaderCircle';
 
@@ -22,7 +22,7 @@ export default function Home() {
         const data = await apiClient.checkAdminExists();
 
 				if (!data.needsSetup) {
-					router.push('/auth/login');
+					router.push(ROUTES.AUTH.LOGIN);
           return;
         }
       } catch (err) {
@@ -39,9 +39,9 @@ export default function Home() {
   useEffect(() => {
     if (!checking) {
       if (isAuthenticated) {
-        router.push('/dashboard');
+        router.push(ROUTES.DASHBOARD.HOME);
       } else {
-        router.push('/auth/login');
+        router.push(ROUTES.AUTH.LOGIN);
       }
     }
   }, [isAuthenticated, checking, router]);

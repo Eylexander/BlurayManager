@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/authStore';
 import { Home, BarChart3, Settings, Plus, Users, LogOut, Github, MoreHorizontal, X, TagIcon, FileDown, LucideIcon } from 'lucide-react';
 import { useState } from 'react';
+import { ROUTES } from '@/hooks/useRouteProtection';
 
 interface MobileLinkProps {
   href: string;
@@ -57,37 +58,37 @@ export default function MobileNav() {
   // Centralized Link Configuration
   const navLinks = [
     { 
-      href: '/dashboard', 
+      href: ROUTES.DASHBOARD.HOME, 
       label: 'nav.home', 
       icon: Home, 
       show: true 
     },
     { 
-      href: '/dashboard/statistics', 
+      href: ROUTES.DASHBOARD.STATISTICS, 
       label: 'nav.statistics', 
       icon: BarChart3, 
       show: !isGuest 
     },
     { 
-      href: '/dashboard/settings', 
+      href: ROUTES.DASHBOARD.SETTINGS, 
       label: 'nav.settings', 
       icon: Settings, 
       show: !isGuest 
     },
     { 
-      href: '/dashboard/users', 
+      href: ROUTES.DASHBOARD.USERS, 
       label: 'nav.users', 
       icon: Users, 
       show: isAdmin 
     },
     { 
-      href: '/dashboard/tags', 
+      href: ROUTES.DASHBOARD.TAGS, 
       label: 'nav.tags', 
       icon: TagIcon, 
       show: isAdmin 
     },
     { 
-      href: '/dashboard/import-export', 
+      href: ROUTES.DASHBOARD.IMPORT_EXPORT, 
       label: 'nav.importExport', 
       icon: FileDown, 
       show: isAdmin 

@@ -10,6 +10,8 @@
     "edit": "Modifier",
     "add": "Ajouter",
     "search": "Rechercher",
+    "selectAll": "Tout sélectionner",
+    "deselectAll": "Tout désélectionner",
     "searchResults": "Résultats de recherche",
     "clearSearch": "Effacer la recherche",
     "filter": "Filtrer",
@@ -23,7 +25,18 @@
     "done": "Terminé",
     "movie": "film",
     "series": "série",
-    "unknownDirector": "Réalisateur inconnu"
+    "unknownDirector": "Réalisateur inconnu",
+    "advancedSearch": "Recherche avancée",
+    "searchTips": {
+      "title": "Recherche avancée",
+      "searchByTitle": "Rechercher par titre",
+      "searchByDirector": "Rechercher par réalisateur",
+      "searchByTag": "Rechercher par étiquette",
+      "searchByGenre": "Rechercher par genre",
+      "searchByYear": "Rechercher par année",
+      "filterByType": "Filtrer par type",
+      "combine": "Combiner"
+    }
   },
   "filter": {
     "recentlyAdded": "Ajoutés récemment",
@@ -144,17 +157,26 @@
   "details": {
     "overview": "Synopsis",
     "description": "Description",
+    "synopsis": "Synopsis",
     "collectionInfo": "Informations de collection",
+    "libraryInfo": "Informations de bibliothèque",
     "releaseYear": "Année de sortie",
     "director": "Réalisateur",
+    "directedBy": "Réalisé par",
     "runtime": "Durée",
     "purchasePrice": "Prix d'achat",
     "purchaseDate": "Date d'achat",
     "location": "Emplacement",
+    "noLocation": "Aucun emplacement spécifié",
     "rating": "Note",
     "tags": "Étiquettes",
     "seasons": "Saisons",
+    "season": "Saison",
+    "episode": "épisode",
     "episodes": "épisodes",
+    "totalEpisodes": "Total d'épisodes",
+    "yearRange": "Période",
+    "noSeasons": "Aucune saison disponible",
     "edit": "Modifier",
     "delete": "Supprimer",
     "deleting": "Suppression...",
@@ -164,7 +186,14 @@
     "notFound": "Élément introuvable",
     "backToDashboard": "Retour au tableau de bord",
     "noTags": "Aucune étiquette assignée",
-    "viewOnTMDB": "Voir sur TMDB"
+    "viewOnTMDB": "Voir sur TMDB",
+    "tmdb": "TMDB",
+    "manageSeasons": "Gérer les saisons",
+    "editPurchaseInfo": "Modifier les informations d'achat",
+    "purchaseInfoUpdated": "Informations d'achat mises à jour avec succès",
+    "purchaseInfoUpdateError": "Échec de la mise à jour des informations d'achat",
+    "purchasePriceHelp": "Entrez le prix d'achat dans votre devise",
+    "purchaseDateHelp": "Sélectionnez quand vous avez acheté cet article"
   },
   "bluray": {
     "title": "Titre",
@@ -198,7 +227,24 @@
     "fetchOnlineData": "Récupérer les données en ligne",
     "fetching": "Récupération...",
     "updateDetails": "Mettre à jour les détails de votre {type}",
-    "addSeason": "Ajouter une saison"
+    "addSeason": "Ajouter une saison",
+    "addSeasonManually": "Ajouter une saison manuellement",
+    "selectFromTMDB": "Sélectionner depuis TMDB",
+    "selectSeasons": "Sélectionner les saisons",
+    "seasonsSelected": "saisons sélectionnées",
+    "searchByTitleOrTmdbId": "Rechercher par titre ou ID TMDB...",
+    "noSeasonsFound": "Aucune saison trouvée",
+    "failedToFetchSeasons": "Échec de la récupération des saisons depuis TMDB",
+    "enterTitleOrTmdbId": "Veuillez entrer un titre ou un ID TMDB",
+    "searchFailed": "Échec de la recherche",
+    "noSeasonsAvailable": "Aucune saison disponible",
+    "searchForSeasons": "Recherchez une série pour voir les saisons disponibles",
+    "noSeasonsYet": "Aucune saison ajoutée pour le moment",
+    "seasonInfoReadOnly": "Les informations de saison sont en lecture seule. Utilisez 'Sélectionner depuis TMDB' pour mettre à jour.",
+    "useSelectFromTMDB": "Cliquez sur 'Sélectionner depuis TMDB' ci-dessus pour ajouter des saisons",
+    "titleReadOnly": "Le titre est en lecture seule",
+    "seasonsUpdated": "Saisons mises à jour avec succès !",
+    "seasonsUpdateError": "Échec de la mise à jour des saisons"
   },
   "statistics": {
     "title": "Statistiques de la Collection",
@@ -289,7 +335,7 @@
     "today": "Aujourd'hui",
     "barcodeScanDesc": "Scannez le code-barres UPC/EAN au dos de votre Bluray pour une recherche instantanée",
     "yearPlaceholder": "2024",
-    "foundResults": "{count} résultat(s) TMDB trouvé(s) - sélectionnez-en un",
+    "foundResults": "{count} résultat(s)",
     "failedToSearch": "Échec de la recherche avec le code-barres",
     "searchFailed": "Échec de la recherche : {error}",
     "tagCreated": "Étiquette créée !",
@@ -300,7 +346,9 @@
     "addedToCollection": "{title} ajouté à votre collection !",
     "failedToAddToCollection": "Échec de l'ajout à la collection",
     "tagsUpdated": "Étiquettes mises à jour !",
-    "firstAirDate": "Date de première diffusion"
+    "firstAirDate": "Date de première diffusion",
+    "addToBatch": "Ajouter au lot",
+    "batchComplete": "Traitement du lot terminé !"
   },
   "barcode": {
     "title": "Scanner le code-barres",
@@ -338,7 +386,10 @@
     "noResults": "Aucun résultat TMDB pour ce titre. Essayez une recherche manuelle.",
     "notFound": "Code-barres introuvable dans la base de données. Essayez de rechercher par titre.",
     "searchFailed": "Échec de la recherche",
-    "invalidBarcode": "Code-barres invalide"
+    "invalidBarcode": "Code-barres invalide",
+    "cameraError": "Impossible d'accéder à la caméra. Veuillez vérifier les autorisations.",
+    "manualEntry": "Saisir le code-barres manuellement",
+    "enterManually": "Saisir manuellement"
   },
   "tags": {
     "manageTags": "Gérer les étiquettes",
@@ -375,7 +426,8 @@
     "addTag": "Ajouter une étiquette",
     "editTagTooltip": "Modifier l'étiquette",
     "deleteTagTooltip": "Supprimer l'étiquette",
-    "title": "Gestion des étiquettes"
+    "title": "Gestion des étiquettes",
+    "noTagsFound": "Aucune étiquette trouvée correspondant à votre recherche"
   },
   "users": {
     "title": "Gestion des utilisateurs",

@@ -9,35 +9,68 @@ interface RouteConfig {
   redirectTo?: string; // Default is '/login' if not authenticated, or '/dashboard' if authenticated but not allowed
 }
 
+// Route path constants
+export const ROUTES = {
+  HOME: '/',
+  AUTH: {
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    INSTALL: '/auth/install',
+  },
+  DASHBOARD: {
+    HOME: '/dashboard',
+    SETTINGS: '/dashboard/settings',
+    STATISTICS: '/dashboard/statistics',
+    ADD: {
+      ADD: '/dashboard/add',
+      SEARCH: '/dashboard/add/search',
+      RESULTS: '/dashboard/add/results',
+      SCAN: '/dashboard/add/scan',
+    },
+    IMPORT_EXPORT: '/dashboard/import-export',
+    USERS: '/dashboard/users',
+    BLURAYS: {
+      DETAIL: '/dashboard/blurays/[id]',
+    },
+    TAGS: '/dashboard/tags',
+  },
+} as const;
+
 const ROUTE_CONFIGS: Record<string, RouteConfig> = {
   // Public pages (no auth required)
-  '/': { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
-  '/auth/login': { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
-  '/auth/register': { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
-  '/auth/forgot-password': { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
-  '/auth/install': { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
+  [ROUTES.HOME]: { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
+  [ROUTES.AUTH.LOGIN]: { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
+  [ROUTES.AUTH.REGISTER]: { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
+  [ROUTES.AUTH.FORGOT_PASSWORD]: { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
+  [ROUTES.AUTH.INSTALL]: { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
 
   // Dashboard (all authenticated users)
-  '/dashboard': { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
+  [ROUTES.DASHBOARD.HOME]: { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
 
   // Settings - User role gets limited version, Guest/User can't see certain settings
-  '/dashboard/settings': { allowedRoles: ['admin', 'moderator', 'user'] }, // Guest can't access settings
+  [ROUTES.DASHBOARD.SETTINGS]: { allowedRoles: ['admin', 'moderator', 'user'] }, // Guest can't access settings
   
   // Statistics - Only authenticated non-guest users
-  '/dashboard/statistics': { allowedRoles: ['admin', 'moderator', 'user'] }, // Guest can't access statistics
+  [ROUTES.DASHBOARD.STATISTICS]: { allowedRoles: ['admin', 'moderator', 'user'] }, // Guest can't access statistics
 
   // Collection Management - Admin and Moderator only
-  '/dashboard/add': { allowedRoles: ['admin', 'moderator'] },
-  '/dashboard/blurays/[id]/edit': { allowedRoles: ['admin', 'moderator'] },
+  [ROUTES.DASHBOARD.ADD.ADD]: { allowedRoles: ['admin', 'moderator'] },
+  [ROUTES.DASHBOARD.ADD.SEARCH]: { allowedRoles: ['admin', 'moderator'] },
+  [ROUTES.DASHBOARD.ADD.RESULTS]: { allowedRoles: ['admin', 'moderator'] },
+  [ROUTES.DASHBOARD.ADD.SCAN]: { allowedRoles: ['admin', 'moderator'] },
 
   // Import/Export - Admin only
-  '/dashboard/import-export': { allowedRoles: ['admin'] },
+  [ROUTES.DASHBOARD.IMPORT_EXPORT]: { allowedRoles: ['admin'] },
+
+  // Tag Management - Admin only
+  [ROUTES.DASHBOARD.TAGS]: { allowedRoles: ['admin'] },
 
   // Users management - Admin only
-  '/dashboard/users': { allowedRoles: ['admin'] },
+  [ROUTES.DASHBOARD.USERS]: { allowedRoles: ['admin'] },
 
   // Details page - All authenticated users
-  '/dashboard/blurays/[id]': { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
+  [ROUTES.DASHBOARD.BLURAYS.DETAIL]: { allowedRoles: ['admin', 'moderator', 'user', 'guest'] },
 };
 
 export function useRouteProtection(pathname: string, isPublicPage: boolean = false) {
