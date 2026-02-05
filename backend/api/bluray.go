@@ -205,8 +205,8 @@ func (api *API) ExportBlurays(c *gin.Context) {
 		return
 	}
 
-	// Create CSV content
-	csv := "Title,Type,Genre,DescriptionEn,DescriptionFr,Director,ReleaseYear,Runtime,Rating,PurchasePrice,PurchaseDate,CoverImageURL,Tags,SeasonsCount,TotalEpisodes\n"
+	// Create CSV content with UTF-8 BOM
+	csv := "\xEF\xBB\xBF" + "Title,Type,Genre,DescriptionEn,DescriptionFr,Director,ReleaseYear,Runtime,Rating,PurchasePrice,PurchaseDate,CoverImageURL,BackdropURL,Tags,SeasonsCount,TotalEpisodes\n"
 
 	for _, bluray := range blurays {
 		// Escape and format fields
@@ -268,15 +268,16 @@ func (api *API) ExportBlurays(c *gin.Context) {
 		descFr := escapeCSV(bluray.Description.Fr)
 		director := escapeCSV(bluray.Director)
 		coverURL := escapeCSV(bluray.CoverImageURL)
+		backdropURL := escapeCSV(bluray.BackdropURL)
 		typeStr := string(bluray.Type)
 
 		csv += title + "," + typeStr + "," + genre + "," + descEn + "," + descFr + "," + director + "," +
 			releaseYear + "," + runtime + "," + rating + "," + purchasePrice + "," +
-			purchaseDate + "," + coverURL + "," + tags + "," +
+			purchaseDate + "," + coverURL + "," + backdropURL + "," + tags + "," +
 			seasonsCount + "," + totalEpisodes + "\n"
 	}
 
-	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Type", "text/csv; charset=utf-8")
 	c.Header("Content-Disposition", "attachment; filename=bluray-collection.csv")
 	c.String(http.StatusOK, csv)
 }
@@ -303,8 +304,14 @@ func (api *API) ImportBlurays(c *gin.Context) {
 		return
 	}
 
+	// Convert to string and strip UTF-8 BOM if present
+	csvContent := string(content)
+	if len(csvContent) >= 3 && csvContent[0] == '\xEF' && csvContent[1] == '\xBB' && csvContent[2] == '\xBF' {
+		csvContent = csvContent[3:]
+	}
+
 	// Parse CSV
-	lines := parseCSVLines(string(content))
+	lines := parseCSVLines(csvContent)
 	if len(lines) < 2 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "CSV file is empty or invalid"})
 		return
@@ -312,6 +319,7 @@ func (api *API) ImportBlurays(c *gin.Context) {
 
 	success := 0
 	failed := 0
+	skipped := 0
 	errors := []string{}
 
 	// Skip header row
@@ -354,6 +362,22 @@ func (api *API) ImportBlurays(c *gin.Context) {
 			mediaType = models.MediaTypeSeries
 		}
 
+		// Check for duplicates based on title, type, and release year
+		filters := map[string]interface{}{
+			"title": fields[0],
+			"type":  string(mediaType),
+		}
+		if releaseYear != 0 {
+			filters["release_year"] = releaseYear
+		}
+
+		existingBlurays, err := api.ctrl.ListBlurays(c.Request.Context(), filters, 0, 1)
+		if err == nil && len(existingBlurays) > 0 {
+			// Duplicate found, skip this entry
+			skipped++
+			continue
+		}
+
 		bluray := &models.Bluray{
 			Title: fields[0],
 			Type:  mediaType,
@@ -371,6 +395,7 @@ func (api *API) ImportBlurays(c *gin.Context) {
 			PurchasePrice: purchasePrice,
 			PurchaseDate:  purchaseDate,
 			CoverImageURL: fields[11],
+			BackdropURL:   fields[12],
 			Tags:          tags,
 			TotalEpisodes: totalEpisodes,
 		}
@@ -386,6 +411,7 @@ func (api *API) ImportBlurays(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": success,
 		"failed":  failed,
+		"skipped": skipped,
 		"errors":  errors,
 	})
 }

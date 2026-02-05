@@ -4,11 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Film, Tv, X, LayoutGrid, List } from "lucide-react";
+import { Film, Tv, X, LayoutGrid, List, Plus, ArrowDown } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { apiClient } from "@/lib/api-client";
-import { getLocalizedTextArray } from "@/lib/bluray-utils";
 import { Bluray } from "@/types/bluray";
 import { SimplifiedStatistics } from "@/types/statistics";
 import BlurayCard from "@/components/bluray/BlurayCard";
@@ -17,6 +16,7 @@ import StatsCard from "@/components/common/StatsCard";
 import SortDropdown from "@/components/common/SortDropdown";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
 import useRouteProtection from "@/hooks/useRouteProtection";
+import { Button } from "@/components/common";
 
 type SortOption = "recent" | "name" | "release_date" | "rating";
 
@@ -33,6 +33,10 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<SimplifiedStatistics>();
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [skip, setSkip] = useState(0);
+  const ITEMS_PER_PAGE = 48;
 
   // Use route protection
   useRouteProtection(pathname);
@@ -45,10 +49,14 @@ export default function DashboardPage() {
       // Use search API if there's a search query
       if (searchQuery) {
         bluraysData = await apiClient.searchBlurays(searchQuery, 0, 100);
+        setHasMore(false); // Disable load more for search
       } else {
         bluraysData = await apiClient.getSimplifiedBlurays({
-          limit: 16,
+          limit: ITEMS_PER_PAGE,
+          skip: 0,
         });
+        setHasMore(bluraysData.length === ITEMS_PER_PAGE);
+        setSkip(ITEMS_PER_PAGE);
       }
 
       const statsData = await apiClient.getSimplifiedStatistics();
@@ -61,6 +69,29 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }, [searchQuery]);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore || searchQuery) return;
+
+    setLoadingMore(true);
+    try {
+      const moreBlurays = await apiClient.getSimplifiedBlurays({
+        limit: ITEMS_PER_PAGE,
+        skip: skip,
+      });
+
+      if (moreBlurays.length < ITEMS_PER_PAGE) {
+        setHasMore(false);
+      }
+
+      setRecentBlurays((prev) => [...prev, ...moreBlurays]);
+      setSkip((prev) => prev + ITEMS_PER_PAGE);
+    } catch (error) {
+      console.error("Failed to load more blurays:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -263,6 +294,23 @@ export default function DashboardPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Load More Button */}
+        {!searchQuery && hasMore && recentBlurays.length > 0 && (
+          <div className="flex justify-center mt-8 p-6">
+            <Button
+              onClick={loadMore}
+              disabled={loadingMore}
+              variant="primary"
+              className="px-6 py-3 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              icon={
+                <ArrowDown className="w-5 h-5 group-hover:translate-y-[0.1rem] transition-transform duration-300" />
+              }
+            >
+              {loadingMore ? t("common.loading") : t("common.loadMore")}
+            </Button>
+          </div>
         )}
       </div>
     </div>

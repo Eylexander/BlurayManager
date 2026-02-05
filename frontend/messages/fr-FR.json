@@ -2,6 +2,7 @@
   "common": {
     "appName": "Bluray Manager",
     "loading": "Chargement...",
+    "loadMore": "Charger plus",
     "error": "Erreur",
     "success": "Succès",
     "cancel": "Annuler",
@@ -494,12 +495,14 @@
     "exportSuccess": "Collection exportée avec succès",
     "exportFailed": "Échec de l'exportation de la collection",
     "importSuccess": "{count} éléments importés avec succès",
-    "importPartialSuccess": "{success} éléments importés, {failed} échous",
+    "importWithSkipped": "{success} éléments importés, {skipped} doublons ignorés",
+    "importPartialSuccess": "{success} éléments importés, {failed} échoués",
     "importFailed": "Échec de l'importation de la collection",
     "invalidFileType": "Veuillez charger un fichier CSV",
     "importRestricted": "L'importation nécessite les permissions admin ou modérateur",
     "importResults": "Résultats de l'importation",
     "successCount": "Réussis",
+    "skippedCount": "Ignorés",
     "failedCount": "Échoués",
     "errors": "Erreurs"
   }

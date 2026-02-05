@@ -39,6 +39,7 @@ export default function ImportExportPage() {
   const [importResult, setImportResult] = useState<{
     success: number;
     failed: number;
+    skipped: number;
     errors: string[];
   } | null>(null);
 
@@ -95,9 +96,16 @@ export default function ImportExportPage() {
 
       setImportResult(result);
 
-      if (result.failed === 0) {
+      if (result.failed === 0 && result.skipped === 0) {
         toast.success(
           t("importExport.importSuccess", { count: result.success }),
+        );
+      } else if (result.failed === 0) {
+        toast.success(
+          t("importExport.importWithSkipped", {
+            success: result.success,
+            skipped: result.skipped,
+          }),
         );
       } else {
         toast.error(
@@ -251,7 +259,7 @@ export default function ImportExportPage() {
               {t("importExport.importResults")}
             </h3>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-center gap-2 mb-1">
                   <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -261,6 +269,18 @@ export default function ImportExportPage() {
                 </div>
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {importResult.success}
+                </p>
+              </div>
+
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  <span className="font-semibold text-orange-900 dark:text-orange-100">
+                    {t("importExport.skippedCount")}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {importResult.skipped}
                 </p>
               </div>
 
