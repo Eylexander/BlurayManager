@@ -79,14 +79,14 @@ type SimplifiedBluray struct {
 	CoverImageURL string        `bson:"cover_image_url" json:"cover_image_url"`
 	BackdropURL   string        `bson:"backdrop_url" json:"backdrop_url"`
 	Rating        float64       `bson:"rating" json:"rating"`
+	Tags          []string      `bson:"tags" json:"tags"`
 }
 
 // Season represents a season in a series
 type Season struct {
-	Number       int      `bson:"number" json:"number"`
-	EpisodeCount int      `bson:"episode_count" json:"episode_count"`
-	Year         int      `bson:"year,omitempty" json:"year,omitempty"`
-	Description  I18nText `bson:"description,omitempty" json:"description,omitempty"`
+	Number       int `bson:"number" json:"number"`
+	EpisodeCount int `bson:"episode_count" json:"episode_count"`
+	Year         int `bson:"year,omitempty" json:"year,omitempty"`
 }
 
 // CreateBlurayRequest is the request body for creating a bluray

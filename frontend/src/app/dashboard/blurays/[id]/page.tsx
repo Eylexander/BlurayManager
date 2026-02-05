@@ -288,10 +288,10 @@ export default function BlurayDetailPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-center md:justify-start gap-2.5 flex-wrap">
                     <span
-                      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-1.5 border shadow-sm ${
+                      className={`px-3 py-[0.3rem] rounded-lg text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-1.5 border shadow-sm ${
                         bluray.type === "movie"
-                          ? "bg-blue-100/50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-400/30"
-                          : "bg-purple-100/50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-400/30"
+                          ? "bg-blue-100/50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-400/40"
+                          : "bg-purple-100/50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-400/30"
                       }`}
                     >
                       {bluray.type === "movie" ? (
@@ -302,13 +302,13 @@ export default function BlurayDetailPage() {
                       {t(`common.${bluray.type}`)}
                     </span>
                     {bluray.release_year && (
-                      <span className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 text-xs font-bold tracking-wide">
+                      <span className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/20 border border-gray-200 dark:border-white/30 text-gray-600 dark:text-slate-100 text-xs font-bold tracking-wide">
                         {bluray.release_year}
                       </span>
                     )}
                     {bluray.runtime && bluray.runtime > 0 && (
-                      <span className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5">
-                        <Clock className="w-3 h-3 text-gray-400 dark:text-slate-400" />
+                      <span className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/20 border border-gray-200 dark:border-white/30 text-gray-600 dark:text-slate-100 text-xs font-bold flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-gray-400 dark:text-slate-100" />
                         {Math.floor(bluray.runtime / 60)}h {bluray.runtime % 60}
                         m
                       </span>
@@ -323,7 +323,17 @@ export default function BlurayDetailPage() {
                     <p className="text-lg sm:text-xl text-gray-600 dark:text-slate-400 font-light tracking-wide">
                       {t("details.directedBy")}{" "}
                       <span className="text-gray-900 dark:text-white font-medium">
-                        {bluray.director}
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`director:${bluray.director}`)}`,
+                            )
+                          }
+                          className="md:hover:underline focus-visible:underline transition-all"
+                          title={t("details.searchForDirector", { director: bluray.director })}
+                        >
+                          {bluray.director}
+                        </button>
                       </span>
                     </p>
                   )}
@@ -366,7 +376,7 @@ export default function BlurayDetailPage() {
                                 )
                               }
                               className="px-4 py-1.5 bg-gray-200 dark:bg-white/5 hover:bg-gray-300 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 rounded-full text-xs font-medium text-gray-700 dark:text-slate-300 transition-all hover:text-gray-900 dark:hover:text-white hover:scale-105 active:scale-95"
-                              title={`Search for genre: ${g}`}
+                              title={t("details.searchForGenre", { genre: g })}
                             >
                               {g}
                             </button>
@@ -562,7 +572,7 @@ export default function BlurayDetailPage() {
                           backgroundColor: `${fullTag.color}10`,
                         }}
                         className="px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 shadow-sm hover:scale-105 hover:shadow-md active:scale-95 transition-all"
-                        title={`Search for tag: ${fullTag.name}`}
+                        title={t("details.searchForTag", { tag: fullTag.name })}
                       >
                         <span
                           className="w-1.5 h-1.5 rounded-full"

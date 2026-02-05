@@ -194,7 +194,10 @@
     "purchaseInfoUpdated": "Informations d'achat mises à jour avec succès",
     "purchaseInfoUpdateError": "Échec de la mise à jour des informations d'achat",
     "purchasePriceHelp": "Entrez le prix d'achat dans votre devise",
-    "purchaseDateHelp": "Sélectionnez quand vous avez acheté cet article"
+    "purchaseDateHelp": "Sélectionnez quand vous avez acheté cet article",
+    "searchForDirector": "Rechercher le réalisateur : {director}",
+    "searchForGenre": "Rechercher le genre : {genre}",
+    "searchForTag": "Rechercher l'étiquette : {tag}"
   },
   "bluray": {
     "title": "Titre",
@@ -336,6 +339,7 @@
     "quickAddBarcode": "Ajout rapide avec code-barres",
     "today": "Aujourd'hui",
     "barcodeScanDesc": "Scannez le code-barres UPC/EAN au dos de votre Bluray pour une recherche instantanée",
+    "optionalFields": "Filtres de recherche optionnels",
     "yearPlaceholder": "2024",
     "foundResults": "{count} résultat(s)",
     "failedToSearch": "Échec de la recherche avec le code-barres",

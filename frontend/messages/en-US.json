@@ -195,7 +195,10 @@
     "purchaseInfoUpdated": "Purchase information updated successfully",
     "purchaseInfoUpdateError": "Failed to update purchase information",
     "purchasePriceHelp": "Enter the purchase price in your currency",
-    "purchaseDateHelp": "Select when you purchased this item"
+    "purchaseDateHelp": "Select when you purchased this item",
+    "searchForDirector": "Search for director: {director}",
+    "searchForGenre": "Search for genre: {genre}",
+    "searchForTag": "Search for tag: {tag}"
   },
   "bluray": {
     "title": "Title",
@@ -338,6 +341,7 @@
     "quickAddBarcode": "Quick Add with Barcode",
     "today": "Today",
     "barcodeScanDesc": "Scan the UPC/EAN barcode on your Bluray case for instant lookup",
+    "optionalFields": "Optional Search Filters",
     "yearPlaceholder": "2024",
     "foundResults": "Found {count} result(s)",
     "failedToSearch": "Failed to search with barcode",

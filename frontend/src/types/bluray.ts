@@ -14,7 +14,6 @@ export interface Season {
   number: number;
   episode_count: number;
   year?: number;
-  description?: I18nText;
 }
 
 export interface Bluray {

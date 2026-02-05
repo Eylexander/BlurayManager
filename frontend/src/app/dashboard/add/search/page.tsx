@@ -133,7 +133,6 @@ export default function AddSearchPage() {
                 year: season.air_date
                   ? parseInt(season.air_date.split("-")[0])
                   : undefined,
-                description: season.name || `Season ${season.season_number}`,
               })),
             release_year: details.first_air_date
               ? parseInt(details.first_air_date.split("-")[0])

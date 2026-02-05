@@ -47,7 +47,7 @@ export default function DashboardPage() {
         bluraysData = await apiClient.searchBlurays(searchQuery, 0, 100);
       } else {
         bluraysData = await apiClient.getSimplifiedBlurays({
-          limit: 12,
+          limit: 16,
         });
       }
 

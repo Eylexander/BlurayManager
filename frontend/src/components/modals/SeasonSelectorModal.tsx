@@ -45,10 +45,6 @@ export default function SeasonSelectorModal({
             number: s.season_number,
             episode_count: s.episode_count,
             year: extractYear(s.air_date),
-            description: {
-              "en-US": `${s.name} - ${s.episode_count} episodes`,
-              "fr-FR": `${s.name} - ${s.episode_count} épisodes`,
-            },
           }));
         
         setAvailableSeasons(seasons);

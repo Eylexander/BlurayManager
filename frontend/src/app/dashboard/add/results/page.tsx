@@ -81,7 +81,6 @@ const buildBlurayData = (
           year: season?.air_date
             ? parseInt(season.air_date.split("-")[0])
             : undefined,
-          description: season?.name || `Season ${seasonNum}`,
         };
       });
     } else if (details.seasons) {
@@ -94,7 +93,6 @@ const buildBlurayData = (
           year: season.air_date
             ? parseInt(season.air_date.split("-")[0])
             : undefined,
-          description: season.name || `Season ${season.season_number}`,
         }));
     }
     blurayData.release_year =
