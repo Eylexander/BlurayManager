@@ -42,7 +42,8 @@
   "filter": {
     "recentlyAdded": "Ajoutés récemment",
     "name": "Nom (A-Z)",
-    "releaseDate": "Date de sortie"
+    "releaseDate": "Date de sortie",
+    "rating": "Note"
   },
   "nav": {
     "home": "Accueil",
@@ -377,6 +378,7 @@
     "searching": "Recherche...",
     "cancel": "Annuler",
     "scanned": "Scanné",
+    "added": "Ajouté",
     "clearAll": "Tout effacer",
     "finishBatch": "Terminer le batch",
     "processing": "Traitement...",

@@ -42,7 +42,8 @@
   "filter": {
     "recentlyAdded": "Recently Added",
     "name": "Name (A-Z)",
-    "releaseDate": "Release Date"
+    "releaseDate": "Release Date",
+    "rating": "Rating"
   },
   "nav": {
     "home": "Home",
@@ -379,6 +380,7 @@
     "searching": "Searching...",
     "cancel": "Cancel",
     "scanned": "Scanned",
+    "added": "Added",
     "clearAll": "Clear All",
     "finishBatch": "Finish Batch",
     "processing": "Processing...",

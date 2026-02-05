@@ -59,6 +59,16 @@ export default function AddScanPage() {
   const lastScannedRef = useRef<string | null>(null);
   const lastScanTimeRef = useRef<number>(0);
 
+  // Validate barcode format (numeric, valid length for UPC/EAN)
+  const isValidBarcode = (barcode: string): boolean => {
+    const trimmed = barcode.trim();
+    // Check if numeric
+    if (!/^\d+$/.test(trimmed)) return false;
+    // Check common barcode lengths: EAN-8 (8), UPC-A (12), EAN-13 (13)
+    const validLengths = [8, 12, 13];
+    return validLengths.includes(trimmed.length);
+  };
+
   // Initialize ZXing reader
   useEffect(() => {
     codeReaderRef.current = new BrowserMultiFormatReader();
@@ -113,6 +123,11 @@ export default function AddScanPage() {
           if (result) {
             const barcode = result.getText();
             const now = Date.now();
+
+            // Validate barcode format
+            if (!isValidBarcode(barcode)) {
+              return; // Ignore invalid barcodes (artifacts)
+            }
 
             // Debounce Logic
             if (
@@ -340,23 +355,30 @@ export default function AddScanPage() {
 
   const handleManualSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!manualInput.trim()) {
+    const trimmed = manualInput.trim();
+
+    if (!trimmed) {
+      toast.error(tBarcode("invalidBarcode"));
+      return;
+    }
+
+    if (!isValidBarcode(trimmed)) {
       toast.error(tBarcode("invalidBarcode"));
       return;
     }
 
     if (isBatchMode) {
       setScannedBarcodes((prev) => {
-        if (!prev.includes(manualInput.trim())) {
-          toast.success(`${tBarcode("scanned")}: ${manualInput.trim()}`);
-          return [manualInput.trim(), ...prev];
+        if (!prev.includes(trimmed)) {
+          toast.success(`${tBarcode("added")}: ${trimmed}`);
+          return [trimmed, ...prev];
         }
         toast(tBarcode("alreadyScanned"), { icon: "ℹ️" });
         return prev;
       });
       setManualInput("");
     } else {
-      handleBarcodeScanned(manualInput.trim());
+      handleBarcodeScanned(trimmed);
     }
   };
 
@@ -396,7 +418,10 @@ export default function AddScanPage() {
 
             if (results.length > 0) {
               const bestMatch = results[0];
-              const details = await apiClient.getTMDBDetails(type, bestMatch.id);
+              const details = await apiClient.getTMDBDetails(
+                type,
+                bestMatch.id,
+              );
 
               const blurayData = {
                 title:
@@ -475,13 +500,13 @@ export default function AddScanPage() {
       }
 
       toast.dismiss();
-      
+
       if (successCount > 0) {
         toast.success(
           `${t("add.addedToCollection", { title: `${successCount} item(s)` })}`,
         );
       }
-      
+
       if (failCount > 0) {
         toast.error(`Failed to add ${failCount} item(s)`);
       }
@@ -489,7 +514,7 @@ export default function AddScanPage() {
       // Clear the batch and redirect
       setScannedBarcodes([]);
       setSearching(false);
-      
+
       if (successCount > 0) {
         router.push(ROUTES.DASHBOARD.HOME);
       } else {
@@ -719,8 +744,14 @@ export default function AddScanPage() {
                     <form onSubmit={handleManualSubmit} className="space-y-4">
                       <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={manualInput}
-                        onChange={(e) => setManualInput(e.target.value)}
+                        onChange={(e) => {
+                          // Only allow numeric input
+                          const value = e.target.value.replace(/\D/g, "");
+                          setManualInput(value);
+                        }}
                         placeholder="e.g. 883904245645"
                         className="w-full px-4 py-3 bg-white dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-lg tracking-widest font-mono text-gray-900 dark:text-white transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
                         autoFocus

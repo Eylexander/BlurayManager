@@ -67,7 +67,7 @@ type BarcodeItem struct {
 func (c *Controller) LookupBarcode(ctx context.Context, barcode string) ([]BarcodeItem, error) {
 	// Call DVDFr API with barcode (gencode parameter)
 	// Use BRD for Blu-ray filtering
-	url := fmt.Sprintf("http://www.dvdfr.com/api/search.php?gencode=%s&produit=BRD", barcode)
+	url := fmt.Sprintf("http://www.dvdfr.com/api/search.php?gencode=%s", barcode)
 
 	// Create HTTP client with custom User-Agent (required by DVDFr)
 	client := &http.Client{}

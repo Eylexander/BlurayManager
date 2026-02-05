@@ -18,7 +18,7 @@ import SortDropdown from "@/components/common/SortDropdown";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
 import useRouteProtection from "@/hooks/useRouteProtection";
 
-type SortOption = "recent" | "name" | "release_date";
+type SortOption = "recent" | "name" | "release_date" | "rating";
 
 export default function DashboardPage() {
   const t = useTranslations();
@@ -94,6 +94,8 @@ export default function DashboardPage() {
         const yearA = a.release_year || 0;
         const yearB = b.release_year || 0;
         return yearB - yearA;
+      case "rating":
+        return b.rating - a.rating; // Highest rating first
       case "recent":
       default:
         return 0; // Keep original order (most recent first)
@@ -108,6 +110,8 @@ export default function DashboardPage() {
         return t("filter.name");
       case "release_date":
         return t("filter.releaseDate");
+      case "rating":
+        return t("filter.rating");
       case "recent":
       default:
         return t("filter.recentlyAdded");

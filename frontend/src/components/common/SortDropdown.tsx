@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ArrowUpDown, Check } from 'lucide-react'; 
 import { useTranslations } from 'next-intl';
 
-type SortOption = 'recent' | 'name' | 'release_date';
+type SortOption = 'recent' | 'name' | 'release_date' | 'rating';
 
 type SortDropdownProps = {
   sortBy: SortOption;
@@ -18,6 +18,7 @@ const SortDropdown = ({ sortBy, setSortBy }: SortDropdownProps) => {
     { value: 'recent', label: t('filter.recentlyAdded') },
     { value: 'name', label: t('filter.name') },
     { value: 'release_date', label: t('filter.releaseDate') },
+    { value: 'rating', label: t('filter.rating') },
   ];
 
   const currentLabel = options.find((o) => o.value === sortBy)?.label;
