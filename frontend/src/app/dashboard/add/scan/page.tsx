@@ -369,16 +369,138 @@ export default function AddScanPage() {
     stopCamera();
     setSearching(true);
 
+    let successCount = 0;
+    let failCount = 0;
+    const total = scannedBarcodes.length;
+
     try {
-      toast.loading(tBarcode("processing"));
+      toast.loading(`${tBarcode("processing")} (0/${total})`);
 
       // Process each barcode sequentially
-      for (const barcode of scannedBarcodes) {
-        await handleBarcodeScanned(barcode);
-        break;
+      for (let i = 0; i < scannedBarcodes.length; i++) {
+        const barcode = scannedBarcodes[i];
+        toast.loading(`${tBarcode("processing")} (${i + 1}/${total})`);
+
+        try {
+          // Lookup the barcode
+          const dvdfrData = await apiClient.lookupBarcode(barcode);
+
+          if (dvdfrData.items && dvdfrData.items.length > 0) {
+            const product = dvdfrData.items[0];
+            let title = cleanProductTitle(product.title);
+            const year = product.year;
+
+            // Search TMDB
+            const response = await apiClient.searchTMDB(type, title, year);
+            const results = response.results || [];
+
+            if (results.length > 0) {
+              const bestMatch = results[0];
+              const details = await apiClient.getTMDBDetails(type, bestMatch.id);
+
+              const blurayData = {
+                title:
+                  details.original_title ||
+                  details.original_name ||
+                  details.title ||
+                  details.name ||
+                  "Unknown Title",
+                type,
+                description: {
+                  "en-US": details.overview || "",
+                  "fr-FR": details.fr?.overview || "",
+                },
+                director: details.director || "",
+                genre: {
+                  "en-US": details.genres
+                    ? details.genres.map((g: any) => g.name)
+                    : [],
+                  "fr-FR": details.fr?.genres
+                    ? details.fr.genres.map((g: any) => g.name)
+                    : [],
+                },
+                cover_image_url: details.poster_path
+                  ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
+                  : null,
+                backdrop_url: details.backdrop_path
+                  ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
+                  : null,
+                purchase_date: purchaseDate
+                  ? new Date(purchaseDate).toISOString()
+                  : null,
+                rating: details.vote_average || 0,
+                tags,
+                tmdb_id: details.id?.toString(),
+                ...(type === "movie" && {
+                  release_year: details.release_date
+                    ? parseInt(details.release_date.split("-")[0])
+                    : year
+                      ? parseInt(year)
+                      : undefined,
+                  runtime: details.runtime || 0,
+                }),
+                ...(type === "series" &&
+                  details.seasons && {
+                    seasons: details.seasons
+                      .filter((s: any) => s.season_number > 0)
+                      .map((season: any) => ({
+                        number: season.season_number,
+                        episode_count: season.episode_count || 0,
+                        year: season.air_date
+                          ? parseInt(season.air_date.split("-")[0])
+                          : undefined,
+                        description:
+                          season.name || `Season ${season.season_number}`,
+                      })),
+                    release_year: details.first_air_date
+                      ? parseInt(details.first_air_date.split("-")[0])
+                      : year
+                        ? parseInt(year)
+                        : undefined,
+                  }),
+              };
+
+              await apiClient.createBluray(blurayData);
+              successCount++;
+            } else {
+              failCount++;
+            }
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to process barcode ${barcode}:`, error);
+          failCount++;
+        }
+      }
+
+      toast.dismiss();
+      
+      if (successCount > 0) {
+        toast.success(
+          `${t("add.addedToCollection", { title: `${successCount} item(s)` })}`,
+        );
+      }
+      
+      if (failCount > 0) {
+        toast.error(`Failed to add ${failCount} item(s)`);
+      }
+
+      // Clear the batch and redirect
+      setScannedBarcodes([]);
+      setSearching(false);
+      
+      if (successCount > 0) {
+        router.push(ROUTES.DASHBOARD.HOME);
+      } else {
+        startCamera();
       }
     } catch (error) {
-      // ...
+      console.error("Batch processing error:", error);
+      toast.dismiss();
+      toast.error(t("add.searchFailed"));
+      setSearching(false);
+      startCamera();
     }
   };
 
@@ -676,7 +798,7 @@ export default function AddScanPage() {
                                 prev.filter((c) => c !== code),
                               )
                             }
-                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
                           >
                             <X className="w-4 h-4" />
                           </button>
