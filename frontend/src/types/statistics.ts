@@ -23,7 +23,6 @@ export interface Statistics {
   newest_bluray: BlurayStats | null;
   genre_distribution: Record<string, number>;
   tag_distribution: Record<string, number>;
-  year_distribution: Record<number, number>;
   average_rating: number;
   top_rated: BlurayStats[];
 }

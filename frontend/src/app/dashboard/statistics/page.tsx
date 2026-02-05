@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart,
   Bar,
@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api-client";
-import useRouteProtection from "@/hooks/useRouteProtection";
+import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 import { Statistics } from "@/types/statistics";
 import StatsCard from "@/components/common/StatsCard";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
@@ -69,6 +69,7 @@ const ChartContainer = ({
 export default function StatisticsPage() {
   const t = useTranslations();
   const pathname = usePathname();
+  const router = useRouter();
   const [stats, setStats] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -274,11 +275,13 @@ export default function StatisticsPage() {
             </span>
           </div>
           <p className="text-4xl font-bold">
-            €{(stats.total_blurays * 4).toFixed(2)}
+            €{(stats.total_spent || 0).toFixed(2)}
           </p>
           <p className="mt-2 text-green-100 text-sm flex items-center">
             <ArrowUpRight className="w-4 h-4 mr-1" />
-            {t("statistics.estimatedValueSubtitle")}
+            {t("statistics.estimatedValueSubtitle", {
+              value: stats.average_price.toFixed(2),
+            })}
           </p>
         </div>
 
@@ -321,48 +324,80 @@ export default function StatisticsPage() {
       </div>
 
       {/* History & Highlights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50 flex flex-col">
           <div className="flex items-center gap-2 mb-6 text-amber-600 uppercase text-xs font-bold tracking-widest">
             <History className="w-4 h-4" /> {t("statistics.timelineMilestones")}
           </div>
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">
+
+          {/* Use flex-1 and justify-around to spread the two items out vertically */}
+          <div className="flex-1 flex flex-col justify-around">
+            <div className="flex justify-between items-center group p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <div className="flex flex-col">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
                   {t("statistics.oldest")}
                 </p>
-                <p className="font-bold">{stats.oldest_bluray?.title}</p>
+                <button
+                  onClick={() =>
+                    router.push(
+                      ROUTES.DASHBOARD.BLURAYS.DETAIL.replace(
+                        "[id]",
+                        stats.oldest_bluray?.id || "",
+                      ),
+                    )
+                  }
+                  className="font-bold text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1"
+                >
+                  {stats.oldest_bluray?.title}
+                </button>
               </div>
-              <span className="text-2xl font-black">
+              <span className="text-3xl font-black text-gray-600 dark:text-gray-100">
                 {stats.oldest_bluray?.release_year}
               </span>
             </div>
-            <div className="h-px bg-gray-100 dark:bg-gray-700 w-full" />
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">
+
+            <div className="h-px bg-gradient-to-r from-transparent via-gray-100 dark:via-gray-700 to-transparent w-full my-4" />
+
+            <div className="flex justify-between items-center group p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <div className="flex flex-col">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
                   {t("statistics.newest")}
                 </p>
-                <p className="font-bold">{stats.newest_bluray?.title}</p>
+                <button
+                  onClick={() =>
+                    router.push(
+                      ROUTES.DASHBOARD.BLURAYS.DETAIL.replace(
+                        "[id]",
+                        stats.newest_bluray?.id || "",
+                      ),
+                    )
+                  }
+                  className="font-bold text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1"
+                >
+                  {stats.newest_bluray?.title}
+                </button>
               </div>
-              <span className="text-2xl font-black">
+              <span className="text-3xl font-black text-gray-600 dark:text-gray-100">
                 {stats.newest_bluray?.release_year}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Top Rated List */}
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50">
+        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50 flex flex-col">
           <div className="flex items-center gap-2 mb-6 text-blue-600 uppercase text-xs font-bold tracking-widest">
             <Award className="w-4 h-4" /> {t("statistics.topRated")}
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2 flex-1 flex flex-col justify-between">
             {stats.top_rated?.slice(0, 5).map((item, index) => (
-              <div
+              <button
                 key={item.id}
-                className="flex items-center justify-between group"
+                onClick={() =>
+                  router.push(
+                    ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", item.id),
+                  )
+                }
+                className="flex items-center justify-between group w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg p-2 -mx-2 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-gray-400 w-4">
@@ -378,7 +413,7 @@ export default function StatisticsPage() {
                     {item.rating?.toFixed(1)}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

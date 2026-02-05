@@ -17,7 +17,6 @@ type Statistics struct {
 	NewestBluray         *BlurayStats   `json:"newest_bluray"`
 	GenreDistribution    map[string]int `json:"genre_distribution"`
 	TagDistribution      map[string]int `json:"tag_distribution"`
-	YearDistribution     map[int]int    `json:"year_distribution"`
 	AverageRating        float64        `json:"average_rating"`
 	TopRated             []BlurayStats  `json:"top_rated"`
 }

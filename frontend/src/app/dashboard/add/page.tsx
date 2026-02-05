@@ -109,6 +109,30 @@ export default function AddBlurayPage() {
         </h1>
       </div>
 
+      {/* Barcode Scanner Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 border border-purple-300 dark:border-purple-600/30 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex-1">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+              <div className="w-1 h-6 bg-purple-500 rounded-full" />
+              {t("add.quickAddBarcode")}
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-3">
+              {t("add.barcodeScanDesc")}
+            </p>
+          </div>
+
+          <Button
+            variant="primary"
+            onClick={handleScanBarcode}
+            icon={<Camera className="w-5 h-5" />}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
+          >
+            {t("barcode.title")}
+          </Button>
+        </div>
+      </div>
+
       {/* Main Form Section */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-md">
         <div className="space-y-3 sm:space-y-6">
@@ -297,29 +321,7 @@ export default function AddBlurayPage() {
         </div>
       </div>
 
-      {/* Barcode Scanner Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 border border-purple-300 dark:border-purple-600/30 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-          <div className="flex-1">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-              <div className="w-1 h-6 bg-purple-500 rounded-full" />
-              {t("add.quickAddBarcode")}
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-3">
-              {t("add.barcodeScanDesc")}
-            </p>
-          </div>
 
-          <Button
-            variant="primary"
-            onClick={handleScanBarcode}
-            icon={<Camera className="w-5 h-5" />}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
-          >
-            {t("barcode.title")}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

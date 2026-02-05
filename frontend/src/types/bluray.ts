@@ -32,7 +32,6 @@ export interface Bluray {
   backdrop_url: string;
   purchase_price: number;
   purchase_date: string;
-  location: string;
   tags: string[];
   rating: number;
   tmdb_id?: string;
@@ -55,7 +54,6 @@ export interface CreateBlurayRequest {
   backdrop_url: string;
   purchase_price: number;
   purchase_date: string;
-  location: string;
   tags: string[];
   rating: number;
   tmdb_id?: string;

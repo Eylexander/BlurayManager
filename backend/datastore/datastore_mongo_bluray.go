@@ -49,7 +49,6 @@ func (ds *MongoDatastore) UpdateBluray(ctx context.Context, bluray *models.Blura
 		"backdrop_url":    bluray.BackdropURL,
 		"purchase_price":  bluray.PurchasePrice,
 		"purchase_date":   bluray.PurchaseDate,
-		"location":        bluray.Location,
 		"tags":            bluray.Tags,
 		"rating":          bluray.Rating,
 		"tmdb_id":         bluray.TMDBID,

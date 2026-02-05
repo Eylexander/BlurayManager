@@ -17,6 +17,7 @@ func (api *API) SearchTMDB(c *gin.Context) {
 	i18n := api.GetI18n(c)
 	mediaType := c.Query("type")
 	query := c.Query("query")
+	year := c.Query("year")
 	lang := c.GetHeader("Accept-Language")
 	if lang == "" {
 		lang = "en-US"
@@ -26,7 +27,9 @@ func (api *API) SearchTMDB(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("tmdb.typeAndQueryRequired")})
 		return
 	}
-	if mediaType == "series" {
+
+	isTVSeries := mediaType == "series"
+	if isTVSeries {
 		mediaType = "tv"
 	}
 
@@ -35,12 +38,57 @@ func (api *API) SearchTMDB(c *gin.Context) {
 	params.Add("query", query)
 	params.Add("language", lang)
 
+	// Add year filter if provided
+	if year != "" {
+		if isTVSeries {
+			params.Add("first_air_date_year", year)
+		} else {
+			params.Add("year", year)
+		}
+	}
+
 	reqURL := fmt.Sprintf("%s/search/%s?%s", tmdbBaseURL, mediaType, params.Encode())
 
 	result, err := api.fetchTMDB(reqURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("tmdb.failedToSearch")})
 		return
+	}
+
+	// Filter results by exact year match if year parameter was provided
+	if year != "" {
+		if results, ok := result["results"].([]interface{}); ok {
+			filteredResults := make([]interface{}, 0)
+			for _, item := range results {
+				if resultMap, ok := item.(map[string]interface{}); ok {
+					// Get release date based on media type
+					var releaseDate string
+					if isTVSeries {
+						if date, ok := resultMap["first_air_date"].(string); ok {
+							releaseDate = date
+						}
+					} else {
+						if date, ok := resultMap["release_date"].(string); ok {
+							releaseDate = date
+						}
+					}
+
+					// Extract year from date (format: YYYY-MM-DD)
+					if len(releaseDate) >= 4 {
+						resultYear := releaseDate[:4]
+						if resultYear == year {
+							filteredResults = append(filteredResults, item)
+						}
+					}
+				}
+			}
+
+			// Only use filtered results if we found matches
+			if len(filteredResults) > 0 {
+				result["results"] = filteredResults
+				result["total_results"] = len(filteredResults)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, result)

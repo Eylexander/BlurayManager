@@ -47,7 +47,6 @@ type Bluray struct {
 	BackdropURL   string        `bson:"backdrop_url" json:"backdrop_url"`
 	PurchasePrice float64       `bson:"purchase_price" json:"purchase_price"`
 	PurchaseDate  time.Time     `bson:"purchase_date" json:"purchase_date"`
-	Location      string        `bson:"location" json:"location"` // Physical location in storage
 	Tags          []string      `bson:"tags" json:"tags"`
 	Rating        float64       `bson:"rating" json:"rating"` // Personal rating
 
@@ -84,10 +83,10 @@ type SimplifiedBluray struct {
 
 // Season represents a season in a series
 type Season struct {
-	Number       int    `bson:"number" json:"number"`
-	EpisodeCount int    `bson:"episode_count" json:"episode_count"`
-	Year         int    `bson:"year,omitempty" json:"year,omitempty"`
-	Description  string `bson:"description,omitempty" json:"description,omitempty"`
+	Number       int      `bson:"number" json:"number"`
+	EpisodeCount int      `bson:"episode_count" json:"episode_count"`
+	Year         int      `bson:"year,omitempty" json:"year,omitempty"`
+	Description  I18nText `bson:"description,omitempty" json:"description,omitempty"`
 }
 
 // CreateBlurayRequest is the request body for creating a bluray
@@ -104,7 +103,6 @@ type CreateBlurayRequest struct {
 	BackdropURL   string    `json:"backdrop_url"`
 	PurchasePrice float64   `json:"purchase_price"`
 	PurchaseDate  time.Time `json:"purchase_date"`
-	Location      string    `json:"location"`
 	Tags          []string  `json:"tags"`
 	Rating        float64   `json:"rating"`
 	TMDBID        string    `json:"tmdb_id,omitempty"`
@@ -125,7 +123,6 @@ type UpdateBlurayRequest struct {
 	BackdropURL   *string    `json:"backdrop_url,omitempty"`
 	PurchasePrice *float64   `json:"purchase_price,omitempty"`
 	PurchaseDate  *time.Time `json:"purchase_date,omitempty"`
-	Location      *string    `json:"location,omitempty"`
 	Tags          *[]string  `json:"tags,omitempty"`
 	Rating        *float64   `json:"rating,omitempty"`
 	TMDBID        *string    `json:"tmdb_id,omitempty"`

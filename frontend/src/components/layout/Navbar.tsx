@@ -7,7 +7,6 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { Search, Bell, User, X, Film, Tv } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import toast from "react-hot-toast";
 import { useNotifications, Notification } from "@/hooks/useNotification";
 import { ROUTES } from "@/hooks/useRouteProtection";
 import { getLocalizedTextArray } from "@/lib/bluray-utils";

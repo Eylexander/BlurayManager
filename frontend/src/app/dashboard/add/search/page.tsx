@@ -49,8 +49,11 @@ export default function AddSearchPage() {
     const searchTMDB = async () => {
       setLoading(true);
       try {
-        const query = year ? `${name} ${year}` : name;
-        const response = await apiClient.searchTMDB(type, query);
+        const response = await apiClient.searchTMDB(
+          type,
+          name,
+          year || undefined,
+        );
         setSearchResults(response.results || []);
       } catch (error) {
         console.error("Search error:", error);
@@ -82,7 +85,12 @@ export default function AddSearchPage() {
 
       // Data mapping remains the same as your original logic
       const blurayData = {
-        title: details.title || details.name || "Unknown Title",
+        title:
+          details.original_title ||
+          details.original_name ||
+          details.title ||
+          details.name ||
+          "Unknown Title",
         type,
         description: {
           "en-US": details.overview || "",

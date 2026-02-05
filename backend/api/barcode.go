@@ -1,15 +1,12 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-// LookupBarcode proxies UPC lookup requests to avoid CORS issues
+// LookupBarcode handles barcode lookup requests
 func (api *API) LookupBarcode(c *gin.Context) {
 	barcode := c.Param("barcode")
 
@@ -18,28 +15,16 @@ func (api *API) LookupBarcode(c *gin.Context) {
 		return
 	}
 
-	// Call UPC Item DB API
-	url := fmt.Sprintf("https://api.upcitemdb.com/prod/trial/lookup?upc=%s", barcode)
-
-	resp, err := http.Get(url)
+	// Call controller to perform the lookup
+	items, err := api.ctrl.LookupBarcode(c.Request.Context(), barcode)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to lookup barcode"})
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Parse the response
-	var result map[string]interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
-		return
-	}
-
-	c.JSON(http.StatusOK, result)
+	// Return in format expected by frontend
+	c.JSON(http.StatusOK, gin.H{
+		"items": items,
+		"total": len(items),
+	})
 }

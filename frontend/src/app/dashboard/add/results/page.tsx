@@ -33,7 +33,12 @@ const buildBlurayData = (
   seasons?: number[],
 ): any => {
   const blurayData: any = {
-    title: details.title || details.name || "Unknown Title",
+    title:
+      details.original_title ||
+      details.original_name ||
+      details.title ||
+      details.name ||
+      "Unknown Title",
     type,
     description: {
       "en-US": details.overview || "",

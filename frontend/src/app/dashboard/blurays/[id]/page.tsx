@@ -257,8 +257,8 @@ export default function BlurayDetailPage() {
                 <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-950" />
               )}
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/90 dark:from-slate-950 dark:via-slate-950/90 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-50 via-slate-50/20 dark:from-slate-950 dark:via-slate-950/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-50 via-neutral-50/20 dark:from-slate-950 dark:via-slate-950/10 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r dark:from-slate-950 dark:via-slate-950/5 to-transparent pointer-events-none hidden md:block" />
           </div>
 
           {/* Main Content */}
@@ -290,8 +290,8 @@ export default function BlurayDetailPage() {
                     <span
                       className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-1.5 border shadow-sm ${
                         bluray.type === "movie"
-                          ? "bg-blue-500/20 text-blue-300 border-blue-400/30"
-                          : "bg-purple-500/20 text-purple-300 border-purple-400/30"
+                          ? "bg-blue-100/50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-400/30"
+                          : "bg-purple-100/50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-400/30"
                       }`}
                     >
                       {bluray.type === "movie" ? (
@@ -302,13 +302,13 @@ export default function BlurayDetailPage() {
                       {t(`common.${bluray.type}`)}
                     </span>
                     {bluray.release_year && (
-                      <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-xs font-bold tracking-wide">
+                      <span className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 text-xs font-bold tracking-wide">
                         {bluray.release_year}
                       </span>
                     )}
                     {bluray.runtime && bluray.runtime > 0 && (
-                      <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-xs font-bold flex items-center gap-1.5">
-                        <Clock className="w-3 h-3 text-slate-400" />
+                      <span className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-gray-400 dark:text-slate-400" />
                         {Math.floor(bluray.runtime / 60)}h {bluray.runtime % 60}
                         m
                       </span>
@@ -332,20 +332,20 @@ export default function BlurayDetailPage() {
                 <div className="flex flex-col md:flex-row items-center gap-6 pt-2">
                   {/* Rating */}
                   {bluray.rating && bluray.rating > 0 && (
-                    <div className="flex items-center gap-3 bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-3 bg-gray-100/80 dark:bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl border border-gray-200 dark:border-white/5">
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${star <= Math.round(bluray.rating / 2) ? "text-yellow-400 fill-yellow-400" : "text-slate-700"}`}
+                            className={`w-4 h-4 ${star <= Math.round(bluray.rating / 2) ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-slate-700"}`}
                           />
                         ))}
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-white font-black text-xl leading-none">
+                        <span className="text-gray-900 dark:text-white font-black text-xl leading-none">
                           {bluray.rating}
                         </span>
-                        <span className="text-slate-500 text-xs font-bold uppercase tracking-tighter">
+                        <span className="text-gray-500 dark:text-slate-500 text-xs font-bold uppercase tracking-tighter">
                           / 10
                         </span>
                       </div>

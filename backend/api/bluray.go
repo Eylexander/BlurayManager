@@ -2,6 +2,7 @@ package api
 
 import (
 	"eylexander/bluraymanager/models"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -35,10 +36,11 @@ func (api *API) CreateBluray(c *gin.Context) {
 	}
 
 	// Create notification
+	i18n := api.GetI18n(c)
 	notification := &models.Notification{
 		UserID:   id,
 		Type:     models.NotificationBlurayAdded,
-		Message:  "New item added to collection: " + bluray.Title,
+		Message:  fmt.Sprintf(i18n.T("notification.bluray_added"), bluray.Title),
 		BlurayID: bluray.ID,
 	}
 	api.ctrl.CreateNotification(c.Request.Context(), notification)
@@ -143,10 +145,11 @@ func (api *API) DeleteBluray(c *gin.Context) {
 	}
 
 	// Create notification
+	i18n := api.GetI18n(c)
 	notification := &models.Notification{
 		UserID:   uid,
 		Type:     models.NotificationBlurayRemoved,
-		Message:  "Item removed from collection: " + bluray.Title,
+		Message:  fmt.Sprintf(i18n.T("notification.bluray_deleted"), bluray.Title),
 		BlurayID: id,
 	}
 	api.ctrl.CreateNotification(c.Request.Context(), notification)
@@ -203,7 +206,7 @@ func (api *API) ExportBlurays(c *gin.Context) {
 	}
 
 	// Create CSV content
-	csv := "Title,Type,Genre,DescriptionEn,DescriptionFr,Director,ReleaseYear,Runtime,Rating,PurchasePrice,PurchaseDate,Location,CoverImageURL,Tags,SeasonsCount,TotalEpisodes\n"
+	csv := "Title,Type,Genre,DescriptionEn,DescriptionFr,Director,ReleaseYear,Runtime,Rating,PurchasePrice,PurchaseDate,CoverImageURL,Tags,SeasonsCount,TotalEpisodes\n"
 
 	for _, bluray := range blurays {
 		// Escape and format fields
@@ -264,13 +267,12 @@ func (api *API) ExportBlurays(c *gin.Context) {
 		descEn := escapeCSV(bluray.Description.En)
 		descFr := escapeCSV(bluray.Description.Fr)
 		director := escapeCSV(bluray.Director)
-		location := escapeCSV(bluray.Location)
 		coverURL := escapeCSV(bluray.CoverImageURL)
 		typeStr := string(bluray.Type)
 
 		csv += title + "," + typeStr + "," + genre + "," + descEn + "," + descFr + "," + director + "," +
 			releaseYear + "," + runtime + "," + rating + "," + purchasePrice + "," +
-			purchaseDate + "," + location + "," + coverURL + "," + tags + "," +
+			purchaseDate + "," + coverURL + "," + tags + "," +
 			seasonsCount + "," + totalEpisodes + "\n"
 	}
 
@@ -368,8 +370,7 @@ func (api *API) ImportBlurays(c *gin.Context) {
 			Rating:        rating,
 			PurchasePrice: purchasePrice,
 			PurchaseDate:  purchaseDate,
-			Location:      fields[11],
-			CoverImageURL: fields[12],
+			CoverImageURL: fields[11],
 			Tags:          tags,
 			TotalEpisodes: totalEpisodes,
 		}

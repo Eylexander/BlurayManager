@@ -206,9 +206,9 @@ class ApiClient {
   }
 
   // TMDB endpoints
-  async searchTMDB(type: string, query: string) {
+  async searchTMDB(type: string, query: string, year?: string) {
     const response = await this.client.get('/tmdb/search', {
-      params: { type, query },
+      params: { type, query, ...(year && { year }) },
     });
     return response.data;
   }

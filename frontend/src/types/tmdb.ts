@@ -2,6 +2,8 @@ export interface TMDBDetails {
     id: number;
     title?: string;
     name?: string;
+    original_title?: string;
+    original_name?: string;
     release_date?: string;
     first_air_date?: string;
     last_air_date?: string;
@@ -32,6 +34,8 @@ export interface TMDBResult {
     id: number;
     title?: string;
     name?: string;
+    original_title?: string;
+    original_name?: string;
     director?: string;
     release_date?: string;
     first_air_date?: string;
