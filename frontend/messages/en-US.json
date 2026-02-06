@@ -199,7 +199,12 @@
     "purchaseDateHelp": "Select when you purchased this item",
     "searchForDirector": "Search for director: {director}",
     "searchForGenre": "Search for genre: {genre}",
-    "searchForTag": "Search for tag: {tag}"
+    "searchForTag": "Search for tag: {tag}",
+    "refreshFromTmdb": "Refresh from TMDB",
+    "confirmRefresh": "Are you sure you want to refresh this item from TMDB? This will overwrite title, description, images, and other metadata while preserving your tags, seasons, and purchase information.",
+    "refreshSuccess": "Successfully refreshed from TMDB",
+    "refreshError": "Failed to refresh from TMDB",
+    "noTmdbId": "Cannot refresh: No TMDB ID available"
   },
   "bluray": {
     "title": "Title",

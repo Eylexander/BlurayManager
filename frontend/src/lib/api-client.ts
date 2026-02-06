@@ -258,9 +258,13 @@ class ApiClient {
   // Import/Export endpoints
   async exportBlurays() {
     const response = await this.client.get('/blurays/export', {
-      responseType: 'text',
+      responseType: 'blob',
     });
-    return response.data;
+    
+    // Ensure we're treating it as UTF-8 text
+    const blob = new Blob([response.data], { type: 'text/csv; charset=utf-8' });
+    const text = await blob.text();
+    return text;
   }
 
   async importBlurays(formData: FormData) {

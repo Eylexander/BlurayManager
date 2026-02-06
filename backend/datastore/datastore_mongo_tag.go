@@ -60,3 +60,18 @@ func (ds *MongoDatastore) ListTags(ctx context.Context) ([]*models.Tag, error) {
 	}
 	return tags, nil
 }
+
+// SearchTagsByName searches for tags by name pattern (case-insensitive)
+func (ds *MongoDatastore) SearchTagsByName(ctx context.Context, pattern string) ([]*models.Tag, error) {
+	regexPattern := bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}
+	cursor, err := ds.tags.Find(ctx, bson.M{"name": regexPattern})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var tags []*models.Tag
+	if err := cursor.All(ctx, &tags); err != nil {
+		return nil, err
+	}
+	return tags, nil
+}

@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Hash,
   Euro,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import AddTagModal from "@/components/modals/AddTagModal";
@@ -52,6 +53,7 @@ export default function BlurayDetailPage() {
   const [bluray, setBluray] = useState<Bluray | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [editingTags, setEditingTags] = useState(false);
   const [editingSeasons, setEditingSeasons] = useState(false);
   const [editingPurchaseInfo, setEditingPurchaseInfo] = useState(false);
@@ -106,6 +108,85 @@ export default function BlurayDetailPage() {
       toast.error(t("details.deleteError"));
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleRefreshFromTMDB = async () => {
+    if (!bluray?.tmdb_id) {
+      toast.error(t("details.noTmdbId"));
+      return;
+    }
+
+    if (!confirm(t("details.confirmRefresh"))) return;
+
+    setRefreshing(true);
+    try {
+      // Preserve user-edited data
+      const preservedData = {
+        tags: bluray.tags,
+        seasons: bluray.seasons,
+        purchase_price: bluray.purchase_price,
+        purchase_date: bluray.purchase_date,
+      };
+
+      // Fetch fresh data from TMDB through the backend
+      const tmdbData = await apiClient.getTMDBDetails(
+        bluray.type,
+        parseInt(bluray.tmdb_id),
+      );
+
+      // Transform TMDB data to match Bluray structure
+      const transformedData: Partial<Bluray> = {
+        title:
+          tmdbData.original_title ||
+          tmdbData.original_name ||
+          tmdbData.title ||
+          tmdbData.name ||
+          bluray.title,
+        director: tmdbData.director || bluray.director,
+        runtime:
+          tmdbData.runtime || tmdbData.episode_run_time?.[0] || bluray.runtime,
+        rating: tmdbData.vote_average || bluray.rating,
+        description: {
+          "en-US": tmdbData.overview || "",
+          "fr-FR": tmdbData.fr?.overview || tmdbData.overview || "",
+        },
+        genre: {
+          "en-US": tmdbData.genres?.map((g: any) => g.name) || [],
+          "fr-FR":
+            tmdbData.fr?.genres?.map((g: any) => g.name) ||
+            tmdbData.genres?.map((g: any) => g.name) ||
+            [],
+        },
+        cover_image_url: tmdbData.poster_path
+          ? `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`
+          : bluray.cover_image_url,
+        backdrop_url: tmdbData.backdrop_path
+          ? `https://image.tmdb.org/t/p/original${tmdbData.backdrop_path}`
+          : bluray.backdrop_url,
+        release_year: tmdbData.release_date
+          ? new Date(tmdbData.release_date).getFullYear()
+          : tmdbData.first_air_date
+            ? new Date(tmdbData.first_air_date).getFullYear()
+            : bluray.release_year,
+      };
+
+      // Merge with existing bluray and preserved user data
+      const updatedBluray = {
+        ...bluray,
+        ...transformedData,
+        ...preservedData,
+      };
+
+      // Update the bluray in the backend
+      await apiClient.updateBluray(bluray.id, updatedBluray);
+      setBluray(updatedBluray);
+      toast.success(t("details.refreshSuccess"));
+    } catch (error) {
+      console.error("Failed to refresh from TMDB:", error);
+      toast.error(t("details.refreshError"));
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -227,18 +308,32 @@ export default function BlurayDetailPage() {
               <ExternalLink className="w-5 h-5 transition-transform md:group-hover/btn:scale-110" />
             </a>
             {canModify && (
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="p-3 bg-slate-900/60 md:hover:bg-red-500/20 backdrop-blur-xl text-slate-300 md:hover:text-red-400 rounded-xl transition-all duration-300 border border-white/10 md:hover:border-red-500/50 shadow-lg md:hover:shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
-                title={t("details.delete")}
-              >
-                {deleting ? (
-                  <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Trash2 className="w-5 h-5 transition-transform md:group-hover/btn:scale-110" />
-                )}
-              </button>
+              <>
+                <button
+                  onClick={handleRefreshFromTMDB}
+                  disabled={refreshing || !bluray.tmdb_id}
+                  className="p-3 bg-gray-100 dark:bg-slate-900/60 md:hover:bg-green-500/20 backdrop-blur-xl text-gray-700 dark:text-slate-300 md:hover:text-green-600 dark:md:hover:text-green-400 rounded-xl transition-all duration-300 border border-gray-200 dark:border-white/10 md:hover:border-green-500/50 shadow-lg md:hover:shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
+                  title={t("details.refreshFromTmdb")}
+                >
+                  {refreshing ? (
+                    <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-5 h-5 transition-transform md:group-hover/btn:scale-110" />
+                  )}
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="p-3 bg-gray-100 dark:bg-slate-900/60 md:hover:bg-red-500/20 backdrop-blur-xl text-gray-700 dark:text-slate-300 md:hover:text-red-600 dark:md:hover:text-red-400 rounded-xl transition-all duration-300 border border-gray-200 dark:border-white/10 md:hover:border-red-500/50 shadow-lg md:hover:shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
+                  title={t("details.delete")}
+                >
+                  {deleting ? (
+                    <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Trash2 className="w-5 h-5 transition-transform md:group-hover/btn:scale-110" />
+                  )}
+                </button>
+              </>
             )}
           </div>
 
@@ -330,7 +425,9 @@ export default function BlurayDetailPage() {
                             )
                           }
                           className="md:hover:underline focus-visible:underline transition-all"
-                          title={t("details.searchForDirector", { director: bluray.director })}
+                          title={t("details.searchForDirector", {
+                            director: bluray.director,
+                          })}
                         >
                           {bluray.director}
                         </button>

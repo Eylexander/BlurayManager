@@ -34,7 +34,6 @@ export interface Bluray {
   tags: string[];
   rating: number;
   tmdb_id?: string;
-  imdb_id?: string;
   added_by: string;
   created_at: string;
   updated_at: string;
@@ -56,7 +55,6 @@ export interface CreateBlurayRequest {
   tags: string[];
   rating: number;
   tmdb_id?: string;
-  imdb_id?: string;
 }
 
 export interface UpdateBlurayRequest extends Partial<CreateBlurayRequest> {}

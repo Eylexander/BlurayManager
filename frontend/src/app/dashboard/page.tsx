@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Film, Tv, X, LayoutGrid, List, Plus, ArrowDown } from "lucide-react";
+import { Film, Tv, X, LayoutGrid, List } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { apiClient } from "@/lib/api-client";
@@ -16,7 +16,6 @@ import StatsCard from "@/components/common/StatsCard";
 import SortDropdown from "@/components/common/SortDropdown";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
 import useRouteProtection from "@/hooks/useRouteProtection";
-import { Button } from "@/components/common";
 
 type SortOption = "recent" | "name" | "release_date" | "rating";
 
@@ -35,34 +34,35 @@ export default function DashboardPage() {
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [skip, setSkip] = useState(0);
-  const ITEMS_PER_PAGE = 48;
+  const [page, setPage] = useState(0);
+  const ITEMS_PER_PAGE = 32;
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   // Use route protection
   useRouteProtection(pathname);
 
-  // Centralized data fetching function to eliminate duplication
+  // Initial data fetch
   const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
       let bluraysData;
 
       // Use search API if there's a search query
       if (searchQuery) {
         bluraysData = await apiClient.searchBlurays(searchQuery, 0, 100);
-        setHasMore(false); // Disable load more for search
+        setHasMore(false);
       } else {
         bluraysData = await apiClient.getSimplifiedBlurays({
           limit: ITEMS_PER_PAGE,
           skip: 0,
         });
         setHasMore(bluraysData.length === ITEMS_PER_PAGE);
-        setSkip(ITEMS_PER_PAGE);
       }
 
       const statsData = await apiClient.getSimplifiedStatistics();
-
       setStats(statsData);
       setRecentBlurays(bluraysData);
+      setPage(1);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
@@ -70,32 +70,63 @@ export default function DashboardPage() {
     }
   }, [searchQuery]);
 
-  const loadMore = async () => {
+  // Load more items for infinite scroll
+  const loadMoreItems = useCallback(async () => {
     if (loadingMore || !hasMore || searchQuery) return;
 
     setLoadingMore(true);
     try {
       const moreBlurays = await apiClient.getSimplifiedBlurays({
         limit: ITEMS_PER_PAGE,
-        skip: skip,
+        skip: page * ITEMS_PER_PAGE,
       });
 
       if (moreBlurays.length < ITEMS_PER_PAGE) {
         setHasMore(false);
       }
 
-      setRecentBlurays((prev) => [...prev, ...moreBlurays]);
-      setSkip((prev) => prev + ITEMS_PER_PAGE);
+      if (moreBlurays.length > 0) {
+        setRecentBlurays((prev) => [...prev, ...moreBlurays]);
+        setPage((prev) => prev + 1);
+      }
     } catch (error) {
       console.error("Failed to load more blurays:", error);
     } finally {
       setLoadingMore(false);
     }
-  };
+  }, [loadingMore, hasMore, searchQuery, page]);
 
+  // Fetch initial data when search changes
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Set up Intersection Observer for infinite scroll
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target || searchQuery) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMoreItems();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '200px',
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(target);
+
+    return () => {
+      if (target) {
+        observer.unobserve(target);
+      }
+    };
+  }, [hasMore, loadingMore, loadMoreItems, searchQuery]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -296,20 +327,15 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Load More Button */}
-        {!searchQuery && hasMore && recentBlurays.length > 0 && (
-          <div className="flex justify-center mt-8 p-6">
-            <Button
-              onClick={loadMore}
-              disabled={loadingMore}
-              variant="primary"
-              className="px-6 py-3 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              icon={
-                <ArrowDown className="w-5 h-5 group-hover:translate-y-[0.1rem] transition-transform duration-300" />
-              }
-            >
-              {loadingMore ? t("common.loading") : t("common.loadMore")}
-            </Button>
+        {/* Infinite scroll trigger */}
+        {!searchQuery && recentBlurays.length > 0 && (
+          <div ref={observerTarget} className="flex justify-center py-8">
+            {loadingMore && hasMore && (
+              <div className="flex items-center gap-2 text-gray-500">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin"></div>
+                <span>{t("common.loading")}</span>
+              </div>
+            )}
           </div>
         )}
       </div>

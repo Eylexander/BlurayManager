@@ -52,7 +52,6 @@ func (ds *MongoDatastore) UpdateBluray(ctx context.Context, bluray *models.Blura
 		"tags":            bluray.Tags,
 		"rating":          bluray.Rating,
 		"tmdb_id":         bluray.TMDBID,
-		"imdb_id":         bluray.IMDBID,
 		"updated_at":      bluray.UpdatedAt,
 	}
 
@@ -101,7 +100,18 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 			case "director":
 				andConditions = append(andConditions, bson.M{"director": regexPattern})
 			case "tag":
-				andConditions = append(andConditions, bson.M{"tags": regexPattern})
+				// Search for tags by name first, then search blurays by tag IDs
+				matchingTags, err := ds.SearchTagsByName(ctx, f.Value)
+				if err == nil && len(matchingTags) > 0 {
+					tagIDs := make([]string, len(matchingTags))
+					for i, tag := range matchingTags {
+						tagIDs[i] = tag.ID.Hex()
+					}
+					andConditions = append(andConditions, bson.M{"tags": bson.M{"$in": tagIDs}})
+				} else {
+					// If no tags found, add an impossible condition to return no results
+					andConditions = append(andConditions, bson.M{"_id": primitive.NilObjectID})
+				}
 			case "genre":
 				andConditions = append(andConditions, bson.M{
 					"$or": []bson.M{
@@ -133,17 +143,31 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 	} else {
 		// Simple search across all fields (backward compatibility)
 		regexPattern := bson.M{"$regex": primitive.Regex{Pattern: query, Options: "i"}}
-		filter = bson.M{
-			"$or": []bson.M{
-				{"title": regexPattern},
-				{"director": regexPattern},
-				{"tags": regexPattern},
-				{"genre.en-US": regexPattern},
-				{"genre.fr-FR": regexPattern},
-				{"description.en-US": regexPattern},
-				{"description.fr-FR": regexPattern},
-			},
+
+		// For simple search, also check if query matches any tag names
+		matchingTags, _ := ds.SearchTagsByName(ctx, query)
+		tagIDs := make([]string, 0)
+		if len(matchingTags) > 0 {
+			for _, tag := range matchingTags {
+				tagIDs = append(tagIDs, tag.ID.Hex())
+			}
 		}
+
+		orConditions := []bson.M{
+			{"title": regexPattern},
+			{"director": regexPattern},
+			{"genre.en-US": regexPattern},
+			{"genre.fr-FR": regexPattern},
+			{"description.en-US": regexPattern},
+			{"description.fr-FR": regexPattern},
+		}
+
+		// Add tag search if we found matching tags
+		if len(tagIDs) > 0 {
+			orConditions = append(orConditions, bson.M{"tags": bson.M{"$in": tagIDs}})
+		}
+
+		filter = bson.M{"$or": orConditions}
 	}
 
 	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})

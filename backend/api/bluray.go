@@ -3,10 +3,12 @@ package api
 import (
 	"eylexander/bluraymanager/models"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -206,7 +208,7 @@ func (api *API) ExportBlurays(c *gin.Context) {
 	}
 
 	// Create CSV content with UTF-8 BOM
-	csv := "\xEF\xBB\xBF" + "Title,Type,Genre,DescriptionEn,DescriptionFr,Director,ReleaseYear,Runtime,Rating,PurchasePrice,PurchaseDate,CoverImageURL,BackdropURL,Tags,SeasonsCount,TotalEpisodes\n"
+	csv := "\xEF\xBB\xBF" + "Title,Type,GenreEn,GenreFr,DescriptionEn,DescriptionFr,Director,ReleaseYear,Runtime,Rating,PurchasePrice,PurchaseDate,CoverImageURL,BackdropURL,TMDBID,Tags,Seasons,TotalEpisodes\n"
 
 	for _, bluray := range blurays {
 		// Escape and format fields
@@ -220,13 +222,23 @@ func (api *API) ExportBlurays(c *gin.Context) {
 			}
 		}
 
-		genre := ""
+		genreEn := ""
 		if len(bluray.Genre.En) > 0 {
 			for i, g := range bluray.Genre.En {
 				if i > 0 {
-					genre += ";"
+					genreEn += ";"
 				}
-				genre += g
+				genreEn += g
+			}
+		}
+
+		genreFr := ""
+		if len(bluray.Genre.Fr) > 0 {
+			for i, g := range bluray.Genre.Fr {
+				if i > 0 {
+					genreFr += ";"
+				}
+				genreFr += g
 			}
 		}
 
@@ -250,7 +262,19 @@ func (api *API) ExportBlurays(c *gin.Context) {
 			purchasePrice = strconv.FormatFloat(bluray.PurchasePrice, 'f', 2, 64)
 		}
 
-		seasonsCount := strconv.Itoa(len(bluray.Seasons))
+		// Serialize seasons data (format: "number:episodeCount:year;number:episodeCount:year")
+		seasons := ""
+		if len(bluray.Seasons) > 0 {
+			for i, season := range bluray.Seasons {
+				if i > 0 {
+					seasons += ";"
+				}
+				seasons += strconv.Itoa(season.Number) + ":" + strconv.Itoa(season.EpisodeCount)
+				if season.Year != 0 {
+					seasons += ":" + strconv.Itoa(season.Year)
+				}
+			}
+		}
 
 		totalEpisodes := ""
 		if bluray.TotalEpisodes != 0 {
@@ -269,12 +293,13 @@ func (api *API) ExportBlurays(c *gin.Context) {
 		director := escapeCSV(bluray.Director)
 		coverURL := escapeCSV(bluray.CoverImageURL)
 		backdropURL := escapeCSV(bluray.BackdropURL)
+		tmdbID := escapeCSV(bluray.TMDBID)
 		typeStr := string(bluray.Type)
 
-		csv += title + "," + typeStr + "," + genre + "," + descEn + "," + descFr + "," + director + "," +
+		csv += title + "," + typeStr + "," + genreEn + "," + genreFr + "," + descEn + "," + descFr + "," + director + "," +
 			releaseYear + "," + runtime + "," + rating + "," + purchasePrice + "," +
-			purchaseDate + "," + coverURL + "," + backdropURL + "," + tags + "," +
-			seasonsCount + "," + totalEpisodes + "\n"
+			purchaseDate + "," + coverURL + "," + backdropURL + "," + tmdbID + "," + tags + "," +
+			seasons + "," + totalEpisodes + "\n"
 	}
 
 	c.Header("Content-Type", "text/csv; charset=utf-8")
@@ -298,8 +323,8 @@ func (api *API) ImportBlurays(c *gin.Context) {
 	defer f.Close()
 
 	// Read CSV content
-	content := make([]byte, file.Size)
-	if _, err := f.Read(content); err != nil {
+	content, err := io.ReadAll(f)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read file"})
 		return
 	}
@@ -308,6 +333,12 @@ func (api *API) ImportBlurays(c *gin.Context) {
 	csvContent := string(content)
 	if len(csvContent) >= 3 && csvContent[0] == '\xEF' && csvContent[1] == '\xBB' && csvContent[2] == '\xBF' {
 		csvContent = csvContent[3:]
+	}
+
+	// Validate UTF-8 encoding
+	if !utf8.ValidString(csvContent) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UTF-8 encoding in file"})
+		return
 	}
 
 	// Parse CSV
@@ -325,35 +356,78 @@ func (api *API) ImportBlurays(c *gin.Context) {
 	// Skip header row
 	for i := 1; i < len(lines); i++ {
 		fields := lines[i]
-		if len(fields) < 16 {
+		if len(fields) < 18 {
 			errors = append(errors, "Line "+strconv.Itoa(i+1)+": insufficient fields")
 			failed++
 			continue
 		}
 
 		// Parse fields
-		releaseYear, _ := strconv.Atoi(fields[6])
-		runtime, _ := strconv.Atoi(fields[7])
-		rating, _ := strconv.ParseFloat(fields[8], 64)
-		purchasePrice, _ := strconv.ParseFloat(fields[9], 64)
-		totalEpisodes, _ := strconv.Atoi(fields[15])
+		releaseYear, _ := strconv.Atoi(fields[7])
+		runtime, _ := strconv.Atoi(fields[8])
+		rating, _ := strconv.ParseFloat(fields[9], 64)
+		purchasePrice, _ := strconv.ParseFloat(fields[10], 64)
+		totalEpisodes, _ := strconv.Atoi(fields[17])
 
 		// Parse purchase date
 		var purchaseDate time.Time
-		if fields[10] != "" {
-			purchaseDate, _ = time.Parse("2006-01-02", fields[10])
+		if fields[11] != "" {
+			purchaseDate, _ = time.Parse("2006-01-02", fields[11])
 		}
 
 		// Split tags
 		var tags []string
-		if fields[13] != "" {
-			tags = parseCSVTags(fields[13])
+		if fields[15] != "" {
+			tags = parseCSVTags(fields[15])
 		}
 
 		// Split genres
-		var genre []string
+		var genreEn []string
 		if fields[2] != "" {
-			genre = parseCSVTags(fields[2])
+			genreEn = parseCSVTags(fields[2])
+		}
+
+		var genreFr []string
+		if fields[3] != "" {
+			genreFr = parseCSVTags(fields[3])
+		}
+
+		// Parse seasons data (format: "number:episodeCount:year;number:episodeCount:year")
+		var seasons []models.Season
+		if fields[16] != "" {
+			seasonParts := parseCSVTags(fields[16])
+			for _, part := range seasonParts {
+				if part == "" {
+					continue
+				}
+				seasonData := []string{}
+				current := ""
+				for _, ch := range part {
+					if ch == ':' {
+						seasonData = append(seasonData, current)
+						current = ""
+					} else {
+						current += string(ch)
+					}
+				}
+				if current != "" {
+					seasonData = append(seasonData, current)
+				}
+
+				if len(seasonData) >= 2 {
+					number, _ := strconv.Atoi(seasonData[0])
+					episodeCount, _ := strconv.Atoi(seasonData[1])
+					season := models.Season{
+						Number:       number,
+						EpisodeCount: episodeCount,
+					}
+					if len(seasonData) >= 3 {
+						year, _ := strconv.Atoi(seasonData[2])
+						season.Year = year
+					}
+					seasons = append(seasons, season)
+				}
+			}
 		}
 
 		// Parse media type
@@ -382,21 +456,24 @@ func (api *API) ImportBlurays(c *gin.Context) {
 			Title: fields[0],
 			Type:  mediaType,
 			Genre: models.I18nTextArray{
-				En: genre,
+				En: genreEn,
+				Fr: genreFr,
 			},
 			Description: models.I18nText{
-				En: fields[3],
-				Fr: fields[4],
+				En: fields[4],
+				Fr: fields[5],
 			},
-			Director:      fields[5],
+			Director:      fields[6],
 			ReleaseYear:   releaseYear,
 			Runtime:       runtime,
 			Rating:        rating,
 			PurchasePrice: purchasePrice,
 			PurchaseDate:  purchaseDate,
-			CoverImageURL: fields[11],
-			BackdropURL:   fields[12],
+			CoverImageURL: fields[12],
+			BackdropURL:   fields[13],
+			TMDBID:        fields[14],
 			Tags:          tags,
+			Seasons:       seasons,
 			TotalEpisodes: totalEpisodes,
 		}
 

@@ -34,13 +34,15 @@ func parseCSVLines(content string) [][]string {
 	currentField := ""
 	inQuotes := false
 
-	for i := 0; i < len(content); i++ {
-		ch := content[i]
+	// Iterate through runes (Unicode characters) not bytes
+	runes := []rune(content)
+	for i := 0; i < len(runes); i++ {
+		ch := runes[i]
 
 		if inQuotes {
 			if ch == '"' {
 				// Check if it's an escaped quote
-				if i+1 < len(content) && content[i+1] == '"' {
+				if i+1 < len(runes) && runes[i+1] == '"' {
 					currentField += "\""
 					i++
 				} else {
@@ -83,6 +85,7 @@ func parseCSVTags(s string) []string {
 	}
 	tags := []string{}
 	currentTag := ""
+	// Iterate through runes (Unicode characters) not bytes
 	for _, ch := range s {
 		if ch == ';' {
 			if currentTag != "" {

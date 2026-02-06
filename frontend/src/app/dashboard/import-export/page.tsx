@@ -51,8 +51,11 @@ export default function ImportExportPage() {
     try {
       const response = await apiClient.exportBlurays();
 
-      // Create blob and download
-      const blob = new Blob([response], { type: "text/csv;charset=utf-8;" });
+      // Create blob with UTF-8 BOM and download
+      // Add UTF-8 BOM if not present to ensure proper encoding
+      const utf8BOM = "\uFEFF";
+      const content = response.startsWith(utf8BOM) ? response : utf8BOM + response;
+      const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
 
@@ -66,6 +69,7 @@ export default function ImportExportPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       toast.success(t("importExport.exportSuccess"));
     } catch (error: any) {

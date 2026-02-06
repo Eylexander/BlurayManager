@@ -198,7 +198,12 @@
     "purchaseDateHelp": "Sélectionnez quand vous avez acheté cet article",
     "searchForDirector": "Rechercher le réalisateur : {director}",
     "searchForGenre": "Rechercher le genre : {genre}",
-    "searchForTag": "Rechercher l'étiquette : {tag}"
+    "searchForTag": "Rechercher le tag : {tag}",
+    "refreshFromTmdb": "Actualiser depuis TMDB",
+    "confirmRefresh": "Êtes-vous sûr de vouloir actualiser cet élément depuis TMDB ? Cela écrasera le titre, la description, les images et d'autres métadonnées tout en préservant vos tags, saisons et informations d'achat.",
+    "refreshSuccess": "Actualisation depuis TMDB réussie",
+    "refreshError": "Échec de l'actualisation depuis TMDB",
+    "noTmdbId": "Impossible d'actualiser : aucun ID TMDB disponible"
   },
   "bluray": {
     "title": "Titre",

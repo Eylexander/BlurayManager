@@ -26,6 +26,12 @@ interface Bluray {
   };
 }
 
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export default function Navbar() {
   const t = useTranslations();
   const router = useRouter();
@@ -45,6 +51,7 @@ export default function Navbar() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showSearchTips, setShowSearchTips] = useState(false);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +75,19 @@ export default function Navbar() {
       }
     }
   };
+
+  // Fetch all tags on mount
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const tags = await apiClient.getTags();
+        setAllTags(Array.isArray(tags) ? tags : []);
+      } catch (error) {
+        console.error("Failed to fetch tags:", error);
+      }
+    };
+    fetchTags();
+  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -291,19 +311,22 @@ export default function Navbar() {
                               bluray.genre,
                               locale,
                             );
-                            const hasTags =
-                              bluray.tags && bluray.tags.length > 0;
+                            const resolvedTags = bluray.tags
+                              ?.map((tagId) => allTags.find((t) => t.id === tagId))
+                              .filter((tag): tag is Tag => tag !== undefined) || [];
+                            const hasTags = resolvedTags.length > 0;
                             const hasGenres = localizedGenres.length > 0;
 
                             return hasTags || hasGenres ? (
                               <div className="flex items-center gap-1 mt-1 flex-wrap">
-                                {bluray.tags &&
-                                  bluray.tags.slice(0, 3).map((tag, idx) => (
+                                {resolvedTags
+                                  .slice(0, 3)
+                                  .map((tag) => (
                                     <span
-                                      key={`tag-${idx}`}
+                                      key={tag.id}
                                       className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                                     >
-                                      {tag}
+                                      {tag.name}
                                     </span>
                                   ))}
                                 {localizedGenres

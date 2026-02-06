@@ -52,7 +52,6 @@ type Bluray struct {
 
 	// External IDs
 	TMDBID string `bson:"tmdb_id,omitempty" json:"tmdb_id,omitempty"`
-	IMDBID string `bson:"imdb_id,omitempty" json:"imdb_id,omitempty"`
 
 	// Metadata
 	AddedBy   primitive.ObjectID `bson:"added_by" json:"added_by"`
@@ -106,7 +105,6 @@ type CreateBlurayRequest struct {
 	Tags          []string  `json:"tags"`
 	Rating        float64   `json:"rating"`
 	TMDBID        string    `json:"tmdb_id,omitempty"`
-	IMDBID        string    `json:"imdb_id,omitempty"`
 }
 
 // UpdateBlurayRequest is the request body for updating a bluray
@@ -126,5 +124,4 @@ type UpdateBlurayRequest struct {
 	Tags          *[]string  `json:"tags,omitempty"`
 	Rating        *float64   `json:"rating,omitempty"`
 	TMDBID        *string    `json:"tmdb_id,omitempty"`
-	IMDBID        *string    `json:"imdb_id,omitempty"`
 }
