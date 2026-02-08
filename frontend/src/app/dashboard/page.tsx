@@ -15,7 +15,7 @@ import BlurayListItem from "@/components/bluray/BlurayListItem";
 import StatsCard from "@/components/common/StatsCard";
 import SortDropdown from "@/components/common/SortDropdown";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
-import useRouteProtection from "@/hooks/useRouteProtection";
+import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 
 type SortOption = "recent" | "name" | "release_date" | "rating";
 
@@ -214,7 +214,7 @@ export default function DashboardPage() {
 
           {stats && (
             <div className="grid grid-cols-2 gap-4 sm:gap-4 md:gap-6 lg:gap-4 !mt-0 sm:!mt-2 md:!mt-6">
-              <Link href="/dashboard/statistics">
+              <Link href={ROUTES.DASHBOARD.STATISTICS}>
                 <StatsCard
                   title={t("statistics.totalMovies")}
                   value={stats.total_movies || 0}
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                   color="blue"
                 />
               </Link>
-              <Link href="/dashboard/statistics">
+              <Link href={ROUTES.DASHBOARD.STATISTICS}>
                 <StatsCard
                   title={t("statistics.totalSeasons")}
                   value={stats.total_seasons || 0}

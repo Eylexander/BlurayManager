@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { apiClient } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { ROUTES } from "@/hooks/useRouteProtection";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations();
@@ -96,7 +97,7 @@ export default function ForgotPasswordPage() {
 
       <div className="mt-6 text-center">
         <Link
-          href="/auth/login"
+          href={ROUTES.AUTH.LOGIN}
           className="text-sm text-primary-600 hover:text-primary-700 font-medium"
         >
           {t("auth.backToLogin")}

@@ -125,7 +125,7 @@ export default function LoginPage() {
           </div>
           <div className="mt-2 text-right">
             <Link
-              href="/forgot-password"
+              href={ROUTES.AUTH.FORGOT_PASSWORD}
               className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               {t("auth.forgotPassword")}
@@ -146,7 +146,7 @@ export default function LoginPage() {
         <p className="text-sm text-gray-600 dark:text-gray-400">
           {t("auth.dontHaveAccount")}{" "}
           <Link
-            href="/auth/register"
+            href={ROUTES.AUTH.REGISTER}
             className="text-primary-600 hover:text-primary-700 font-medium"
           >
             {t("auth.register")}

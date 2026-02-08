@@ -10,6 +10,7 @@ import AddTagModal from '@/components/modals/AddTagModal';
 import { useBlurayTools } from '@/hooks/useBlurayTools';
 import { getLocalizedTextArray } from '@/lib/bluray-utils';
 import { useLocale } from 'use-intl/react';
+import { ROUTES } from '@/hooks/useRouteProtection';
 
 interface BlurayListItemProps {
   bluray: Bluray;
@@ -33,7 +34,7 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
         onContextMenu={(e) => { e.preventDefault(); if(canModify) setContextMenu({ x: e.clientX, y: e.clientY }); }}
         className="relative group"
       >
-        <Link href={`/dashboard/blurays/${currentBluray.id}`}>
+        <Link href={ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", currentBluray.id.toString())}>
           <div className="
             flex gap-4 p-3 sm:p-4 
             bg-white dark:bg-dark-800/40 backdrop-blur-md

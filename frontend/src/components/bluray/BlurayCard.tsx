@@ -15,6 +15,7 @@ import ContextMenu from "@/components/common/ContextMenu";
 import AddTagModal from "@/components/modals/AddTagModal";
 import { useTranslations } from "next-intl";
 import { useBlurayTools } from "@/hooks/useBlurayTools";
+import { ROUTES } from "@/hooks/useRouteProtection";
 
 interface BlurayCardProps {
   bluray: Bluray;
@@ -46,7 +47,7 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
         className="relative group h-full w-full perspective-1000"
       >
         <Link
-          href={`/dashboard/blurays/${currentBluray.id}`}
+          href={ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", currentBluray.id.toString())}
           className="block h-full w-full"
         >
           <div

@@ -171,7 +171,7 @@ export default function MobileNav() {
           {/* Add Action (Only if permitted) */}
           {!isGuest && canModify && (
             <Link
-              href="/dashboard/add"
+              href={ROUTES.DASHBOARD.ADD.ADD}
               className="w-12 h-12 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all active:scale-90 shadow-lg shadow-blue-500/40"
             >
               <Plus className="w-6 h-6" strokeWidth={2.5} />
