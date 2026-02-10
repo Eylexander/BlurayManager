@@ -120,6 +120,7 @@ func (s *Server) setupRoutes() {
 			tmdb := protected.Group("/tmdb")
 			{
 				tmdb.GET("/search", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.SearchTMDB)
+				tmdb.GET("/find/:external_id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.FindByExternalID)
 				tmdb.GET("/:type/:id", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.GetTMDBDetails)
 			}
 

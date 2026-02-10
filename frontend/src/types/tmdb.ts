@@ -11,6 +11,7 @@ export interface TMDBDetails {
     backdrop_path?: string;
     overview?: string;
     vote_average?: number;
+    vote_count?: number;
     runtime?: number;
     genres?: { id: number; name: string }[];
     director?: string;
@@ -43,4 +44,5 @@ export interface TMDBResult {
     backdrop_path?: string;
     overview?: string;
     vote_average?: number;
+    vote_count?: number;
 }

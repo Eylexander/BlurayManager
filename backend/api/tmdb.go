@@ -261,3 +261,116 @@ func extractTVCreator(result map[string]interface{}) {
 		result["director"] = name
 	}
 }
+
+// FindByExternalID handles finding media by external ID (IMDB or TMDB)
+func (api *API) FindByExternalID(c *gin.Context) {
+	i18n := api.GetI18n(c)
+	externalID := c.Param("external_id")
+	source := c.Query("source")
+	lang := c.GetHeader("Accept-Language")
+	if lang == "" {
+		lang = "en-US"
+	}
+
+	if externalID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("tmdb.externalIDRequired")})
+		return
+	}
+
+	// Default to imdb_id if not specified
+	if source == "" {
+		source = "imdb_id"
+	}
+
+	// If source is tmdb_id, directly get details
+	if source == "tmdb_id" {
+		// Need to determine if it's a movie or TV show
+		// Try movie first, then TV
+		mediaType := c.Query("type")
+		if mediaType == "" {
+			mediaType = "movie"
+		}
+		if mediaType == "series" {
+			mediaType = "tv"
+		}
+
+		apiKey := os.Getenv("TMDB_API_KEY")
+		params := url.Values{}
+		params.Add("api_key", apiKey)
+		params.Add("language", lang)
+		if mediaType == "movie" {
+			params.Add("append_to_response", "credits")
+		}
+
+		reqURL := fmt.Sprintf("%s/%s/%s?%s", tmdbBaseURL, mediaType, externalID, params.Encode())
+		result, err := api.fetchTMDB(reqURL)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("tmdb.failedToFetchDetails")})
+			return
+		}
+
+		result, err = api.enrichWithLocalization(result, mediaType, externalID, lang, apiKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("tmdb.failedToEnrichDetails")})
+			return
+		}
+
+		switch mediaType {
+		case "movie":
+			extractMovieDirector(result)
+			delete(result, "credits")
+		case "tv":
+			extractTVCreator(result)
+			if name, ok := result["name"]; ok {
+				result["title"] = name
+			}
+		}
+
+		result["media_type"] = mediaType
+		c.JSON(http.StatusOK, result)
+		return
+	}
+
+	// For IMDB ID, use TMDB's find endpoint
+	apiKey := os.Getenv("TMDB_API_KEY")
+	params := url.Values{}
+	params.Add("api_key", apiKey)
+	params.Add("language", lang)
+	params.Add("external_source", source)
+
+	reqURL := fmt.Sprintf("%s/find/%s?%s", tmdbBaseURL, externalID, params.Encode())
+
+	result, err := api.fetchTMDB(reqURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T("tmdb.failedToFind")})
+		return
+	}
+
+	// The find endpoint returns movie_results and tv_results arrays
+	movieResults, hasMovies := result["movie_results"].([]interface{})
+	tvResults, hasTVs := result["tv_results"].([]interface{})
+
+	var foundResult map[string]interface{}
+	var mediaType string
+
+	if hasMovies && len(movieResults) > 0 {
+		foundResult, _ = movieResults[0].(map[string]interface{})
+		mediaType = "movie"
+	} else if hasTVs && len(tvResults) > 0 {
+		foundResult, _ = tvResults[0].(map[string]interface{})
+		mediaType = "tv"
+	} else {
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T("tmdb.noResultsFound")})
+		return
+	}
+
+	if foundResult == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T("tmdb.noResultsFound")})
+		return
+	}
+
+	// Add media_type to the result
+	foundResult["media_type"] = mediaType
+
+	c.JSON(http.StatusOK, foundResult)
+}

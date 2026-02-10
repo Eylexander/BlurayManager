@@ -199,6 +199,8 @@
     "searchForDirector": "Rechercher le réalisateur : {director}",
     "searchForGenre": "Rechercher le genre : {genre}",
     "searchForTag": "Rechercher le tag : {tag}",
+    "searchForType": "Rechercher le type : {type}",
+    "searchForYear": "Rechercher l'année : {year}",
     "refreshFromTmdb": "Actualiser depuis TMDB",
     "confirmRefresh": "Êtes-vous sûr de vouloir actualiser cet élément depuis TMDB ? Cela écrasera le titre, la description, les images et d'autres métadonnées tout en préservant vos tags, saisons et informations d'achat.",
     "refreshSuccess": "Actualisation depuis TMDB réussie",
@@ -253,7 +255,15 @@
     "useSelectFromTMDB": "Cliquez sur 'Sélectionner depuis TMDB' ci-dessus pour ajouter des saisons",
     "titleReadOnly": "Le titre est en lecture seule",
     "seasonsUpdated": "Saisons mises à jour avec succès !",
-    "seasonsUpdateError": "Échec de la mise à jour des saisons"
+    "seasonsUpdateError": "Échec de la mise à jour des saisons",
+    "addedSeasonToSeries": "Saison {season} ajoutée à {title}",
+    "addedSeasonsToSeries": "Saisons {seasons} ajoutées à {title}",
+    "addedSeriesWithSeasons": "{title} ajouté avec la Saison {seasons}",
+    "addedSeriesWithMultipleSeasons": "{title} ajouté avec les Saisons {seasons}",
+    "alreadyHasSeasons": "{title} a déjà ces saisons",
+    "alreadyHasSeason": "{title} a déjà cette saison",
+    "missingSeriesData": "Données de série manquantes",
+    "noSeasonsForSeries": "Aucune saison trouvée pour cette série"
   },
   "statistics": {
     "title": "Statistiques de la Collection",
@@ -347,6 +357,9 @@
     "barcodeScanDesc": "Scannez le code-barres UPC/EAN au dos de votre Bluray pour une recherche instantanée",
     "optionalFields": "Filtres de recherche optionnels",
     "yearPlaceholder": "2024",
+    "tmdbOrImdbId": "ID TMDB ou IMDB",
+    "tmdbIdHint": "Entrez l'ID TMDB (ex: 550) ou l'ID IMDB (ex: tt0137523). Si fourni, la recherche par nom sera ignorée.",
+    "findById": "Rechercher par ID",
     "foundResults": "{count} résultat(s)",
     "failedToSearch": "Échec de la recherche avec le code-barres",
     "searchFailed": "Échec de la recherche : {error}",
@@ -403,7 +416,8 @@
     "invalidBarcode": "Code-barres invalide",
     "cameraError": "Impossible d'accéder à la caméra. Veuillez vérifier les autorisations.",
     "manualEntry": "Saisir le code-barres manuellement",
-    "enterManually": "Saisir manuellement"
+    "enterManually": "Saisir manuellement",
+    "seasonDetected": "Saison {season} détectée du code-barres"
   },
   "tags": {
     "manageTags": "Gérer les étiquettes",

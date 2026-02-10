@@ -39,6 +39,7 @@ export default function AddBlurayPage() {
   const [type, setType] = useState<MediaType>("movie");
   const [name, setName] = useState("");
   const [year, setYear] = useState("");
+  const [tmdbId, setTmdbId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [buyingPrice, setBuyingPrice] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -65,6 +66,25 @@ export default function AddBlurayPage() {
     if (e) {
       e.preventDefault();
     }
+
+    // If TMDB/IMDB ID is provided, use direct ID lookup
+    if (tmdbId.trim()) {
+      const params = new URLSearchParams({
+        type,
+        ...(purchaseDate && { purchaseDate }),
+        ...(buyingPrice && { buyingPrice }),
+        ...(selectedTags.length > 0 && { tags: selectedTags.join(",") }),
+      });
+
+      // Check if it's an IMDB ID (starts with 'tt') or TMDB ID (numeric)
+      const isImdbId = /^tt\d{7,8}$/i.test(tmdbId.trim());
+      const source = isImdbId ? 'imdb' : 'tmdb';
+      
+      router.push(`${ROUTES.DASHBOARD.ADD.RESULTS}?${params.toString()}&id=${tmdbId.trim()}&source=${source}`);
+      return;
+    }
+
+    // Otherwise, require name for search
     if (!name.trim()) return;
 
     // Navigate to search page with query params
@@ -83,6 +103,7 @@ export default function AddBlurayPage() {
   const handleScanBarcode = () => {
     // Navigate to scan page with query params
     const params = new URLSearchParams({
+      type,
       ...(purchaseDate && { purchaseDate }),
       ...(buyingPrice && { buyingPrice }),
       ...(selectedTags.length > 0 && { tags: selectedTags.join(",") }),
@@ -216,6 +237,23 @@ export default function AddBlurayPage() {
               />
             </div>
 
+            {/* TMDB/IMDB ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t("add.tmdbOrImdbId")}
+              </label>
+              <input
+                type="text"
+                value={tmdbId}
+                onChange={(e) => setTmdbId(e.target.value)}
+                placeholder="tt0137523 or 550"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {t("add.tmdbIdHint")}
+              </p>
+            </div>
+
             {/* Purchase Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -321,11 +359,11 @@ export default function AddBlurayPage() {
           <Button
             variant="primary"
             type="submit"
-            disabled={!name.trim()}
+            disabled={!name.trim() && !tmdbId.trim()}
             icon={<Search className="w-5 h-5" />}
             fullWidth
           >
-            {t("add.searchTMDB")}
+            {tmdbId.trim() ? t("add.findById") : t("add.searchTMDB")}
           </Button>
         </form>
       </div>

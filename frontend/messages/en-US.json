@@ -200,6 +200,8 @@
     "searchForDirector": "Search for director: {director}",
     "searchForGenre": "Search for genre: {genre}",
     "searchForTag": "Search for tag: {tag}",
+    "searchForType": "Search for type: {type}",
+    "searchForYear": "Search for year: {year}",
     "refreshFromTmdb": "Refresh from TMDB",
     "confirmRefresh": "Are you sure you want to refresh this item from TMDB? This will overwrite title, description, images, and other metadata while preserving your tags, seasons, and purchase information.",
     "refreshSuccess": "Successfully refreshed from TMDB",
@@ -254,7 +256,15 @@
     "useSelectFromTMDB": "Click 'Select from TMDB' above to add seasons",
     "titleReadOnly": "Title is read-only",
     "seasonsUpdated": "Seasons updated successfully!",
-    "seasonsUpdateError": "Failed to update seasons"
+    "seasonsUpdateError": "Failed to update seasons",
+    "addedSeasonToSeries": "Added Season {season} to {title}",
+    "addedSeasonsToSeries": "Added Seasons {seasons} to {title}",
+    "addedSeriesWithSeasons": "Added {title} with Season {seasons}",
+    "addedSeriesWithMultipleSeasons": "Added {title} with Seasons {seasons}",
+    "alreadyHasSeasons": "{title} already has these seasons",
+    "alreadyHasSeason": "{title} already has this season",
+    "missingSeriesData": "Missing series data",
+    "noSeasonsForSeries": "No seasons found for this series"
   },
   "statistics": {
     "title": "Collection Statistics",
@@ -349,6 +359,9 @@
     "barcodeScanDesc": "Scan the UPC/EAN barcode on your Bluray case for instant lookup",
     "optionalFields": "Optional Search Filters",
     "yearPlaceholder": "2024",
+    "tmdbOrImdbId": "TMDB or IMDB ID",
+    "tmdbIdHint": "Enter TMDB ID (e.g., 550) or IMDB ID (e.g., tt0137523). If provided, name search will be skipped.",
+    "findById": "Find by ID",
     "foundResults": "Found {count} result(s)",
     "failedToSearch": "Failed to search with barcode",
     "searchFailed": "Search failed: {error}",
@@ -405,7 +418,8 @@
     "invalidBarcode": "Invalid barcode provided",
     "cameraError": "Failed to access camera. Please check permissions.",
     "manualEntry": "Enter barcode manually",
-    "enterManually": "Enter Manually"
+    "enterManually": "Enter Manually",
+    "seasonDetected": "Season {season} detected from barcode"
   },
   "tags": {
     "manageTags": "Manage Tags",

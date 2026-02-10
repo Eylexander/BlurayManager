@@ -168,6 +168,75 @@ class ApiClient {
     return response.data.blurays || [];
   }
 
+  /**
+   * Find a series by TMDB ID (Option C: Check if series exists)
+   */
+  async findSeriesByTmdbId(tmdbId: string) {
+    try {
+      const response = await this.client.get('/blurays', {
+        params: { type: 'series', skip: 0, limit: 100 },
+      });
+      const blurays = response.data.blurays || [];
+      
+      // Find series with matching TMDB ID
+      return blurays.find((b: any) => b.tmdb_id === tmdbId) || null;
+    } catch (error) {
+      console.error('Failed to search for series:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update series with new seasons (Option C: Incremental season management)
+   * Merges new seasons with existing ones, avoiding duplicates
+   */
+  async addSeasonsToSeries(id: string, newSeasons: any[], title: string) {
+    try {
+      // Get current bluray data
+      const current = await this.getBluray(id);
+      
+      // Merge seasons, avoiding duplicates
+      const existingSeasonNumbers = new Set(
+        (current.seasons || []).map((s: any) => s.number)
+      );
+      
+      const seasonsToAdd = newSeasons.filter(
+        (s) => !existingSeasonNumbers.has(s.number)
+      );
+      
+      const mergedSeasons = [...(current.seasons || []), ...seasonsToAdd].sort(
+        (a, b) => a.number - b.number
+      );
+      
+      // Update the bluray - preserve all existing data, only update seasons
+      const response = await this.updateBluray(id, {
+        title: current.title,
+        type: current.type,
+        description: current.description,
+        director: current.director,
+        genre: current.genre,
+        cover_image_url: current.cover_image_url,
+        backdrop_url: current.backdrop_url,
+        purchase_price: current.purchase_price,
+        purchase_date: current.purchase_date,
+        tags: current.tags,
+        rating: current.rating,
+        tmdb_id: current.tmdb_id,
+        release_year: current.release_year,
+        seasons: mergedSeasons,
+      });
+      
+      return {
+        success: true,
+        bluray: response.bluray || response,
+        addedSeasons: seasonsToAdd.map((s) => s.number),
+      };
+    } catch (error) {
+      console.error('Failed to add seasons:', error);
+      throw error;
+    }
+  }
+
   // Tag endpoints
   async getTags() {
     const response = await this.client.get('/tags');
@@ -215,6 +284,13 @@ class ApiClient {
 
   async getTMDBDetails(type: string, id: number) {
     const response = await this.client.get(`/tmdb/${type}/${id}`);
+    return response.data;
+  }
+
+  async findByExternalID(externalId: string, source: 'imdb_id' | 'tmdb_id' = 'imdb_id', type?: string) {
+    const response = await this.client.get(`/tmdb/find/${externalId}`, {
+      params: { source, ...(type && { type }) },
+    });
     return response.data;
   }
 

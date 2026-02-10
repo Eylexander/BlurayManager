@@ -214,7 +214,7 @@ export default function DashboardPage() {
 
           {stats && (
             <div className="grid grid-cols-2 gap-4 sm:gap-4 md:gap-6 lg:gap-4 !mt-0 sm:!mt-2 md:!mt-6">
-              <Link href={ROUTES.DASHBOARD.STATISTICS}>
+              <Link href={`/dashboard?search=${encodeURIComponent("type:movie")}`}>
                 <StatsCard
                   title={t("statistics.totalMovies")}
                   value={stats.total_movies || 0}
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                   color="blue"
                 />
               </Link>
-              <Link href={ROUTES.DASHBOARD.STATISTICS}>
+              <Link href={`/dashboard?search=${encodeURIComponent("type:series")}`}>
                 <StatsCard
                   title={t("statistics.totalSeasons")}
                   value={stats.total_seasons || 0}

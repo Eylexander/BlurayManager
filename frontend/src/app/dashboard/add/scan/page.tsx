@@ -17,12 +17,14 @@ import {
   Layers,
   Search,
   Plus,
+  Tv,
 } from "lucide-react";
-import { cleanProductTitle } from "@/lib/tmdb-utils";
+import { cleanProductTitle, extractSeasonNumber, cleanSeriesTitle } from "@/lib/tmdb-utils";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import { motion, AnimatePresence } from "framer-motion";
 import DVDFrConfirmationModal from "@/components/modals/DVDFrConfirmationModal";
+import SeasonSelectorModal from "@/components/modals/SeasonSelectorModal";
 
 type MediaType = "movie" | "series";
 
@@ -36,11 +38,13 @@ export default function AddScanPage() {
   useRouteProtection(pathname);
 
   // Get params from URL
-  const type = (searchParams.get("type") as MediaType) || "movie";
   const purchaseDate = searchParams.get("purchaseDate") || "";
   const tags = searchParams.get("tags")?.split(",") || [];
 
   // State management
+  const [type, setType] = useState<MediaType>(
+    (searchParams.get("type") as MediaType) || "movie"
+  );
   const [activeTab, setActiveTab] = useState<"camera" | "manual">("camera");
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
@@ -51,6 +55,13 @@ export default function AddScanPage() {
   const [searching, setSearching] = useState(false);
   const [dvdfrResult, setDvdfrResult] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // Season selector modal state (Option B)
+  const [showSeasonSelector, setShowSeasonSelector] = useState(false);
+  const [detectedSeason, setDetectedSeason] = useState<number | null>(null);
+  const [tmdbDetails, setTmdbDetails] = useState<any>(null);
+  const [seriesTitle, setSeriesTitle] = useState<string>("");
+  
   // Theme-aware styles applied to scan page elements
 
   // Refs
@@ -58,6 +69,16 @@ export default function AddScanPage() {
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const lastScannedRef = useRef<string | null>(null);
   const lastScanTimeRef = useRef<number>(0);
+
+  // Handle type change and update URL params
+  const handleTypeChange = (newType: MediaType) => {
+    setType(newType);
+    
+    // Update URL params
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("type", newType);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   // Validate barcode format (numeric, valid length for UPC/EAN)
   const isValidBarcode = (barcode: string): boolean => {
@@ -217,14 +238,20 @@ export default function AddScanPage() {
     setShowConfirmModal(false);
     setSearching(true);
 
-    let title = cleanProductTitle(dvdfrResult.title);
+    // Option A: Extract season number from DVDFr data
+    const detectedSeasonNum = type === "series" ? extractSeasonNumber(dvdfrResult) : null;
+    setDetectedSeason(detectedSeasonNum);
+
+    // Clean title - remove season info for better TMDB search
+    let title = type === "series" 
+      ? cleanSeriesTitle(cleanProductTitle(dvdfrResult.title))
+      : cleanProductTitle(dvdfrResult.title);
     const year = dvdfrResult.year;
 
     try {
       toast.loading(t("add.searchingTMDB"));
 
       // Search TMDB with title and year as separate parameters
-      // Backend will filter by year if provided
       const response = await apiClient.searchTMDB(type, title, year);
       const results = response.results || [];
 
@@ -238,104 +265,56 @@ export default function AddScanPage() {
         return;
       }
 
-      // Backend filters by year, so if we have only one result, auto-add
       const bestMatch = results[0];
 
-      if (results.length === 1) {
-        toast.loading(t("add.addingToCollection"));
+      // Get full TMDB details
+      const details = await apiClient.getTMDBDetails(type, bestMatch.id);
+      const fullTitle =
+        details.original_title ||
+        details.original_name ||
+        details.title ||
+        details.name ||
+        "Unknown Title";
 
-        try {
-          const details = await apiClient.getTMDBDetails(type, bestMatch.id);
+      setTmdbDetails(details);
+      setSeriesTitle(fullTitle);
 
-          const blurayData = {
-            title:
-              details.original_title ||
-              details.original_name ||
-              details.title ||
-              details.name ||
-              "Unknown Title",
-            type,
-            description: {
-              "en-US": details.overview || "",
-              "fr-FR": details.fr?.overview || "",
-            },
-            director: details.director || "",
-            genre: {
-              "en-US": details.genres
-                ? details.genres.map((g: any) => g.name)
-                : [],
-              "fr-FR": details.fr?.genres
-                ? details.fr.genres.map((g: any) => g.name)
-                : [],
-            },
-            cover_image_url: details.poster_path
-              ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
-              : null,
-            backdrop_url: details.backdrop_path
-              ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
-              : null,
-            purchase_date: purchaseDate
-              ? new Date(purchaseDate).toISOString()
-              : null,
-            rating: details.vote_average || 0,
-            tags,
-            tmdb_id: details.id?.toString(),
-            ...(type === "movie" && {
-              release_year: details.release_date
-                ? parseInt(details.release_date.split("-")[0])
-                : year
-                  ? parseInt(year)
-                  : undefined,
-              runtime: details.runtime || 0,
-            }),
-            ...(type === "series" &&
-              details.seasons && {
-                seasons: details.seasons
-                  .filter((s: any) => s.season_number > 0)
-                  .map((season: any) => ({
-                    number: season.season_number,
-                    episode_count: season.episode_count || 0,
-                    year: season.air_date
-                      ? parseInt(season.air_date.split("-")[0])
-                      : undefined,
-                    description:
-                      season.name || `Season ${season.season_number}`,
-                  })),
-                release_year: details.first_air_date
-                  ? parseInt(details.first_air_date.split("-")[0])
-                  : year
-                    ? parseInt(year)
-                    : undefined,
-              }),
-          };
-
-          await apiClient.createBluray(blurayData);
-          toast.dismiss();
-          toast.success(
-            t("add.addedToCollection", { title: blurayData.title }),
-          );
-          router.push(ROUTES.DASHBOARD.HOME);
-        } catch (error: any) {
-          toast.dismiss();
-          toast.error(
-            error.response?.data?.error || t("add.failedToAddToCollection"),
-          );
-          setSearching(false);
-          setDvdfrResult(null);
-          startCamera();
+      // For movies or if TMDB search returned multiple results, handle differently
+      if (type === "movie" || results.length > 1) {
+        if (results.length === 1) {
+          // Single movie match - add directly
+          await addMovieToCollection(details, fullTitle, year);
+        } else {
+          // Multiple results - redirect to search page for manual selection
+          redirectToManualSelection(title, year);
         }
-      } else {
-        // Multiple results and no exact match - redirect to search page for manual selection
-        const params = new URLSearchParams({
-          type,
-          name: title,
-          ...(year && { year }),
-          ...(purchaseDate && { purchaseDate }),
-          ...(tags.length > 0 && { tags: tags.join(",") }),
-        });
-
-        router.push(`${ROUTES.DASHBOARD.ADD.SEARCH}?${params.toString()}`);
+        return;
       }
+
+      // For series: Check if seasons available
+      if (!details.seasons || details.seasons.length === 0) {
+        toast.error(t("bluray.noSeasonsForSeries"));
+        setSearching(false);
+        setDvdfrResult(null);
+        startCamera();
+        return;
+      }
+
+      // Option B: Show season selector modal
+      const availableSeasons = details.seasons
+        .filter((s: any) => s.season_number > 0)
+        .map((season: any) => ({
+          number: season.season_number,
+          episode_count: season.episode_count || 0,
+          year: season.air_date
+            ? parseInt(season.air_date.split("-")[0])
+            : undefined,
+          description: season.name || `Season ${season.season_number}`,
+        }));
+
+      setShowSeasonSelector(true);
+      setSearching(false);
+
     } catch (error: any) {
       console.error("TMDB search error:", error);
       toast.dismiss();
@@ -344,6 +323,191 @@ export default function AddScanPage() {
       setDvdfrResult(null);
       startCamera();
     }
+  };
+
+  // Handle season selection from modal (Option B & C combined)
+  const handleSeasonSelection = async (selectedSeasonsData: any[]) => {
+    setShowSeasonSelector(false);
+    setSearching(true);
+
+    if (!tmdbDetails || !seriesTitle) {
+      toast.error(t("bluray.missingSeriesData"));
+      setSearching(false);
+      startCamera();
+      return;
+    }
+
+    const selectedSeasons = selectedSeasonsData.map(s => s.number);
+
+    try {
+      toast.loading(t("add.addingToCollection"));
+
+      // Option C: Check if series already exists by TMDB ID
+      const existingSeries = await apiClient.findSeriesByTmdbId(tmdbDetails.id?.toString());
+
+      if (existingSeries) {
+        // Series exists - update with new seasons
+        const result = await apiClient.addSeasonsToSeries(
+          existingSeries.id,
+          selectedSeasonsData,
+          seriesTitle
+        );
+
+        toast.dismiss();
+        
+        if (result.addedSeasons.length > 1) {
+          toast.success(
+            t("bluray.addedSeasonsToSeries", {
+              seasons: result.addedSeasons.join(', '),
+              title: seriesTitle
+            })
+          );
+        } else if (result.addedSeasons.length === 1) {
+          toast.success(
+            t("bluray.addedSeasonToSeries", {
+              season: result.addedSeasons[0],
+              title: seriesTitle
+            })
+          );
+        } else {
+          const message = selectedSeasons.length > 1
+            ? t("bluray.alreadyHasSeasons", { title: seriesTitle })
+            : t("bluray.alreadyHasSeason", { title: seriesTitle });
+          toast(message, { icon: 'ℹ️' });
+        }
+      } else {
+        // Series doesn't exist - create new entry
+        const blurayData = {
+          title: seriesTitle,
+          type: "series",
+          description: {
+            "en-US": tmdbDetails.overview || "",
+            "fr-FR": tmdbDetails.fr?.overview || "",
+          },
+          director: tmdbDetails.director || "",
+          genre: {
+            "en-US": tmdbDetails.genres
+              ? tmdbDetails.genres.map((g: any) => g.name)
+              : [],
+            "fr-FR": tmdbDetails.fr?.genres
+              ? tmdbDetails.fr.genres.map((g: any) => g.name)
+              : [],
+          },
+          cover_image_url: tmdbDetails.poster_path
+            ? `https://image.tmdb.org/t/p/w500${tmdbDetails.poster_path}`
+            : null,
+          backdrop_url: tmdbDetails.backdrop_path
+            ? `https://image.tmdb.org/t/p/original${tmdbDetails.backdrop_path}`
+            : null,
+          purchase_date: purchaseDate
+            ? new Date(purchaseDate).toISOString()
+            : null,
+          rating: tmdbDetails.vote_average || 0,
+          tags,
+          tmdb_id: tmdbDetails.id?.toString(),
+          seasons: selectedSeasonsData,
+          release_year: tmdbDetails.first_air_date
+            ? parseInt(tmdbDetails.first_air_date.split("-")[0])
+            : undefined,
+        };
+
+        await apiClient.createBluray(blurayData);
+        toast.dismiss();
+        const seasonList = selectedSeasons.join(', ');
+        const message = selectedSeasons.length > 1
+          ? t("bluray.addedSeriesWithMultipleSeasons", { title: seriesTitle, seasons: seasonList })
+          : t("bluray.addedSeriesWithSeasons", { title: seriesTitle, seasons: seasonList });
+        toast.success(message);
+      }
+
+      // Reset state and redirect
+      setDvdfrResult(null);
+      setTmdbDetails(null);
+      setSeriesTitle("");
+      setDetectedSeason(null);
+      setSearching(false);
+      router.push(ROUTES.DASHBOARD.HOME);
+
+    } catch (error: any) {
+      console.error("Failed to add/update series:", error);
+      toast.dismiss();
+      toast.error(
+        error.response?.data?.error || t("add.failedToAddToCollection")
+      );
+      setSearching(false);
+      startCamera();
+    }
+  };
+
+  // Helper: Add movie to collection
+  const addMovieToCollection = async (details: any, title: string, year: string) => {
+    try {
+      toast.loading(t("add.addingToCollection"));
+
+      const blurayData = {
+        title,
+        type: "movie",
+        description: {
+          "en-US": details.overview || "",
+          "fr-FR": details.fr?.overview || "",
+        },
+        director: details.director || "",
+        genre: {
+          "en-US": details.genres
+            ? details.genres.map((g: any) => g.name)
+            : [],
+          "fr-FR": details.fr?.genres
+            ? details.fr.genres.map((g: any) => g.name)
+            : [],
+        },
+        cover_image_url: details.poster_path
+          ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
+          : null,
+        backdrop_url: details.backdrop_path
+          ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
+          : null,
+        purchase_date: purchaseDate
+          ? new Date(purchaseDate).toISOString()
+          : null,
+        rating: details.vote_average || 0,
+        tags,
+        tmdb_id: details.id?.toString(),
+        release_year: details.release_date
+          ? parseInt(details.release_date.split("-")[0])
+          : year
+            ? parseInt(year)
+            : undefined,
+        runtime: details.runtime || 0,
+      };
+
+      await apiClient.createBluray(blurayData);
+      toast.dismiss();
+      toast.success(t("add.addedToCollection", { title }));
+      setDvdfrResult(null);
+      setSearching(false);
+      router.push(ROUTES.DASHBOARD.HOME);
+    } catch (error: any) {
+      toast.dismiss();
+      toast.error(
+        error.response?.data?.error || t("add.failedToAddToCollection")
+      );
+      setSearching(false);
+      setDvdfrResult(null);
+      startCamera();
+    }
+  };
+
+  // Helper: Redirect to manual selection page
+  const redirectToManualSelection = (title: string, year: string) => {
+    const params = new URLSearchParams({
+      type,
+      name: title,
+      ...(year && { year }),
+      ...(purchaseDate && { purchaseDate }),
+      ...(tags.length > 0 && { tags: tags.join(",") }),
+    });
+
+    router.push(`${ROUTES.DASHBOARD.ADD.SEARCH}?${params.toString()}`);
   };
 
   const handleManualSearch = () => {
@@ -409,7 +573,14 @@ export default function AddScanPage() {
 
           if (dvdfrData.items && dvdfrData.items.length > 0) {
             const product = dvdfrData.items[0];
-            let title = cleanProductTitle(product.title);
+            
+            // Extract season number for series
+            const detectedSeasonNum = type === "series" ? extractSeasonNumber(product) : null;
+            
+            // Clean title appropriately
+            let title = type === "series" 
+              ? cleanSeriesTitle(cleanProductTitle(product.title))
+              : cleanProductTitle(product.title);
             const year = product.year;
 
             // Search TMDB
@@ -418,75 +589,121 @@ export default function AddScanPage() {
 
             if (results.length > 0) {
               const bestMatch = results[0];
-              const details = await apiClient.getTMDBDetails(
-                type,
-                bestMatch.id,
-              );
+              const details = await apiClient.getTMDBDetails(type, bestMatch.id);
 
-              const blurayData = {
-                title:
-                  details.original_title ||
-                  details.original_name ||
-                  details.title ||
-                  details.name ||
-                  "Unknown Title",
-                type,
-                description: {
-                  "en-US": details.overview || "",
-                  "fr-FR": details.fr?.overview || "",
-                },
-                director: details.director || "",
-                genre: {
-                  "en-US": details.genres
-                    ? details.genres.map((g: any) => g.name)
-                    : [],
-                  "fr-FR": details.fr?.genres
-                    ? details.fr.genres.map((g: any) => g.name)
-                    : [],
-                },
-                cover_image_url: details.poster_path
-                  ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
-                  : null,
-                backdrop_url: details.backdrop_path
-                  ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
-                  : null,
-                purchase_date: purchaseDate
-                  ? new Date(purchaseDate).toISOString()
-                  : null,
-                rating: details.vote_average || 0,
-                tags,
-                tmdb_id: details.id?.toString(),
-                ...(type === "movie" && {
+              const fullTitle =
+                details.original_title ||
+                details.original_name ||
+                details.title ||
+                details.name ||
+                "Unknown Title";
+
+              if (type === "movie") {
+                // Add movie
+                const blurayData = {
+                  title: fullTitle,
+                  type: "movie",
+                  description: {
+                    "en-US": details.overview || "",
+                    "fr-FR": details.fr?.overview || "",
+                  },
+                  director: details.director || "",
+                  genre: {
+                    "en-US": details.genres ? details.genres.map((g: any) => g.name) : [],
+                    "fr-FR": details.fr?.genres ? details.fr.genres.map((g: any) => g.name) : [],
+                  },
+                  cover_image_url: details.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
+                    : null,
+                  backdrop_url: details.backdrop_path
+                    ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
+                    : null,
+                  purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
+                  rating: details.vote_average || 0,
+                  tags,
+                  tmdb_id: details.id?.toString(),
                   release_year: details.release_date
                     ? parseInt(details.release_date.split("-")[0])
-                    : year
-                      ? parseInt(year)
-                      : undefined,
+                    : year ? parseInt(year) : undefined,
                   runtime: details.runtime || 0,
-                }),
-                ...(type === "series" &&
-                  details.seasons && {
-                    seasons: details.seasons
-                      .filter((s: any) => s.season_number > 0)
-                      .map((season: any) => ({
-                        number: season.season_number,
-                        episode_count: season.episode_count || 0,
-                        year: season.air_date
-                          ? parseInt(season.air_date.split("-")[0])
-                          : undefined,
-                        description:
-                          season.name || `Season ${season.season_number}`,
-                      })),
+                };
+
+                await apiClient.createBluray(blurayData);
+                successCount++;
+              } else {
+                // Handle series with season detection
+                if (!details.seasons || details.seasons.length === 0) {
+                  failCount++;
+                  continue;
+                }
+
+                // Filter seasons: use detected season or all seasons
+                const seasonsToAdd = details.seasons
+                  .filter((s: any) => {
+                    if (detectedSeasonNum) {
+                      return s.season_number === detectedSeasonNum;
+                    }
+                    return s.season_number > 0;
+                  })
+                  .map((season: any) => ({
+                    number: season.season_number,
+                    episode_count: season.episode_count || 0,
+                    year: season.air_date
+                      ? parseInt(season.air_date.split("-")[0])
+                      : undefined,
+                    description: season.name || `Season ${season.season_number}`,
+                  }));
+
+                if (seasonsToAdd.length === 0) {
+                  failCount++;
+                  continue;
+                }
+
+                // Check if series exists
+                const existingSeries = await apiClient.findSeriesByTmdbId(details.id?.toString());
+
+                if (existingSeries) {
+                  // Update existing series with new seasons
+                  await apiClient.addSeasonsToSeries(
+                    existingSeries.id,
+                    seasonsToAdd,
+                    fullTitle
+                  );
+                  successCount++;
+                } else {
+                  // Create new series entry
+                  const blurayData = {
+                    title: fullTitle,
+                    type: "series",
+                    description: {
+                      "en-US": details.overview || "",
+                      "fr-FR": details.fr?.overview || "",
+                    },
+                    director: details.director || "",
+                    genre: {
+                      "en-US": details.genres ? details.genres.map((g: any) => g.name) : [],
+                      "fr-FR": details.fr?.genres ? details.fr.genres.map((g: any) => g.name) : [],
+                    },
+                    cover_image_url: details.poster_path
+                      ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
+                      : null,
+                    backdrop_url: details.backdrop_path
+                      ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
+                      : null,
+                    purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
+                    rating: details.vote_average || 0,
+                    tags,
+                    tmdb_id: details.id?.toString(),
+                    seasons: seasonsToAdd,
                     release_year: details.first_air_date
                       ? parseInt(details.first_air_date.split("-")[0])
-                      : year
-                        ? parseInt(year)
-                        : undefined,
-                  }),
-              };
+                      : year ? parseInt(year) : undefined,
+                  };
 
-              await apiClient.createBluray(blurayData);
-              successCount++;
+                  await apiClient.createBluray(blurayData);
+                  successCount++;
+                }
+              }
             } else {
               failCount++;
             }
@@ -542,6 +759,26 @@ export default function AddScanPage() {
         onConfirm={handleConfirmDVDFr}
         onCancel={handleManualSearch}
       />
+
+      {/* Season Selector Modal (Option B) */}
+      {showSeasonSelector && tmdbDetails && (
+        <SeasonSelectorModal
+          onClose={() => {
+            setShowSeasonSelector(false);
+            setSearching(false);
+            setDvdfrResult(null);
+            setTmdbDetails(null);
+            setSeriesTitle("");
+            setDetectedSeason(null);
+            startCamera();
+          }}
+          onSave={handleSeasonSelection}
+          currentSeasons={[]}
+          tmdbId={tmdbDetails?.id?.toString()}
+          title={seriesTitle}
+          detectedSeason={detectedSeason}
+        />
+      )}
 
       <div className="max-w-4xl mx-auto px-4 pb-20 pt-6 space-y-6">
         {/* Header */}
@@ -611,8 +848,35 @@ export default function AddScanPage() {
 
           {/* Content Area */}
           <div className="p-4 sm:p-8 bg-gradient-to-b from-gray-50 dark:from-gray-900/50 to-gray-100 dark:to-gray-900/80 min-h-[400px] flex flex-col">
-            {/* Batch Mode Toggle */}
-            <div className="flex justify-end mb-6">
+            {/* Controls: Type Selector & Batch Mode Toggle */}
+            <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
+              {/* Media Type Selector */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleTypeChange("movie")}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
+                    type === "movie"
+                      ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                      : "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-800/50"
+                  }`}
+                >
+                  <Film className="w-4 h-4" />
+                  Movie
+                </button>
+                <button
+                  onClick={() => handleTypeChange("series")}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
+                    type === "series"
+                      ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                      : "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-800/50"
+                  }`}
+                >
+                  <Tv className="w-4 h-4" />
+                  Series
+                </button>
+              </div>
+
+              {/* Batch Mode Toggle */}
               <label className="flex items-center gap-3 px-4 py-2 rounded-xl border transition-all cursor-pointer bg-gray-100 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600/50">
                 <input
                   type="checkbox"

@@ -122,6 +122,9 @@ var Messages = map[string]map[string]string{
 		"tmdb.invalidType":                        "Type must be 'movie' or 'tv'.",
 		"tmdb.failedToFetchDetails":               "Failed to fetch TMDB details.",
 		"tmdb.failedToEnrichDetails":              "Failed to enrich TMDB details with localization.",
+		"tmdb.externalIDRequired":                 "External ID is required.",
+		"tmdb.failedToFind":                       "Failed to find media by external ID.",
+		"tmdb.noResultsFound":                     "No results found for the provided ID.",
 	},
 	"fr-FR": {
 		"notification.bluray_added":                "Le Bluray '%s' a été ajouté à votre collection.",
@@ -168,5 +171,8 @@ var Messages = map[string]map[string]string{
 		"tmdb.invalidType":                         "Le type doit être 'movie' ou 'tv'.",
 		"tmdb.failedToFetchDetails":                "Échec de la récupération des détails TMDB.",
 		"tmdb.failedToEnrichDetails":               "Échec de l'enrichissement des détails TMDB avec la localisation.",
+		"tmdb.externalIDRequired":                  "L'ID externe est requis.",
+		"tmdb.failedToFind":                        "Échec de la recherche du média par ID externe.",
+		"tmdb.noResultsFound":                      "Aucun résultat trouvé pour l'ID fourni.",
 	},
 }

@@ -15,6 +15,7 @@ interface SeasonSelectorModalProps {
   currentSeasons: Season[];
   tmdbId?: string;
   title: string;
+  detectedSeason?: number | null; // For barcode scanning - auto-detected season
 }
 
 export default function SeasonSelectorModal({
@@ -23,6 +24,7 @@ export default function SeasonSelectorModal({
   currentSeasons,
   tmdbId,
   title,
+  detectedSeason,
 }: SeasonSelectorModalProps) {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
@@ -65,6 +67,13 @@ export default function SeasonSelectorModal({
       fetchSeasonsFromTMDB(tmdbId);
     }
   }, [tmdbId, fetchSeasonsFromTMDB]);
+
+  // Pre-select detected season from barcode scan
+  useEffect(() => {
+    if (detectedSeason && availableSeasons.length > 0) {
+      setSelectedSeasons(new Set([detectedSeason]));
+    }
+  }, [detectedSeason, availableSeasons]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim() && !tmdbId) {
@@ -128,6 +137,12 @@ export default function SeasonSelectorModal({
               {t('bluray.selectSeasons')}
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{title}</p>
+            {detectedSeason && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg text-xs font-medium">
+                <Film className="w-3.5 h-3.5" />
+                {t('barcode.seasonDetected', { season: detectedSeason })}
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -207,6 +222,7 @@ export default function SeasonSelectorModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {availableSeasons.map((season) => {
                   const isSelected = selectedSeasons.has(season.number);
+                  const isDetected = season.number === detectedSeason;
                   return (
                     <button
                       key={season.number}
@@ -214,7 +230,9 @@ export default function SeasonSelectorModal({
                       className={`
                         relative p-4 rounded-xl border-2 transition-all text-left
                         ${isSelected
-                          ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/20'
+                          ? isDetected
+                            ? 'border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/30 ring-2 ring-purple-500/50'
+                            : 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/20'
                           : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:bg-gray-800'
                         }
                       `}
@@ -232,8 +250,15 @@ export default function SeasonSelectorModal({
 
                       {/* Season Info */}
                       <div className="pr-8">
-                        <div className="text-lg font-bold text-white mb-1">
-                          {t('details.season')} {season.number}
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-lg font-bold text-white">
+                            {t('details.season')} {season.number}
+                          </div>
+                          {isDetected && (
+                            <span className="px-2 py-0.5 bg-purple-500/30 text-purple-300 rounded text-xs font-medium">
+                              {t('barcode.detected')}
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-400 flex items-center gap-2">
                           <Film className="w-4 h-4" />

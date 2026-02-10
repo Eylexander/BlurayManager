@@ -126,6 +126,7 @@ export default function AddResultsPage() {
 
   const type = (searchParams.get("type") as MediaType) || "movie";
   const id = searchParams.get("id");
+  const source = searchParams.get("source") || "tmdb"; // 'tmdb' or 'imdb'
   const year = searchParams.get("year") || "";
   const purchaseDate = searchParams.get("purchaseDate") || "";
   const tags = searchParams.get("tags")?.split(",").filter(Boolean) || [];
@@ -139,10 +140,21 @@ export default function AddResultsPage() {
     const fetchDetails = async () => {
       setLoading(true);
       try {
-        const data: TMDBDetails = await apiClient.getTMDBDetails(
-          type,
-          parseInt(id),
-        );
+        let data: TMDBDetails;
+        
+        // If source is IMDB, first find the TMDB ID
+        if (source === "imdb") {
+          const findResult = await apiClient.findByExternalID(id, "imdb_id", type);
+          const tmdbId = findResult.id;
+          const detectedType = findResult.media_type === "tv" ? "series" : findResult.media_type;
+          
+          // Now fetch full details using the TMDB ID
+          data = await apiClient.getTMDBDetails(detectedType, tmdbId);
+        } else {
+          // Direct TMDB ID lookup
+          data = await apiClient.getTMDBDetails(type, parseInt(id));
+        }
+        
         setDetails(data);
 
         if (type === "series" && data.seasons) {
@@ -258,7 +270,7 @@ export default function AddResultsPage() {
                         {details.runtime} {t("add.minutes")}
                       </span>
                     )}
-                    {details.vote_average && details.vote_average > 0 && (
+                    {details.vote_average != null && details.vote_average > 0 && (
                       <span className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 rounded-full border border-yellow-500/20">
                         <Star className="w-4 h-4 fill-current" />
                         {details.vote_average.toFixed(1)}
@@ -284,7 +296,7 @@ export default function AddResultsPage() {
                       </p>
                     </div>
                   )}
-                  {details.genres && (
+                  {details.genres && details.genres.length > 0 && (
                     <div className="space-y-1">
                       <p className="text-xs uppercase tracking-widest text-gray-600 dark:text-gray-500 font-bold">
                         {t("add.genres")}
