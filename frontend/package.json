@@ -9,35 +9,35 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@swc/wasm": "^1.15.10",
+    "@swc/wasm": "^1.15.11",
     "@zxing/library": "^0.21.3",
-    "axios": "^1.6.5",
-    "date-fns": "^3.2.0",
+    "axios": "^1.13.5",
+    "date-fns": "^3.6.0",
     "formatjs": "^0.1.1",
-    "framer-motion": "^12.27.1",
+    "framer-motion": "^12.34.0",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.312.0",
-    "next-intl": "^4.7.0",
+    "next-intl": "^4.8.2",
     "next-themes": "^0.4.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hot-toast": "^2.4.1",
+    "react-hot-toast": "^2.6.0",
     "recharts": "^3.7.0",
-    "zustand": "^4.4.7"
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@types/estree": "^1.0.8",
     "@types/js-cookie": "^3.0.6",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^20.19.30",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
-    "autoprefixer": "^10.4.17",
+    "@types/node": "^20.19.33",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.4.24",
     "eslint": "^9.39.2",
-    "eslint-config-next": "^16.1.4",
-    "next": "^15.1.0",
-    "postcss": "^8.4.33",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3"
+    "eslint-config-next": "^16.1.6",
+    "next": "^15.5.12",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3"
   }
 }
