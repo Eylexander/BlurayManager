@@ -105,6 +105,7 @@
     "theme": "Thème",
     "dark": "Sombre",
     "light": "Clair",
+    "system": "Système",
     "english": "Anglais",
     "french": "Français",
     "saved": "Paramètres enregistrés avec succès !",
@@ -130,7 +131,7 @@
     "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
     "passwordUpdated": "Mot de passe mis à jour avec succès !",
     "passwordUpdateFailed": "Échec de la mise à jour du mot de passe",
-    "themeSubtitle": "Choisissez votre thème préféré",
+    "themeSubtitle": "Choisissez votre thème préféré ou utilisez celui du système",
     "languageSubtitle": "Sélectionnez votre langue préférée"
   },
   "welcome": {

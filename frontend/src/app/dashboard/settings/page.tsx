@@ -395,7 +395,7 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             <OptionButton
               icon={
                 <Sun
@@ -415,6 +415,16 @@ export default function SettingsPage() {
               label={t("settings.dark")}
               isSelected={selectedTheme === "dark"}
               onClick={() => setSelectedTheme("dark")}
+            />
+            <OptionButton
+              icon={
+                <Settings
+                  className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedTheme === "system" ? "text-blue-400" : "text-gray-400 group-hover:text-blue-400"}`}
+                />
+              }
+              label={t("settings.system")}
+              isSelected={selectedTheme === "system"}
+              onClick={() => setSelectedTheme("system")}
             />
           </div>
         </div>

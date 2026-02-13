@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { X, User as UserIcon, Check } from 'lucide-react';
+import { X, User as UserIcon, Mail, Lock, Shield, Save } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import toast from 'react-hot-toast';
-import { Button, Input } from '@/components/common';
+import { Button } from '@/components/common';
 
 interface User {
 	id: string;
@@ -46,7 +46,9 @@ export function AddUserModal({ isOpen, onClose, editingUser, onRefresh }: AddUse
 		}
 	}, [editingUser, isOpen]);
 
-	const handleSaveUser = async () => {
+	const handleSaveUser = async (e?: React.FormEvent) => {
+		if (e) e.preventDefault();
+
 		if (!formData.username.trim() || !formData.email.trim()) {
 			toast.error(t('users.usernameEmailRequired'));
 			return;
@@ -83,63 +85,71 @@ export function AddUserModal({ isOpen, onClose, editingUser, onRefresh }: AddUse
 	if (!isOpen) return null;
 
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-			onClick={(e) => e.target === e.currentTarget && onClose()}
-		>
-			<div className="bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700/50 max-w-md w-full">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+			<div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
 				{/* Modal Header */}
-				<div className="bg-gray-50 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700/50 p-6 flex items-center justify-between rounded-t-2xl">
-					<div className="flex items-center gap-3">
-						<div className="p-2 rounded-lg bg-blue-500/20 dark:bg-blue-500/20">
-							<UserIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-						</div>
-						<h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-							{editingUser ? t('users.editUser') : t('users.createUser')}
-						</h2>
-					</div>
+				<div className="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+					<h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+						<div className="w-2 h-6 bg-blue-500 rounded-full" />
+						{editingUser ? t('users.editUser') : t('users.createUser')}
+					</h2>
 					<button
 						onClick={onClose}
-						className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg"
+						className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all"
 					>
-						<X className="w-6 h-6" />
+						<X size={20} />
 					</button>
 				</div>
 
 				{/* Modal Body */}
-				<div className="p-6 space-y-4">
-					<Input
-						label={`${t('users.username')} *`}
-						type="text"
-						value={formData.username}
-						onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-						placeholder={t('users.enterUsername')}
-					/>
-
-					<Input
-						label={`${t('users.email')} *`}
-						type="email"
-						value={formData.email}
-						onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-						placeholder={t('users.enterEmail')}
-					/>
-
-					<Input
-						label={`${t('users.password')} ${!editingUser ? '*' : ''}`}
-						type="password"
-						value={formData.password}
-						onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-						placeholder={editingUser ? t('users.leaveEmptyPassword') : t('users.enterPassword')}
-					/>
+				<form onSubmit={handleSaveUser} className="p-6 space-y-3 sm:space-y-6 sm:mb-2 overflow-y-auto">
+					<div>
+						<label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-500 mb-2">
+							<UserIcon size={14} /> {t('users.username')}
+						</label>
+						<input
+							type="text"
+							value={formData.username}
+							onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+							placeholder={t('users.enterUsername')}
+							className="w-full bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white outline-none transition-all"
+						/>
+					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
-							{t('users.role')} *
+						<label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-500 mb-2">
+							<Mail size={14} /> {t('users.email')}
+						</label>
+						<input
+							type="email"
+							value={formData.email}
+							onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+							placeholder={t('users.enterEmail')}
+							className="w-full bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white outline-none transition-all"
+						/>
+					</div>
+
+					<div>
+						<label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-500 mb-2">
+							<Lock size={14} /> {t('users.password')}
+						</label>
+						<input
+							type="password"
+							value={formData.password}
+							onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+							placeholder={editingUser ? t('users.leaveEmptyPassword') : t('users.enterPassword')}
+							className="w-full bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white outline-none transition-all"
+						/>
+					</div>
+
+					<div>
+						<label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-500 mb-2">
+							<Shield size={14} /> {t('users.role')}
 						</label>
 						<select
 							value={formData.role}
 							onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-							className="w-full px-4 py-3 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600/50 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-gray-50 dark:focus:bg-gray-700 transition-all duration-200"
+							className="w-full bg-white dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 focus:border-blue-500 rounded-xl px-4 py-3 text-gray-900 dark:text-white outline-none transition-all appearance-none"
 						>
 							<option value="guest">{t('users.guest')}</option>
 							<option value="user">{t('users.user')}</option>
@@ -147,27 +157,29 @@ export function AddUserModal({ isOpen, onClose, editingUser, onRefresh }: AddUse
 							<option value="admin">{t('users.admin')}</option>
 						</select>
 					</div>
-				</div>
+
+					{/* Actions - hidden submit button to enable enter key */}
+					<button type="submit" className="hidden" />
+				</form>
 
 				{/* Modal Footer */}
-				<div className="bg-gray-50 dark:bg-gray-800/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700/50 p-6 flex gap-3 rounded-b-2xl">
-					<Button
-						variant="primary"
-						onClick={handleSaveUser}
-						disabled={saving}
-						loading={saving}
-						loadingText={t('users.saving')}
-						fullWidth
-						icon={<Check className="w-5 h-5" />}
-					>
-						{editingUser ? t('users.update') : t('users.create')}
-					</Button>
+				<div className="flex gap-3 p-6 pt-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
 					<Button
 						variant="secondary"
 						onClick={onClose}
 						disabled={saving}
+						className="flex-1 py-3 rounded-2xl"
 					>
 						{t('users.cancel')}
+					</Button>
+					<Button
+						onClick={() => handleSaveUser()}
+						loading={saving}
+						variant="primary"
+						className="flex-1 py-3 rounded-2xl shadow-lg shadow-blue-500/20"
+					>
+						<Save size={18} className="mr-2" />
+						{editingUser ? t('users.update') : t('users.create')}
 					</Button>
 				</div>
 			</div>

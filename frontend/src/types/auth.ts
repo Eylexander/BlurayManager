@@ -8,7 +8,7 @@ export interface User {
 }
 
 export interface UserSettings {
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
   language: 'en-US' | 'fr-FR';
 }
 

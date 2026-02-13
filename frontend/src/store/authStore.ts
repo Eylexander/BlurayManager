@@ -3,13 +3,14 @@ import { persist } from 'zustand/middleware';
 import Cookies from 'js-cookie';
 import { User } from '@/types/auth';
 import { apiClient } from '@/lib/api-client';
+import { useSettingsStore } from './settingsStore';
 
 interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (identifier: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<{ languageChanged: boolean }>;
+  register: (username: string, email: string, password: string) => Promise<{ languageChanged: boolean }>;
   logout: () => void;
   updateUser: (user: User) => void;
   checkAuth: () => Promise<void>;
@@ -31,7 +32,22 @@ export const useAuthStore = create<AuthState>()(
           secure: false // Set to true in production with HTTPS
         });
         
+        let languageChanged = false;
+        
+        // Sync user settings to settingsStore
+        if (response.user.settings) {
+          const { setTheme, setLanguage, language: currentLanguage } = useSettingsStore.getState();
+          if (response.user.settings.theme) {
+            setTheme(response.user.settings.theme as 'light' | 'dark' | 'system');
+          }
+          if (response.user.settings.language && response.user.settings.language !== currentLanguage) {
+            setLanguage(response.user.settings.language);
+            languageChanged = true;
+          }
+        }
+        
         set({ user: response.user, token: response.token, isAuthenticated: true });
+        return { languageChanged };
       },
 
       register: async (username: string, email: string, password: string) => {
@@ -43,7 +59,22 @@ export const useAuthStore = create<AuthState>()(
           secure: false // Set to true in production with HTTPS
         });
         
+        let languageChanged = false;
+        
+        // Sync user settings to settingsStore
+        if (response.user.settings) {
+          const { setTheme, setLanguage, language: currentLanguage } = useSettingsStore.getState();
+          if (response.user.settings.theme) {
+            setTheme(response.user.settings.theme as 'light' | 'dark' | 'system');
+          }
+          if (response.user.settings.language && response.user.settings.language !== currentLanguage) {
+            setLanguage(response.user.settings.language);
+            languageChanged = true;
+          }
+        }
+        
         set({ user: response.user, token: response.token, isAuthenticated: true });
+        return { languageChanged };
       },
 
       logout: () => {
@@ -61,6 +92,18 @@ export const useAuthStore = create<AuthState>()(
         if (token) {
           try {
             const user = await apiClient.getCurrentUser();
+            
+            // Sync user settings to settingsStore
+            if (user.settings) {
+              const { setTheme, setLanguage } = useSettingsStore.getState();
+              if (user.settings.theme) {
+                setTheme(user.settings.theme as 'light' | 'dark' | 'system');
+              }
+              if (user.settings.language) {
+                setLanguage(user.settings.language);
+              }
+            }
+            
             set({ user, token, isAuthenticated: true });
           } catch (error) {
             console.error('[AuthStore] CheckAuth failed:', error);

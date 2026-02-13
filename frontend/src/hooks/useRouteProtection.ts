@@ -84,6 +84,13 @@ export function useRouteProtection(pathname: string, isPublicPage: boolean = fal
         await checkAuth();
       }
 
+      // Redirect authenticated users away from auth pages
+      const authPages = [ROUTES.AUTH.LOGIN, ROUTES.AUTH.REGISTER];
+      if (isAuthenticated && authPages.includes(pathname as any)) {
+        router.replace(ROUTES.DASHBOARD.HOME);
+        return;
+      }
+
       // Find matching route config
       let config: RouteConfig | null = null;
       

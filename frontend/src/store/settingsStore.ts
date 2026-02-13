@@ -3,10 +3,10 @@ import Cookies from 'js-cookie';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface SettingsState {
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
   language: 'en-US' | 'fr-FR';
   viewMode: 'grid' | 'list';
-  setTheme: (theme: 'light' | 'dark') => void;
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setLanguage: (language: 'en-US' | 'fr-FR') => void;
   setViewMode: (viewMode: 'grid' | 'list') => void;
 }
@@ -14,7 +14,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      theme: 'dark',
+      theme: 'system',
       language: 'en-US',
       viewMode: 'grid',
 

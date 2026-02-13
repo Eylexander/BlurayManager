@@ -3,20 +3,24 @@
 import { useAuthStore } from "@/store/authStore";
 import { Eye, EyeOff, UserCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/dist/client/components/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { ROUTES } from "@/hooks/useRouteProtection";
+import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 
 export default function LoginPage() {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
   const { login } = useAuthStore();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect authenticated users to dashboard
+  useRouteProtection(pathname, false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,9 +30,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(identifier.trim(), password);
+      const { languageChanged } = await login(identifier.trim(), password);
       toast.success(t("auth.loginSuccess"));
-      router.push(ROUTES.DASHBOARD.HOME);
+      
+      if (languageChanged) {
+        window.location.href = ROUTES.DASHBOARD.HOME;
+      } else {
+        router.push(ROUTES.DASHBOARD.HOME);
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       const errorMessage =
@@ -45,9 +54,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login("guest@bluray-manager.local", "guest");
+      const { languageChanged } = await login("guest@bluray-manager.local", "guest");
       toast.success(t("auth.guestLoginSuccess"));
-      router.push(ROUTES.DASHBOARD.HOME);
+      
+      if (languageChanged) {
+        window.location.href = ROUTES.DASHBOARD.HOME;
+      } else {
+        router.push(ROUTES.DASHBOARD.HOME);
+      }
     } catch (error: any) {
       console.error("Guest login error:", error);
       toast.error(t("auth.guestLoginError"));

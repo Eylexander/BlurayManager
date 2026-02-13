@@ -54,12 +54,12 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
             className="
             relative flex flex-col h-full w-full 
             bg-white dark:bg-dark-800/40 backdrop-blur-md 
-            border border-gray-200 dark:border-white/5 
+            border border-gray-300 dark:border-white/5 
             rounded-2xl overflow-hidden
             transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
             md:group-hover:scale-[1.02] md:group-hover:-translate-y-2 
             3xl:group-hover:scale-[1.01]
-            md:group-hover:border-primary-500/40 md:group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]
+            md:group-hover:border-primary-500/40 md:group-hover:shadow-lg md:group-hover:shadow-black/20
             active:scale-[0.97]
           "
           >
@@ -76,13 +76,13 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                     sizes="(max-width: 640px) 50vw, 20vw"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-dark-700 to-dark-900 flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br dark:from-dark-700 dark:to-dark-900 flex items-center justify-center">
                     <span className="text-4xl opacity-40">🎬</span>
                   </div>
                 )}
 
                 {/* Premium Gradient Overlay: Now inside the scaling wrapper */}
-                <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-transparent to-black/20" />
+                <div className="absolute inset-0 bg-gradient-to-t dark:from-dark-900 dark:via-black/0 via-25% dark:to-transparent" />
               </div>
 
               {/* Floating Badge (Top Left) */}
@@ -107,7 +107,7 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                       e.preventDefault();
                       setShowTagModal(true);
                     }}
-                    className="p-2.5 bg-dark-950/90 backdrop-blur-xl hover:bg-primary-500 text-white rounded-xl border border-white/20 shadow-2xl transition-colors"
+                    className="p-2.5 bg-dark-950/90 backdrop-blur-xl hover:bg-primary-500 text-white rounded-xl border border-white/20 shadow-lg transition-colors"
                   >
                     <TagIcon className="w-4 h-4" />
                   </button>

@@ -154,17 +154,55 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-dark-900 border-b border-gray-200 dark:border-dark-800 z-50">
       <div className="h-full px-3 sm:px-6 flex items-center justify-between">
         {/* Logo */}
+        {/* <div className="flex justify-center mb-2">
+          <Image
+            src="/logo.png"
+            alt={useTranslations()('common.appName')}
+            width={140}
+            height={140}
+            className="dark:hidden w-[120px] object-contain"
+            priority
+          />
+          <Image
+            src="/logo_dark.png"
+            alt={useTranslations()('common.appName')}
+            width={140}
+            height={140}
+            className="hidden dark:block w-[120px] object-contain"
+            priority
+          />
+        </div> */}
         <button
           onClick={() => router.push(ROUTES.DASHBOARD.HOME)}
-          className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 p-4 -m-2 rounded-lg lg:hover:scale-[101%] lg:hover:bg-gray-100 dark:lg:hover:bg-dark-800"
+          className="flex items-center justify-center flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 px-2 py-1 rounded-lg lg:hover:scale-105 lg:hover:bg-gray-100 dark:lg:hover:bg-dark-800 sm:mb-3"
           title="Go to home"
         >
-          <div className="text-xl sm:text-2xl lg:group-hover:scale-105 lg:group-hover:rotate-12 transition-all duration-300">
-            🎬
-          </div>
-          <h1 className="hidden sm:block text-base sm:text-xl font-bold text-gray-900 dark:text-white lg:group-hover:text-primary-600 dark:lg:group-hover:text-primary-400 transition-colors">
-            {t("common.appName")}
-          </h1>
+          {/* Mobile logo (small) - same for both light and dark */}
+          <Image
+            src="/logo_small.png"
+            alt={useTranslations()('common.appName')}
+            width={48}
+            height={48}
+            className="block sm:hidden w-[40px] h-auto object-contain"
+            priority
+          />
+          {/* Desktop logo (full) */}
+          <Image
+            src="/logo.png"
+            alt={useTranslations()('common.appName')}
+            width={200}
+            height={80}
+            className="hidden dark:hidden sm:block w-[160px] h-auto object-contain"
+            priority
+          />
+          <Image
+            src="/logo_dark.png"
+            alt={useTranslations()('common.appName')}
+            width={200}
+            height={80}
+            className="hidden sm:dark:block w-[160px] h-auto object-contain"
+            priority
+          />
         </button>
 
         {/* Search Bar - Always visible */}
@@ -372,11 +410,10 @@ export default function Navbar() {
           <div className="relative" ref={notificationRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className={`relative p-2.5 rounded-lg transition-all duration-300 ${
-                showNotifications
-                  ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 shadow-lg shadow-blue-500/20 scale-105"
-                  : "lg:hover:bg-gray-100 lg:dark:hover:bg-dark-800 text-gray-600 dark:text-gray-400 lg:hover:text-blue-500 lg:dark:hover:text-blue-400"
-              } lg:hover:scale-110 active:scale-95`}
+              className={`relative p-2.5 rounded-lg transition-all duration-300 ${showNotifications
+                ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 shadow-lg shadow-blue-500/20 scale-105"
+                : "lg:hover:bg-gray-100 lg:dark:hover:bg-dark-800 text-gray-600 dark:text-gray-400 lg:hover:text-blue-500 lg:dark:hover:text-blue-400"
+                } lg:hover:scale-110 active:scale-95`}
               title="Notifications"
             >
               <Bell className="w-5 h-5" />
@@ -416,11 +453,10 @@ export default function Navbar() {
                       <div
                         key={notification.id}
                         onClick={() => markAsRead(notification.id)}
-                        className={`p-3 sm:p-4 border-b border-gray-200 dark:border-dark-700 ${
-                          !notification.read
-                            ? "bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                            : "hover:bg-gray-50 dark:hover:bg-dark-700"
-                        } transition-all duration-200 cursor-pointer active:scale-95 transform hover:pl-4 sm:hover:pl-5 active:bg-opacity-75`}
+                        className={`p-3 sm:p-4 border-b border-gray-200 dark:border-dark-700 ${!notification.read
+                          ? "bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          : "hover:bg-gray-50 dark:hover:bg-dark-700"
+                          } transition-all duration-200 cursor-pointer active:scale-95 transform hover:pl-4 sm:hover:pl-5 active:bg-opacity-75`}
                         style={{
                           animationDelay: `${index * 50}ms`,
                         }}

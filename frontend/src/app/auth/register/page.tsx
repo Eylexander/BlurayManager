@@ -29,9 +29,15 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(username, email.toLowerCase(), password);
+      const { languageChanged } = await register(username, email.toLowerCase(), password);
       toast.success(t("auth.registerSuccess"));
-      router.push(ROUTES.DASHBOARD.HOME);
+      
+      if (languageChanged) {
+        // Refresh page to apply new language
+        window.location.href = ROUTES.DASHBOARD.HOME;
+      } else {
+        router.push(ROUTES.DASHBOARD.HOME);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error || t("auth.registerError"));
     } finally {
