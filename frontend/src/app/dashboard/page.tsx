@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Film, Tv, X, LayoutGrid, List } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore } from "@/store/settingsStore";
 import { apiClient } from "@/lib/api-client";
 import { Bluray } from "@/types/bluray";
 import { SimplifiedStatistics } from "@/types/statistics";
@@ -22,10 +21,9 @@ type SortOption = "recent" | "name" | "release_date" | "rating";
 export default function DashboardPage() {
   const t = useTranslations();
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, viewMode, setViewMode } = useAuthStore();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
-  const { viewMode, setViewMode } = useSettingsStore();
   const locale = useLocale() as "en-US" | "fr-FR";
 
   const [recentBlurays, setRecentBlurays] = useState<Bluray[]>([]);

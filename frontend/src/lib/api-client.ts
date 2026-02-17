@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import Cookies from 'js-cookie';
 import { useNotificationStore } from '@/store/notificationStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -23,9 +23,9 @@ class ApiClient {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      const settings = useSettingsStore.getState();
-      if (settings.language) {
-        config.headers['Accept-Language'] = settings.language;
+      const { user } = useAuthStore.getState();
+      if (user?.settings?.language) {
+        config.headers['Accept-Language'] = user.settings.language;
       }
 
       return config;

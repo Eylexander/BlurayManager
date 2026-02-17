@@ -5,7 +5,16 @@ const nextConfig = {
   output: 'standalone',
   devIndicators: false,
   images: {
-    domains: ['image.tmdb.org', 'localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'image.tmdb.org',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
   },
 }
 

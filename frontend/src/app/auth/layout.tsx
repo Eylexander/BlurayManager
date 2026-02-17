@@ -11,18 +11,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Image
             src="/logo.png"
             alt={useTranslations()('common.appName')}
-            width={240}
-            height={240}
+            width={960}
+            height={960}
             className="dark:hidden w-[180px] lg:w-[240px] object-contain"
-            priority
           />
           <Image
             src="/logo_dark.png"
             alt={useTranslations()('common.appName')}
-            width={240}
-            height={240}
+            width={960}
+            height={960}
             className="hidden dark:block w-[180px] lg:w-[240px] object-contain"
-            priority
           />
         </div>
 

@@ -1,9 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import ToasterProvider from "@/components/providers/ToasterProvider";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bluray.eylexander.xyz"),
@@ -12,6 +19,15 @@ export const metadata: Metadata = {
     template: "%s | Bluray Manager",
   },
   description: "Personal Bluray collection manager - Organize, track, and manage your physical media library",
+  applicationName: "Bluray Manager",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Bluray Manager",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: "Bluray Manager",
     description: "Personal Bluray collection manager - Organize, track, and manage your physical media library",
@@ -45,7 +61,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
+    apple: "/icon-192x192.png",
   },
+  manifest: "/manifest.json",
 };
 
 export default async function RootLayout({

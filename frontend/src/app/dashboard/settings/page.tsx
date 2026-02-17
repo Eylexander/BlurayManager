@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore } from "@/store/settingsStore";
 import { apiClient } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { Sun, Moon, Globe, User, Lock, Check, Settings } from "lucide-react";
@@ -80,11 +79,10 @@ export default function SettingsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { user, updateUser } = useAuthStore();
-  const { language, setLanguage } = useSettingsStore();
+  const { user, updateUser, setLanguage } = useAuthStore();
   const [selectedTheme, setSelectedTheme] = useState(theme || "dark");
   const [selectedLanguage, setSelectedLanguage] = useState(
-    locale || language || "en-US",
+    locale || user?.settings?.language || "en-US",
   );
   const [loading, setLoading] = useState(false);
 
@@ -104,10 +102,10 @@ export default function SettingsPage() {
   useEffect(() => {
     if (theme) setSelectedTheme(theme);
     // Use actual locale from next-intl as the source of truth
-    const currentLanguage = locale || language;
+    const currentLanguage = locale || user?.settings?.language;
     if (currentLanguage) setSelectedLanguage(currentLanguage);
     if (user) setNewUsername(user.username);
-  }, [theme, language, user, locale]);
+  }, [theme, user, locale]);
 
   const handleSave = async () => {
     setLoading(true);

@@ -7,7 +7,7 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 import { apiClient } from "@/lib/api-client";
-import { useSettingsStore } from "@/store/settingsStore";
+import { useAuthStore } from "@/store/authStore";
 import {
   Film,
   ChevronLeft,
@@ -115,7 +115,8 @@ export default function AddResultsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { language } = useSettingsStore();
+  const { user } = useAuthStore();
+  const language = user?.settings?.language || 'en-US';
 
   useRouteProtection(pathname);
 

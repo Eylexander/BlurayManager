@@ -154,30 +154,11 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-dark-900 border-b border-gray-200 dark:border-dark-800 z-50">
       <div className="h-full px-3 sm:px-6 flex items-center justify-between">
         {/* Logo */}
-        {/* <div className="flex justify-center mb-2">
-          <Image
-            src="/logo.png"
-            alt={useTranslations()('common.appName')}
-            width={140}
-            height={140}
-            className="dark:hidden w-[120px] object-contain"
-            priority
-          />
-          <Image
-            src="/logo_dark.png"
-            alt={useTranslations()('common.appName')}
-            width={140}
-            height={140}
-            className="hidden dark:block w-[120px] object-contain"
-            priority
-          />
-        </div> */}
-        <button
+        {/* <button
           onClick={() => router.push(ROUTES.DASHBOARD.HOME)}
           className="flex items-center justify-center flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 px-2 py-1 rounded-lg lg:hover:scale-105 lg:hover:bg-gray-100 dark:lg:hover:bg-dark-800 sm:mb-3"
           title="Go to home"
         >
-          {/* Mobile logo (small) - same for both light and dark */}
           <Image
             src="/logo_small.png"
             alt={useTranslations()('common.appName')}
@@ -186,7 +167,7 @@ export default function Navbar() {
             className="block sm:hidden w-[40px] h-auto object-contain"
             priority
           />
-          {/* Desktop logo (full) */}
+          
           <Image
             src="/logo.png"
             alt={useTranslations()('common.appName')}
@@ -203,6 +184,23 @@ export default function Navbar() {
             className="hidden sm:dark:block w-[160px] h-auto object-contain"
             priority
           />
+        </button> */}
+
+        <button
+          onClick={() => router.push(ROUTES.DASHBOARD.HOME)}
+          className="flex items-center space-x-2 flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 px-2 py-1 rounded-lg lg:hover:scale-[101%] lg:hover:bg-gray-100 dark:lg:hover:bg-dark-800"
+          title="Go to home"
+        >
+          <Image
+            src="/logo_small.png"
+            alt={useTranslations()('common.appName')}
+            width={48}
+            height={48}
+            className="w-[40px] h-auto object-contain"
+          />
+          <h1 className="hidden sm:block text-base sm:text-2xl font-black italic text-gray-900 dark:text-white lg:group-hover:text-primary-600 dark:lg:group-hover:text-primary-400 transition-colors">
+            {t('common.appName').toUpperCase()}
+          </h1>
         </button>
 
         {/* Search Bar - Always visible */}
