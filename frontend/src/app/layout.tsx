@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     siteName: "Bluray Manager",
     images: [
       {
-        url: "/og.png",
+        url: "/logo_dark.png",
         width: 1920,
         height: 1080,
       },

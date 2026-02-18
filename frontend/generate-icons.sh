@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SOURCE="public/logo_dark.png"
+SOURCE="public/logo_small.png"
 SIZES=(72 96 128 144 152 192 384 512)
 
 echo "Generating PWA icons from $SOURCE..."
