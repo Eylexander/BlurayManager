@@ -14,6 +14,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             width={960}
             height={960}
             className="dark:hidden w-[180px] lg:w-[240px] object-contain"
+            priority
           />
           <Image
             src="/logo_dark.png"
@@ -21,6 +22,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             width={960}
             height={960}
             className="hidden dark:block w-[180px] lg:w-[240px] object-contain"
+            priority
           />
         </div>
 

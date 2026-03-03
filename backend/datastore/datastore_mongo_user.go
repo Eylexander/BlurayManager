@@ -73,13 +73,24 @@ func (ds *MongoDatastore) ListUsers(ctx context.Context, skip, limit int) ([]*mo
 	return users, nil
 }
 
-// EnsureGuestUser creates a guest user if it doesn't exist
-// Returns true if the user was created, false if it already existed
+// EnsureGuestUser creates a guest user if it doesn't exist, or migrates
+// an existing guest user's locale to the current format (e.g. "en" → "en-US").
+// Returns true if the user was created, false if it already existed.
 func (ds *MongoDatastore) EnsureGuestUser(ctx context.Context) (bool, error) {
+	// Locale migration map: old short codes → new BCP-47 tags
+	localeMap := map[string]string{
+		"en": "en-US",
+		"fr": "fr-FR",
+	}
+
 	// Check if guest user already exists
-	_, err := ds.GetUserByEmail(ctx, "guest@bluray-manager.local")
+	existingUser, err := ds.GetUserByEmail(ctx, "guest@bluray-manager.local")
 	if err == nil {
-		// Guest user already exists
+		// Migrate outdated locale format if necessary
+		if newLocale, outdated := localeMap[existingUser.Settings.Language]; outdated {
+			existingUser.Settings.Language = newLocale
+			_ = ds.UpdateUser(ctx, existingUser)
+		}
 		return false, nil
 	}
 
@@ -96,7 +107,7 @@ func (ds *MongoDatastore) EnsureGuestUser(ctx context.Context) (bool, error) {
 		Role:         models.RoleGuest,
 		Settings: models.UserSettings{
 			Theme:    "dark",
-			Language: "en",
+			Language: "en-US",
 		},
 	}
 

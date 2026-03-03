@@ -4,6 +4,13 @@ import Cookies from 'js-cookie';
 import { User } from '@/types/auth';
 import { apiClient } from '@/lib/api-client';
 
+// Migrate legacy short locale codes (e.g. "en", "fr") to full BCP-47 tags
+const LOCALE_MAP: Record<string, string> = {
+  'en': 'en-US',
+  'fr': 'fr-FR',
+};
+const normalizeLocale = (lang: string): string => LOCALE_MAP[lang] ?? lang;
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -39,9 +46,14 @@ export const useAuthStore = create<AuthState>()(
         let languageChanged = false;
         const currentLanguage = get().user?.settings?.language;
         
-        if (response.user.settings?.language && response.user.settings.language !== currentLanguage) {
-          languageChanged = true;
-          Cookies.set('locale', response.user.settings.language, { expires: 365 });
+        if (response.user.settings?.language) {
+          const normalizedLocale = normalizeLocale(response.user.settings.language);
+          if (normalizedLocale !== currentLanguage) {
+            languageChanged = true;
+            Cookies.set('locale', normalizedLocale, { expires: 365 });
+          }
+          // Keep the stored user's language in normalized form
+          response.user.settings.language = normalizedLocale;
         }
         
         if (response.user.settings?.theme) {
@@ -64,9 +76,13 @@ export const useAuthStore = create<AuthState>()(
         let languageChanged = false;
         const currentLanguage = get().user?.settings?.language;
         
-        if (response.user.settings?.language && response.user.settings.language !== currentLanguage) {
-          languageChanged = true;
-          Cookies.set('locale', response.user.settings.language, { expires: 365 });
+        if (response.user.settings?.language) {
+          const normalizedLocale = normalizeLocale(response.user.settings.language);
+          if (normalizedLocale !== currentLanguage) {
+            languageChanged = true;
+            Cookies.set('locale', normalizedLocale, { expires: 365 });
+          }
+          response.user.settings.language = normalizedLocale;
         }
         
         if (response.user.settings?.theme) {
@@ -98,7 +114,9 @@ export const useAuthStore = create<AuthState>()(
             }
             
             if (user.settings?.language) {
-              Cookies.set('locale', user.settings.language, { expires: 365 });
+              const normalizedLocale = normalizeLocale(user.settings.language);
+              Cookies.set('locale', normalizedLocale, { expires: 365 });
+              user.settings.language = normalizedLocale;
             }
             
             set({ user, token, isAuthenticated: true });

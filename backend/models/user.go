@@ -31,7 +31,7 @@ type User struct {
 // UserSettings stores user preferences
 type UserSettings struct {
 	Theme    string `bson:"theme" json:"theme"`       // "light" or "dark"
-	Language string `bson:"language" json:"language"` // "en" or "fr"
+	Language string `bson:"language" json:"language"` // "en-US" or "fr-FR"
 }
 
 // UserCredentials for login

@@ -80,7 +80,3 @@ func (ds *MongoDatastore) UpdateUserPassword(userID, newPassword string) error {
 	)
 	return err
 }
-
-func (ds *MongoDatastore) Close(ctx context.Context) error {
-	return ds.client.Disconnect(ctx)
-}

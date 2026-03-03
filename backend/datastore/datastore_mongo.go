@@ -80,3 +80,7 @@ func (ds *MongoDatastore) createIndexes(ctx context.Context) error {
 
 	return err
 }
+
+func (ds *MongoDatastore) Close(ctx context.Context) error {
+	return ds.client.Disconnect(ctx)
+}
