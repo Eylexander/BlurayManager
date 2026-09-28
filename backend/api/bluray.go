@@ -225,16 +225,16 @@ func (api *API) ExportBlurays(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		resolver := newTagResolver(tags)
+		resolver := NewTagResolver(tags)
 		for i, b := range blurays {
 			named := *b
-			named.Tags = resolver.names(b.Tags)
+			named.Tags = resolver.Names(b.Tags)
 			blurays[i] = &named
 		}
 	}
 
 	var buf bytes.Buffer
-	if err := writeBluraysCSV(&buf, blurays); err != nil {
+	if err := WriteBluraysCSV(&buf, blurays); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -268,7 +268,7 @@ func (api *API) ImportBlurays(c *gin.Context) {
 		return
 	}
 
-	records, err := readBluraysCSV(bytes.NewReader(content))
+	records, err := ReadBluraysCSV(bytes.NewReader(content))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -283,14 +283,14 @@ func (api *API) ImportBlurays(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	tagResolver := newTagResolver(tags)
+	tagResolver := NewTagResolver(tags)
 	userID, _ := primitive.ObjectIDFromHex(c.GetString("userID"))
 
 	for i, fields := range records {
 		// +2: records exclude the header row, and file lines are 1-indexed.
 		line := "Line " + strconv.Itoa(i+2) + ": "
 
-		bluray, err := recordToBluray(fields)
+		bluray, err := RecordToBluray(fields)
 		if err != nil {
 			errors = append(errors, line+err.Error())
 			failed++
@@ -299,7 +299,7 @@ func (api *API) ImportBlurays(c *gin.Context) {
 
 		// Map tag names (or IDs from older exports) to this instance's tags,
 		// creating the ones that don't exist yet.
-		tagIDs, missing := tagResolver.resolve(bluray.Tags)
+		tagIDs, missing := tagResolver.Resolve(bluray.Tags)
 		for _, name := range missing {
 			tag := &models.Tag{Name: name, Color: defaultTagColor, CreatedBy: userID}
 			if err := api.ctrl.CreateTag(ctx, tag); err != nil {

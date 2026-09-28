@@ -1,8 +1,9 @@
-package controller
+package test
 
 import (
 	"context"
 	"errors"
+	"eylexander/bluraymanager/controller"
 	"eylexander/bluraymanager/datastore"
 	"eylexander/bluraymanager/models"
 	"net/http"
@@ -19,30 +20,30 @@ func init() {
 }
 
 func TestRateLimiterWindow(t *testing.T) {
-	rl := NewRateLimiter(2, time.Minute)
+	rl := controller.NewRateLimiter(2, time.Minute)
 	now := time.Now()
 
 	for i := range 2 {
-		if !rl.allow("1.2.3.4", now) {
+		if !rl.Allow("1.2.3.4", now) {
 			t.Fatalf("request %d should pass", i+1)
 		}
 	}
-	if rl.allow("1.2.3.4", now) {
+	if rl.Allow("1.2.3.4", now) {
 		t.Fatal("third request inside the window should be rejected")
 	}
-	if !rl.allow("5.6.7.8", now) {
+	if !rl.Allow("5.6.7.8", now) {
 		t.Fatal("limits must be tracked per IP")
 	}
-	if !rl.allow("1.2.3.4", now.Add(2*time.Minute)) {
+	if !rl.Allow("1.2.3.4", now.Add(2*time.Minute)) {
 		t.Fatal("the counter should reset once the window has passed")
 	}
-	if len(rl.visitors) != 1 {
-		t.Fatalf("expired visitors should be swept, have %d", len(rl.visitors))
+	if rl.Size() != 1 {
+		t.Fatalf("expired visitors should be swept, have %d", rl.Size())
 	}
 }
 
 func TestDenyRole(t *testing.T) {
-	c := &Controller{}
+	c := &controller.Controller{}
 	for _, tc := range []struct {
 		role models.UserRole
 		want int
@@ -65,7 +66,7 @@ func TestDenyRole(t *testing.T) {
 }
 
 func TestCORSMiddleware(t *testing.T) {
-	c := &Controller{}
+	c := &controller.Controller{}
 	serve := func(allowed []string, origin string) *httptest.ResponseRecorder {
 		r := gin.New()
 		r.Use(c.CORSMiddleware(allowed))
@@ -108,14 +109,14 @@ func (s userStore) GetUserByID(_ context.Context, id primitive.ObjectID) (*model
 
 func TestAuthMiddlewareUsesCurrentRole(t *testing.T) {
 	user := &models.User{ID: primitive.NewObjectID(), Username: "eylexander", Role: models.RoleUser}
-	signer := NewController(nil, "test-secret")
+	signer := controller.NewController(nil, "test-secret")
 	token, err := signer.GenerateToken(user) // token claims role "user"
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	serve := func(store datastore.Datastore) int {
-		c := NewController(store, "test-secret")
+		c := controller.NewController(store, "test-secret")
 		r := gin.New()
 		r.GET("/admin", c.AuthMiddleware(), c.RequireRole(models.RoleAdmin), func(ctx *gin.Context) {
 			ctx.Status(http.StatusOK)

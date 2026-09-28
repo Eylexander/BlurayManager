@@ -1,8 +1,9 @@
-package api
+package test
 
 import (
 	"context"
 	"errors"
+	"eylexander/bluraymanager/api"
 	"eylexander/bluraymanager/controller"
 	"net/http"
 	"net/http/httptest"
@@ -18,9 +19,9 @@ func TestFetchTMDBStatusError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	_, err := (&API{}).fetchTMDB(context.Background(), srv.URL+"/search/movie?api_key=secret")
-	var statusErr *tmdbStatusError
-	if !errors.As(err, &statusErr) || statusErr.status != http.StatusUnauthorized {
+	_, err := (&api.API{}).FetchTMDB(context.Background(), srv.URL+"/search/movie?api_key=secret")
+	var statusErr *api.TMDBStatusError
+	if !errors.As(err, &statusErr) || statusErr.Status != http.StatusUnauthorized {
 		t.Fatalf("want a 401 tmdbStatusError, got %v", err)
 	}
 }
@@ -29,7 +30,7 @@ func TestFetchTMDBRedactsAPIKey(t *testing.T) {
 	srv := httptest.NewServer(http.NotFoundHandler())
 	srv.Close() // connection refused
 
-	_, err := (&API{}).fetchTMDB(context.Background(), srv.URL+"/search/movie?api_key=super-secret")
+	_, err := (&api.API{}).FetchTMDB(context.Background(), srv.URL+"/search/movie?api_key=super-secret")
 	if err == nil {
 		t.Fatal("expected a connection error")
 	}
@@ -40,12 +41,12 @@ func TestFetchTMDBRedactsAPIKey(t *testing.T) {
 
 func TestTMDBFailureInvalidKeyMessage(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	api := NewAPI(controller.NewController(nil, "x"))
+	a := api.NewAPI(controller.NewController(nil, "x"))
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/tmdb/search", nil)
 
-	api.tmdbFailure(c, "tmdb.failedToSearch", &tmdbStatusError{status: http.StatusUnauthorized})
+	a.TMDBFailure(c, "tmdb.failedToSearch", &api.TMDBStatusError{Status: http.StatusUnauthorized})
 
 	if w.Code != http.StatusBadGateway {
 		t.Errorf("status = %d, want 502", w.Code)

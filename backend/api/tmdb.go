@@ -21,19 +21,19 @@ const tmdbBaseURL = "https://api.themoviedb.org/3"
 // or connection hangs the request until the browser gives up.
 var tmdbClient = &http.Client{Timeout: 10 * time.Second}
 
-// tmdbStatusError is a non-200 answer from TMDB.
-type tmdbStatusError struct{ status int }
+// TMDBStatusError is a non-200 answer from TMDB.
+type TMDBStatusError struct{ Status int }
 
-func (e *tmdbStatusError) Error() string { return fmt.Sprintf("TMDB returned status %d", e.status) }
+func (e *TMDBStatusError) Error() string { return fmt.Sprintf("TMDB returned status %d", e.Status) }
 
-// tmdbFailure logs why a TMDB call failed and answers 502: the upstream
+// TMDBFailure logs why a TMDB call failed and answers 502: the upstream
 // service failed, not this server. A rejected API key gets its own message
 // since it is a configuration problem the admin can fix.
-func (api *API) tmdbFailure(c *gin.Context, messageKey string, err error) {
+func (api *API) TMDBFailure(c *gin.Context, messageKey string, err error) {
 	log.Printf("TMDB %s %s: %v", c.Request.Method, c.Request.URL.Path, err)
 	i18n := api.GetI18n(c)
-	var statusErr *tmdbStatusError
-	if errors.As(err, &statusErr) && statusErr.status == http.StatusUnauthorized {
+	var statusErr *TMDBStatusError
+	if errors.As(err, &statusErr) && statusErr.Status == http.StatusUnauthorized {
 		messageKey = "tmdb.invalidApiKey"
 	}
 	c.JSON(http.StatusBadGateway, gin.H{"error": i18n.T(messageKey)})
@@ -76,9 +76,9 @@ func (api *API) SearchTMDB(c *gin.Context) {
 
 	reqURL := fmt.Sprintf("%s/search/%s?%s", tmdbBaseURL, mediaType, params.Encode())
 
-	result, err := api.fetchTMDB(c.Request.Context(), reqURL)
+	result, err := api.FetchTMDB(c.Request.Context(), reqURL)
 	if err != nil {
-		api.tmdbFailure(c, "tmdb.failedToSearch", err)
+		api.TMDBFailure(c, "tmdb.failedToSearch", err)
 		return
 	}
 
@@ -156,15 +156,15 @@ func (api *API) GetTMDBDetails(c *gin.Context) {
 
 	reqURL := fmt.Sprintf("%s/%s/%s?%s", tmdbBaseURL, mediaType, id, params.Encode())
 
-	result, err := api.fetchTMDB(c.Request.Context(), reqURL)
+	result, err := api.FetchTMDB(c.Request.Context(), reqURL)
 	if err != nil {
-		api.tmdbFailure(c, "tmdb.failedToFetchDetails", err)
+		api.TMDBFailure(c, "tmdb.failedToFetchDetails", err)
 		return
 	}
 
 	result, err = api.enrichWithLocalization(c.Request.Context(), result, mediaType, id, lang, apiKey)
 	if err != nil {
-		api.tmdbFailure(c, "tmdb.failedToEnrichDetails", err)
+		api.TMDBFailure(c, "tmdb.failedToEnrichDetails", err)
 		return
 	}
 
@@ -182,8 +182,8 @@ func (api *API) GetTMDBDetails(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// fetchTMDB handles the HTTP GET and JSON decoding
-func (api *API) fetchTMDB(ctx context.Context, rawURL string) (map[string]interface{}, error) {
+// FetchTMDB handles the HTTP GET and JSON decoding
+func (api *API) FetchTMDB(ctx context.Context, rawURL string) (map[string]interface{}, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (api *API) fetchTMDB(ctx context.Context, rawURL string) (map[string]interf
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, &tmdbStatusError{status: resp.StatusCode}
+		return nil, &TMDBStatusError{Status: resp.StatusCode}
 	}
 
 	var result map[string]interface{}
@@ -227,7 +227,7 @@ func (api *API) enrichWithLocalization(ctx context.Context, result map[string]in
 
 	urlLocalized := fmt.Sprintf("%s/%s/%s?%s", tmdbBaseURL, mediaType, id, params.Encode())
 
-	localizedResult, err := api.fetchTMDB(ctx, urlLocalized)
+	localizedResult, err := api.FetchTMDB(ctx, urlLocalized)
 	if err != nil {
 		return result, nil // Silently fail on localization fetch to preserve main result
 	}
@@ -339,15 +339,15 @@ func (api *API) FindByExternalID(c *gin.Context) {
 		}
 
 		reqURL := fmt.Sprintf("%s/%s/%s?%s", tmdbBaseURL, mediaType, externalID, params.Encode())
-		result, err := api.fetchTMDB(c.Request.Context(), reqURL)
+		result, err := api.FetchTMDB(c.Request.Context(), reqURL)
 		if err != nil {
-			api.tmdbFailure(c, "tmdb.failedToFetchDetails", err)
+			api.TMDBFailure(c, "tmdb.failedToFetchDetails", err)
 			return
 		}
 
 		result, err = api.enrichWithLocalization(c.Request.Context(), result, mediaType, externalID, lang, apiKey)
 		if err != nil {
-			api.tmdbFailure(c, "tmdb.failedToEnrichDetails", err)
+			api.TMDBFailure(c, "tmdb.failedToEnrichDetails", err)
 			return
 		}
 
@@ -376,9 +376,9 @@ func (api *API) FindByExternalID(c *gin.Context) {
 
 	reqURL := fmt.Sprintf("%s/find/%s?%s", tmdbBaseURL, externalID, params.Encode())
 
-	result, err := api.fetchTMDB(c.Request.Context(), reqURL)
+	result, err := api.FetchTMDB(c.Request.Context(), reqURL)
 	if err != nil {
-		api.tmdbFailure(c, "tmdb.failedToFind", err)
+		api.TMDBFailure(c, "tmdb.failedToFind", err)
 		return
 	}
 

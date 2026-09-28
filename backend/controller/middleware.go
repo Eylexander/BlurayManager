@@ -204,7 +204,8 @@ func NewRateLimiter(maxRequests int, window time.Duration) *RateLimiter {
 	return &RateLimiter{max: maxRequests, window: window, visitors: map[string]*visitor{}}
 }
 
-func (rl *RateLimiter) allow(ip string, now time.Time) bool {
+// Allow records a request from ip at now and reports whether it is within the limit.
+func (rl *RateLimiter) Allow(ip string, now time.Time) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
@@ -223,9 +224,16 @@ func (rl *RateLimiter) allow(ip string, now time.Time) bool {
 	return v.count <= rl.max
 }
 
+// Size is the number of clients currently tracked.
+func (rl *RateLimiter) Size() int {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	return len(rl.visitors)
+}
+
 func (c *Controller) RateLimit(rl *RateLimiter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if !rl.allow(ctx.ClientIP(), time.Now()) {
+		if !rl.Allow(ctx.ClientIP(), time.Now()) {
 			ctx.JSON(http.StatusTooManyRequests, gin.H{"error": c.GetI18n(ctx).T("api.tooManyRequests")})
 			ctx.Abort()
 			return

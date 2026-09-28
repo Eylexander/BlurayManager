@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-// utf8BOM is prepended to exports so spreadsheet apps (Excel in particular)
+// UTF8BOM is prepended to exports so spreadsheet apps (Excel in particular)
 // detect the encoding instead of mangling accented characters.
-const utf8BOM = "\xEF\xBB\xBF"
+const UTF8BOM = "\xEF\xBB\xBF"
 
-// csvHeader is the column layout shared by export and import. Import reads
+// CSVHeader is the column layout shared by export and import. Import reads
 // columns by position, so the order here is part of the file format.
-var csvHeader = []string{
+var CSVHeader = []string{
 	"Title", "Type", "GenreEn", "GenreFr", "DescriptionEn", "DescriptionFr", "Director",
 	"ReleaseYear", "Runtime", "Rating", "PurchasePrice", "PurchaseDate",
 	"CoverImageURL", "BackdropURL", "TMDBID", "Tags", "Seasons", "TotalEpisodes",
@@ -27,14 +27,14 @@ const csvDateLayout = "2006-01-02"
 // defaultTagColor is used for tags created while importing a CSV.
 const defaultTagColor = "#3B82F6"
 
-// writeBluraysCSV serializes blurays into the export format.
-func writeBluraysCSV(w io.Writer, blurays []*models.Bluray) error {
-	if _, err := io.WriteString(w, utf8BOM); err != nil {
+// WriteBluraysCSV serializes blurays into the export format.
+func WriteBluraysCSV(w io.Writer, blurays []*models.Bluray) error {
+	if _, err := io.WriteString(w, UTF8BOM); err != nil {
 		return err
 	}
 
 	cw := csv.NewWriter(w)
-	if err := cw.Write(csvHeader); err != nil {
+	if err := cw.Write(CSVHeader); err != nil {
 		return err
 	}
 	for _, b := range blurays {
@@ -46,8 +46,8 @@ func writeBluraysCSV(w io.Writer, blurays []*models.Bluray) error {
 	return cw.Error()
 }
 
-// readBluraysCSV parses an import file into records, header row excluded.
-func readBluraysCSV(r io.Reader) ([][]string, error) {
+// ReadBluraysCSV parses an import file into records, header row excluded.
+func ReadBluraysCSV(r io.Reader) ([][]string, error) {
 	cr := csv.NewReader(r)
 	cr.FieldsPerRecord = -1 // short rows are reported per line by the caller
 	cr.LazyQuotes = true
@@ -61,7 +61,7 @@ func readBluraysCSV(r io.Reader) ([][]string, error) {
 	}
 
 	// A BOM would otherwise end up glued to the first header cell.
-	records[0][0] = strings.TrimPrefix(records[0][0], utf8BOM)
+	records[0][0] = strings.TrimPrefix(records[0][0], UTF8BOM)
 	return records[1:], nil
 }
 
@@ -102,10 +102,10 @@ func blurayToRecord(b *models.Bluray) []string {
 	}
 }
 
-// recordToBluray maps an import row back onto a Bluray. Malformed numeric or
+// RecordToBluray maps an import row back onto a Bluray. Malformed numeric or
 // date cells are treated as empty rather than failing the whole row.
-func recordToBluray(fields []string) (*models.Bluray, error) {
-	if len(fields) < len(csvHeader) {
+func RecordToBluray(fields []string) (*models.Bluray, error) {
+	if len(fields) < len(CSVHeader) {
 		return nil, fmt.Errorf("insufficient fields")
 	}
 
@@ -195,31 +195,31 @@ func formatNonZeroFloat(f float64, precision int) string {
 	return strconv.FormatFloat(f, 'f', precision, 64)
 }
 
-// tagResolver translates the Tags column between tag IDs (what blurays store)
+// TagResolver translates the Tags column between tag IDs (what blurays store)
 // and tag names (what the CSV carries). Names keep an export meaningful when
 // it is imported into another instance, whose tags have different IDs.
-type tagResolver struct {
+type TagResolver struct {
 	nameByID map[string]string
 	idByName map[string]string // keyed by lower-cased name
 }
 
-func newTagResolver(tags []*models.Tag) *tagResolver {
-	r := &tagResolver{nameByID: map[string]string{}, idByName: map[string]string{}}
+func NewTagResolver(tags []*models.Tag) *TagResolver {
+	r := &TagResolver{nameByID: map[string]string{}, idByName: map[string]string{}}
 	for _, tag := range tags {
 		r.add(tag)
 	}
 	return r
 }
 
-func (r *tagResolver) add(tag *models.Tag) {
+func (r *TagResolver) add(tag *models.Tag) {
 	id := tag.ID.Hex()
 	r.nameByID[id] = tag.Name
 	r.idByName[strings.ToLower(tag.Name)] = id
 }
 
-// names converts tag IDs to names for export; unknown IDs are dropped since
+// Names converts tag IDs to names for export; unknown IDs are dropped since
 // they point at deleted tags.
-func (r *tagResolver) names(ids []string) []string {
+func (r *TagResolver) Names(ids []string) []string {
 	out := make([]string, 0, len(ids))
 	for _, id := range ids {
 		if name, ok := r.nameByID[id]; ok {
@@ -229,10 +229,10 @@ func (r *tagResolver) names(ids []string) []string {
 	return out
 }
 
-// resolve converts tag references from an import (names, or IDs from exports
+// Resolve converts tag references from an import (names, or IDs from exports
 // made before tags were written by name) to IDs. Names with no matching tag
 // are returned in missing so the caller can create them.
-func (r *tagResolver) resolve(refs []string) (ids []string, missing []string) {
+func (r *TagResolver) Resolve(refs []string) (ids []string, missing []string) {
 	seen := map[string]bool{}
 	for _, ref := range refs {
 		ref = strings.TrimSpace(ref)

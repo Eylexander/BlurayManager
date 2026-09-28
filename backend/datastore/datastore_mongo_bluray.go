@@ -82,11 +82,11 @@ func (ds *MongoDatastore) ListBlurays(ctx context.Context, filters map[string]in
 
 func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip, limit int) ([]*models.Bluray, error) {
 	// Parse search parameters (e.g., "director:David Yates tag:4k potter")
-	filters, freeText := parseSearchQuery(query)
+	filters, freeText := ParseSearchQuery(query)
 
 	andConditions := []bson.M{}
 	for _, f := range filters {
-		regexPattern := bson.M{"$regex": containsPattern(f.Value)}
+		regexPattern := bson.M{"$regex": ContainsPattern(f.Value)}
 
 		switch f.Field {
 		case "title":
@@ -126,7 +126,7 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 
 	// Plain words search every text field, alone or next to filters.
 	if freeText != "" {
-		regexPattern := bson.M{"$regex": containsPattern(freeText)}
+		regexPattern := bson.M{"$regex": ContainsPattern(freeText)}
 		orConditions := []bson.M{
 			{"title": regexPattern},
 			{"director": regexPattern},
@@ -163,7 +163,6 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 	return blurays, nil
 }
 
-// SearchFilter represents a parsed search parameter
 // tagIDsMatching returns the IDs of tags whose name contains name.
 func (ds *MongoDatastore) tagIDsMatching(ctx context.Context, name string) ([]string, error) {
 	tags, err := ds.SearchTagsByName(ctx, name)

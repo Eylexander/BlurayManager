@@ -1,7 +1,8 @@
-package api
+package test
 
 import (
 	"bytes"
+	"eylexander/bluraymanager/api"
 	"eylexander/bluraymanager/models"
 	"reflect"
 	"strings"
@@ -36,14 +37,14 @@ func TestCSVRoundTrip(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := writeBluraysCSV(&buf, in); err != nil {
+	if err := api.WriteBluraysCSV(&buf, in); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	if !strings.HasPrefix(buf.String(), utf8BOM) {
+	if !strings.HasPrefix(buf.String(), api.UTF8BOM) {
 		t.Fatal("export is missing the UTF-8 BOM")
 	}
 
-	records, err := readBluraysCSV(&buf)
+	records, err := api.ReadBluraysCSV(&buf)
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -52,7 +53,7 @@ func TestCSVRoundTrip(t *testing.T) {
 	}
 
 	for i, rec := range records {
-		got, err := recordToBluray(rec)
+		got, err := api.RecordToBluray(rec)
 		if err != nil {
 			t.Fatalf("record %d: %v", i, err)
 		}
@@ -63,13 +64,13 @@ func TestCSVRoundTrip(t *testing.T) {
 }
 
 func TestRecordToBlurayShortRow(t *testing.T) {
-	if _, err := recordToBluray([]string{"Only a title"}); err == nil {
+	if _, err := api.RecordToBluray([]string{"Only a title"}); err == nil {
 		t.Fatal("expected an error for a row with missing columns")
 	}
 }
 
 func TestReadBluraysCSVEmpty(t *testing.T) {
-	if _, err := readBluraysCSV(strings.NewReader(strings.Join(csvHeader, ",") + "\n")); err == nil {
+	if _, err := api.ReadBluraysCSV(strings.NewReader(strings.Join(api.CSVHeader, ",") + "\n")); err == nil {
 		t.Fatal("expected an error for a header-only file")
 	}
 }
@@ -77,15 +78,15 @@ func TestReadBluraysCSVEmpty(t *testing.T) {
 func TestTagResolver(t *testing.T) {
 	fourK := &models.Tag{ID: primitive.NewObjectID(), Name: "4K"}
 	steel := &models.Tag{ID: primitive.NewObjectID(), Name: "Steelbook"}
-	r := newTagResolver([]*models.Tag{fourK, steel})
+	r := api.NewTagResolver([]*models.Tag{fourK, steel})
 
 	// Export: IDs become names; IDs of deleted tags are dropped
-	if got := r.names([]string{steel.ID.Hex(), primitive.NewObjectID().Hex()}); !reflect.DeepEqual(got, []string{"Steelbook"}) {
+	if got := r.Names([]string{steel.ID.Hex(), primitive.NewObjectID().Hex()}); !reflect.DeepEqual(got, []string{"Steelbook"}) {
 		t.Errorf("names = %v", got)
 	}
 
 	// Import: names (any case) and legacy IDs resolve; unknown names are reported once
-	ids, missing := r.resolve([]string{"4k", steel.ID.Hex(), "Criterion", "criterion", " ", "4K"})
+	ids, missing := r.Resolve([]string{"4k", steel.ID.Hex(), "Criterion", "criterion", " ", "4K"})
 	if want := []string{fourK.ID.Hex(), steel.ID.Hex()}; !reflect.DeepEqual(ids, want) {
 		t.Errorf("ids = %v, want %v", ids, want)
 	}

@@ -1,318 +1,378 @@
 "use client";
 
-import { PageHeader } from "@/components/common";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {  Download,
-  Upload,
+import {
+  AlertTriangle,
+  ArrowDownUp,
+  CheckCircle2,
+  ChevronDown,
+  Copy,
+  Download,
+  FileSpreadsheet,
   FileText,
-  AlertCircle,
-  CheckCircle, ArrowDownUp } from "lucide-react";
-import { apiClient, getApiError } from "@/lib/api-client";
+  Tags,
+  Upload,
+  X,
+  XCircle,
+} from "lucide-react";
 import toast from "react-hot-toast";
+import { apiClient, getApiError } from "@/lib/api-client";
 import useRouteProtection from "@/hooks/useRouteProtection";
+import { Button, IconButton, PageHeader } from "@/components/common";
 
-// Reusable Components
-const LoadingSpinner = () => (
-  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-);
+// Matches the backend's request body limit
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-interface FeatureItemProps {
-  icon: React.ReactNode;
-  text: string;
+interface ImportResult {
+  success: number;
+  failed: number;
+  skipped: number;
+  tagsCreated?: number;
+  errors: string[];
 }
 
-const FeatureItem = ({ icon, text }: FeatureItemProps) => (
-  <div className="flex items-start gap-2 text-sm text-muted-foreground">
-    {icon}
-    <span>{text}</span>
-  </div>
-);
+// Column documentation; the authoritative header comes from the backend
+// (see the template download).
+const COLUMNS: [string, string][] = [
+  ["Title", "col_title"],
+  ["Type", "col_type"],
+  ["GenreEn · GenreFr", "col_genre"],
+  ["DescriptionEn · DescriptionFr", "col_description"],
+  ["Director", "col_director"],
+  ["ReleaseYear", "col_releaseYear"],
+  ["Runtime", "col_runtime"],
+  ["Rating", "col_rating"],
+  ["PurchasePrice", "col_purchasePrice"],
+  ["PurchaseDate", "col_purchaseDate"],
+  ["CoverImageURL · BackdropURL", "col_images"],
+  ["TMDBID", "col_tmdbId"],
+  ["Tags", "col_tags"],
+  ["Seasons", "col_seasons"],
+  ["TotalEpisodes", "col_totalEpisodes"],
+];
 
-export default function ImportExportPage() {
+function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Data rows in a CSV (header excluded), ignoring newlines inside quoted cells. */
+function countCsvRows(text: string) {
+  let rows = 0;
+  let inQuotes = false;
+  let rowHasContent = false;
+  for (const ch of text) {
+    if (ch === '"') inQuotes = !inQuotes;
+    if (ch === "\n" && !inQuotes) {
+      if (rowHasContent) rows++;
+      rowHasContent = false;
+    } else if (ch !== "\r") {
+      rowHasContent = true;
+    }
+  }
+  if (rowHasContent) rows++;
+  return Math.max(rows - 1, 0);
+}
+
+function StatTile({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: number; tone: string }) {
+  return (
+    <div className={`rounded-lg border p-4 ${tone}`}>
+      <div className="flex items-center gap-2 text-sm font-medium [&_svg]:w-4 [&_svg]:h-4">
+        {icon}
+        {label}
+      </div>
+      <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+export default function MigrationPage() {
   const t = useTranslations();
   const pathname = usePathname();
-  const [importing, setImporting] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [importResult, setImportResult] = useState<{
-    success: number;
-    failed: number;
-    skipped: number;
-    errors: string[];
-  } | null>(null);
-
-  // Use route protection - admin only
   useRouteProtection(pathname);
 
-  const handleExport = async () => {
-    setExporting(true);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [summary, setSummary] = useState<{ blurays: number; tags: number } | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [rowCount, setRowCount] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
+
+  // Refreshed after each import so the counts reflect what was added
+  useEffect(() => {
+    Promise.all([apiClient.getSimplifiedStatistics(), apiClient.getTags()])
+      .then(([stats, tags]) =>
+        setSummary({ blurays: stats?.total_blurays ?? 0, tags: Array.isArray(tags) ? tags.length : 0 }),
+      )
+      .catch(() => setSummary(null));
+  }, [result]);
+
+  const handleExport = async (template = false) => {
+    setExporting(!template);
     try {
-      const response = await apiClient.exportBlurays();
-
-      // Create blob with UTF-8 BOM and download
-      // Add UTF-8 BOM if not present to ensure proper encoding
-      const utf8BOM = "\uFEFF";
-      const content = response.startsWith(utf8BOM) ? response : utf8BOM + response;
-      const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `bluray-collection-${new Date().toISOString().split("T")[0]}.csv`,
-      );
-      link.style.visibility = "hidden";
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success(t("importExport.exportSuccess"));
-    } catch (error: any) {
-      console.error("Export failed:", error);
+      const blob = await apiClient.exportBlurays(template);
+      const date = new Date().toISOString().split("T")[0];
+      saveBlob(blob, template ? "bluray-import-template.csv" : `bluray-collection-${date}.csv`);
+      if (!template) toast.success(t("importExport.exportSuccess"));
+    } catch {
       toast.error(t("importExport.exportFailed"));
     } finally {
       setExporting(false);
     }
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith(".csv")) {
+  const selectFile = async (candidate: File | undefined) => {
+    if (!candidate) return;
+    if (!candidate.name.toLowerCase().endsWith(".csv")) {
       toast.error(t("importExport.invalidFileType"));
       return;
     }
+    if (candidate.size > MAX_FILE_BYTES) {
+      toast.error(t("importExport.fileTooLarge"));
+      return;
+    }
+    setResult(null);
+    setFile(candidate);
+    setRowCount(countCsvRows(await candidate.text()));
+  };
 
+  const clearFile = () => {
+    setFile(null);
+    setRowCount(0);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const handleImport = async () => {
+    if (!file) return;
     setImporting(true);
-    setImportResult(null);
-
     try {
       const formData = new FormData();
       formData.append("file", file);
+      const res: ImportResult = await apiClient.importBlurays(formData);
+      setResult(res);
+      clearFile();
 
-      const result = await apiClient.importBlurays(formData);
-
-      setImportResult(result);
-
-      if (result.failed === 0 && result.skipped === 0) {
-        toast.success(
-          t("importExport.importSuccess", { count: result.success }),
-        );
-      } else if (result.failed === 0) {
-        toast.success(
-          t("importExport.importWithSkipped", {
-            success: result.success,
-            skipped: result.skipped,
-          }),
-        );
+      if (res.failed > 0) {
+        toast.error(t("importExport.importPartialSuccess", { success: res.success, failed: res.failed }));
+      } else if (res.skipped > 0) {
+        toast.success(t("importExport.importWithSkipped", { success: res.success, skipped: res.skipped }));
       } else {
-        toast.error(
-          t("importExport.importPartialSuccess", {
-            success: result.success,
-            failed: result.failed,
-          }),
-        );
+        toast.success(t("importExport.importSuccess", { count: res.success }));
       }
-    } catch (error: any) {
-      console.error("Import failed:", error);
-      toast.error(
-        getApiError(error, t("importExport.importFailed")),
-      );
+    } catch (error) {
+      toast.error(getApiError(error, t("importExport.importFailed")));
     } finally {
       setImporting(false);
-      // Reset file input
-      e.target.value = "";
     }
   };
 
   return (
-    <>
-      <div className="max-w-6xl mx-auto">
-        <PageHeader icon={<ArrowDownUp />} title={t("importExport.title")} description={t("importExport.subtitle")} />
+    <div className="max-w-5xl mx-auto pb-12 space-y-6">
+      <PageHeader icon={<ArrowDownUp />} title={t("importExport.title")} description={t("importExport.subtitle")} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Export Card */}
-          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Download className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  {t("importExport.export")}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t("importExport.exportDescription")}
-                </p>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Export */}
+        <section className="card p-5 sm:p-6 flex flex-col">
+          <div className="flex items-start gap-3">
+            <div className="grid place-items-center w-10 h-10 shrink-0 rounded-lg bg-primary/10 text-primary">
+              <Download className="w-5 h-5" />
             </div>
-
-            <div className="space-y-3 mb-6">
-              <FeatureItem
-                icon={<CheckCircle className="w-4 h-4 mt-0.5 text-green-500" />}
-                text={t("importExport.exportFeature1")}
-              />
-              <FeatureItem
-                icon={<CheckCircle className="w-4 h-4 mt-0.5 text-green-500" />}
-                text={t("importExport.exportFeature2")}
-              />
-              <FeatureItem
-                icon={<CheckCircle className="w-4 h-4 mt-0.5 text-green-500" />}
-                text={t("importExport.exportFeature3")}
-              />
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{t("importExport.export")}</h2>
+              <p className="text-sm text-muted-foreground">{t("importExport.exportDescription")}</p>
             </div>
-
-            <button
-              onClick={handleExport}
-              disabled={exporting}
-              className="w-full px-4 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-            >
-              {exporting ? (
-                <>
-                  <LoadingSpinner />
-                  {t("common.loading")}
-                </>
-              ) : (
-                <>
-                  <Download className="w-5 h-5" />
-                  {t("importExport.downloadCSV")}
-                </>
-              )}
-            </button>
           </div>
 
-          {/* Import Card */}
-          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Upload className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  {t("importExport.import")}
-                </h2>
+          <div className="my-5 flex-1 flex items-center gap-4 rounded-lg border border-border bg-muted/40 p-4">
+            <FileSpreadsheet className="w-9 h-9 shrink-0 text-primary/70" />
+            <div className="min-w-0">
+              <p className="font-mono text-sm text-foreground truncate">
+                bluray-collection-{new Date().toISOString().split("T")[0]}.csv
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {summary
+                  ? t("importExport.collectionSummary", { blurays: summary.blurays, tags: summary.tags })
+                  : "…"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => handleExport()} loading={exporting} icon={<Download />} className="sm:flex-1">
+              {t("importExport.downloadCSV")}
+            </Button>
+            <Button variant="secondary" onClick={() => handleExport(true)} icon={<FileText />}>
+              {t("importExport.downloadTemplate")}
+            </Button>
+          </div>
+        </section>
+
+        {/* Import */}
+        <section className="card p-5 sm:p-6 flex flex-col">
+          <div className="flex items-start gap-3">
+            <div className="grid place-items-center w-10 h-10 shrink-0 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Upload className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{t("importExport.import")}</h2>
+              <p className="text-sm text-muted-foreground">{t("importExport.importDescription")}</p>
+            </div>
+          </div>
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="sr-only"
+            onChange={(e) => selectFile(e.target.files?.[0])}
+          />
+
+          {file ? (
+            <div className="my-5 flex-1 flex items-center gap-4 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4">
+              <FileSpreadsheet className="w-9 h-9 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {t("importExport.importDescription")}
+                  {formatBytes(file.size)} · {t("importExport.rowsDetected", { count: rowCount })}
                 </p>
               </div>
+              <IconButton label={t("importExport.removeFile")} onClick={clearFile} disabled={importing}>
+                <X />
+              </IconButton>
             </div>
-
-            <div className="space-y-3 mb-6">
-              <FeatureItem
-                icon={<FileText className="w-4 h-4 mt-0.5 text-primary" />}
-                text={t("importExport.importFeature1")}
-              />
-              <FeatureItem
-                icon={<FileText className="w-4 h-4 mt-0.5 text-primary" />}
-                text={t("importExport.importFeature2")}
-              />
-              <FeatureItem
-                icon={
-                  <AlertCircle className="w-4 h-4 mt-0.5 text-orange-500" />
-                }
-                text={t("importExport.importFeature3")}
-              />
-            </div>
-
-            <label
-              htmlFor="csv-upload"
-              className={`block w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-medium shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 hover:scale-[1.02] cursor-pointer text-center ${
-                importing ? "opacity-50 cursor-not-allowed" : ""
+          ) : (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                selectFile(e.dataTransfer.files?.[0]);
+              }}
+              className={`my-5 flex-1 min-h-[7.5rem] flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
+                dragging
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/50 hover:bg-accent/50"
               }`}
             >
-              {importing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <LoadingSpinner />
-                  {t("common.loading")}
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <Upload className="w-5 h-5" />
-                  {t("importExport.uploadCSV")}
-                </span>
-              )}
-            </label>
-            <input
-              id="csv-upload"
-              type="file"
-              accept=".csv"
-              onChange={handleImport}
-              disabled={importing}
-              className="hidden"
+              <Upload className="w-6 h-6" />
+              <span className="text-sm font-medium text-foreground">{t("importExport.dropTitle")}</span>
+              <span className="text-xs">{t("importExport.dropHint")}</span>
+            </button>
+          )}
+
+          <Button
+            variant="success"
+            onClick={handleImport}
+            loading={importing}
+            disabled={!file || rowCount === 0}
+            icon={<Upload />}
+            fullWidth
+          >
+            {file ? t("importExport.startImport", { count: rowCount }) : t("importExport.uploadCSV")}
+          </Button>
+          <p className="mt-3 text-xs text-muted-foreground">{t("importExport.duplicatesNote")}</p>
+        </section>
+      </div>
+
+      {/* Import results */}
+      {result && (
+        <section className="card p-5 sm:p-6 animate-in" aria-live="polite">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="text-lg font-semibold text-foreground">{t("importExport.importResults")}</h2>
+            <Button variant="ghost" size="sm" inline onClick={() => inputRef.current?.click()} icon={<Upload />}>
+              {t("importExport.importAnother")}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatTile
+              icon={<CheckCircle2 />}
+              label={t("importExport.successCount")}
+              value={result.success}
+              tone="border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
+            />
+            <StatTile
+              icon={<Copy />}
+              label={t("importExport.skippedCount")}
+              value={result.skipped}
+              tone="border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300"
+            />
+            <StatTile
+              icon={<XCircle />}
+              label={t("importExport.failedCount")}
+              value={result.failed}
+              tone="border-destructive/30 bg-destructive/5 text-destructive"
+            />
+            <StatTile
+              icon={<Tags />}
+              label={t("importExport.tagsCreatedCount")}
+              value={result.tagsCreated ?? 0}
+              tone="border-primary/30 bg-primary/5 text-primary"
             />
           </div>
-        </div>
 
-        {/* Import Results */}
-        {importResult && (
-          <div className="mt-6 bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              {t("importExport.importResults")}
-            </h3>
+          {result.errors.length > 0 && (
+            <details className="group mt-4 rounded-lg border border-destructive/30" open={result.errors.length <= 5}>
+              <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer select-none text-sm font-medium text-destructive list-none">
+                <AlertTriangle className="w-4 h-4" />
+                {t("importExport.errors")} ({result.errors.length})
+                <ChevronDown className="ml-auto w-4 h-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <ul className="max-h-60 overflow-y-auto border-t border-destructive/20 divide-y divide-border text-sm">
+                {result.errors.map((error, i) => (
+                  <li key={i} className="px-4 py-2 font-mono text-xs text-foreground/80">
+                    {error}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      )}
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  <span className="font-semibold text-green-900 dark:text-green-100">
-                    {t("importExport.successCount")}
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {importResult.success}
-                </p>
-              </div>
-
-              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <div className="flex items-center gap-2 mb-1">
-                  <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                  <span className="font-semibold text-orange-900 dark:text-orange-100">
-                    {t("importExport.skippedCount")}
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {importResult.skipped}
-                </p>
-              </div>
-
-              <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/30">
-                <div className="flex items-center gap-2 mb-1">
-                  <AlertCircle className="w-5 h-5 text-destructive" />
-                  <span className="font-semibold text-red-900 dark:text-red-100">
-                    {t("importExport.failedCount")}
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-destructive">
-                  {importResult.failed}
-                </p>
-              </div>
-            </div>
-
-            {importResult.errors.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-foreground mb-2">
-                  {t("importExport.errors")}
-                </h4>
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {importResult.errors.map((error, index) => (
-                    <p
-                      key={index}
-                      className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded"
-                    >
-                      {error}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* Format reference */}
+      <details className="group card">
+        <summary className="flex items-center gap-3 p-5 sm:p-6 cursor-pointer select-none list-none">
+          <FileText className="w-5 h-5 text-muted-foreground" />
+          <span className="font-semibold text-foreground">{t("importExport.formatTitle")}</span>
+          <ChevronDown className="ml-auto w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="px-5 sm:px-6 pb-6 -mt-2">
+          <p className="text-sm text-muted-foreground mb-4">{t("importExport.formatIntro")}</p>
+          <div className="overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-border">
+                {COLUMNS.map(([name, key]) => (
+                  <tr key={name} className="even:bg-muted/30">
+                    <td className="w-px px-4 py-2 align-top font-mono text-xs text-foreground whitespace-nowrap">{name}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{t(`importExport.${key}`)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
-    </>
+        </div>
+      </details>
+    </div>
   );
 }

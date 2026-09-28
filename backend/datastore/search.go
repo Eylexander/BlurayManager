@@ -25,9 +25,9 @@ var searchFields = map[string]bool{
 	"type":        false,
 }
 
-// parseSearchQuery splits a query such as `director:David Yates year:2011 potter`
+// ParseSearchQuery splits a query such as `director:David Yates year:2011 potter`
 // into field filters and the remaining free text.
-func parseSearchQuery(query string) (filters []SearchFilter, freeText string) {
+func ParseSearchQuery(query string) (filters []SearchFilter, freeText string) {
 	var free []string
 	var current *SearchFilter
 	var currentWords []string
@@ -69,8 +69,8 @@ func parseSearchQuery(query string) (filters []SearchFilter, freeText string) {
 	return filters, strings.Trim(strings.Join(free, " "), `"`)
 }
 
-// containsPattern matches s literally (case-insensitive) anywhere in a field.
+// ContainsPattern matches s literally (case-insensitive) anywhere in a field.
 // User input is escaped so characters like "." or "(" aren't treated as regex.
-func containsPattern(s string) primitive.Regex {
+func ContainsPattern(s string) primitive.Regex {
 	return primitive.Regex{Pattern: regexp.QuoteMeta(s), Options: "i"}
 }
