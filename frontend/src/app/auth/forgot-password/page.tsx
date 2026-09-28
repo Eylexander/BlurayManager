@@ -1,8 +1,9 @@
 "use client";
 
+import { Button, Input } from "@/components/common";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, getApiError } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { ROUTES } from "@/hooks/useRouteProtection";
@@ -22,7 +23,7 @@ export default function ForgotPasswordPage() {
       toast.success(t("auth.resetLinkSent"));
       setSent(true);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t("auth.resetLinkError"));
+      toast.error(getApiError(error, t("auth.resetLinkError")));
     } finally {
       setLoading(false);
     }
@@ -34,40 +35,29 @@ export default function ForgotPasswordPage() {
         <h3 className="text-2xl font-bold text-center">
           {t("auth.resetPassword")}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+        <p className="text-sm text-muted-foreground text-center mt-2">
           {!sent ? t("auth.resetPasswordDescription") : ""}
         </p>
       </div>
 
       {!sent ? (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
-              {t("auth.email")}
-            </label>
-            <div className="relative">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t("auth.emailPlaceholder")}
-                autoComplete="username"
-                disabled={loading}
-                required
-                className="input"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <Input
+            label={t("auth.email")}
+            id="email"
+            name="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t("auth.emailPlaceholder")}
+            autoComplete="username"
             disabled={loading}
-            className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? t("common.loading") : t("auth.sendResetLink")}
-          </button>
+            required
+          />
+
+          <Button type="submit" size="lg" fullWidth loading={loading}>
+          {t("auth.sendResetLink")}
+        </Button>
         </form>
       ) : (
         <div className="text-center py-4">
@@ -86,10 +76,10 @@ export default function ForgotPasswordPage() {
               />
             </svg>
           </div>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-muted-foreground mb-6">
             {t("auth.resetLinkSent")}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {t("auth.resetPasswordInstructions")}
           </p>
         </div>
@@ -98,7 +88,7 @@ export default function ForgotPasswordPage() {
       <div className="mt-6 text-center">
         <Link
           href={ROUTES.AUTH.LOGIN}
-          className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+          className="text-sm text-primary hover:text-primary font-medium"
         >
           {t("auth.backToLogin")}
         </Link>

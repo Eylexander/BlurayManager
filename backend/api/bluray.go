@@ -1,13 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"eylexander/bluraymanager/models"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
@@ -45,7 +45,10 @@ func (api *API) CreateBluray(c *gin.Context) {
 		Message:  fmt.Sprintf(i18n.T("notification.bluray_added"), bluray.Title),
 		BlurayID: bluray.ID,
 	}
-	api.ctrl.CreateNotification(c.Request.Context(), notification)
+	// The mutation already succeeded; a missing notification isn't worth failing the request.
+	if err := api.ctrl.CreateNotification(c.Request.Context(), notification); err != nil {
+		log.Printf("failed to create notification: %v", err)
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"bluray": bluray})
 }
@@ -154,7 +157,10 @@ func (api *API) DeleteBluray(c *gin.Context) {
 		Message:  fmt.Sprintf(i18n.T("notification.bluray_deleted"), bluray.Title),
 		BlurayID: id,
 	}
-	api.ctrl.CreateNotification(c.Request.Context(), notification)
+	// The mutation already succeeded; a missing notification isn't worth failing the request.
+	if err := api.ctrl.CreateNotification(c.Request.Context(), notification); err != nil {
+		log.Printf("failed to create notification: %v", err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "bluray deleted successfully"})
 }
@@ -200,111 +206,41 @@ func (api *API) SearchBlurays(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"blurays": blurays})
 }
 
+// ExportBlurays downloads the collection as CSV. With ?template=true it
+// returns only the header row, as a starting point for hand-made imports.
 func (api *API) ExportBlurays(c *gin.Context) {
-	blurays, err := api.ctrl.ListBlurays(c.Request.Context(), map[string]interface{}{}, 0, 0)
-	if err != nil {
+	ctx := c.Request.Context()
+	var blurays []*models.Bluray
+	if c.Query("template") != "true" {
+		var err error
+		blurays, err = api.ctrl.ListBlurays(ctx, map[string]interface{}{}, 0, 0)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Write tag names rather than IDs so the file can be imported elsewhere.
+		tags, err := api.ctrl.ListTags(ctx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		resolver := newTagResolver(tags)
+		for i, b := range blurays {
+			named := *b
+			named.Tags = resolver.names(b.Tags)
+			blurays[i] = &named
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := writeBluraysCSV(&buf, blurays); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Create CSV content with UTF-8 BOM
-	csv := "\xEF\xBB\xBF" + "Title,Type,GenreEn,GenreFr,DescriptionEn,DescriptionFr,Director,ReleaseYear,Runtime,Rating,PurchasePrice,PurchaseDate,CoverImageURL,BackdropURL,TMDBID,Tags,Seasons,TotalEpisodes\n"
-
-	for _, bluray := range blurays {
-		// Escape and format fields
-		tags := ""
-		if len(bluray.Tags) > 0 {
-			for i, tag := range bluray.Tags {
-				if i > 0 {
-					tags += ";"
-				}
-				tags += tag
-			}
-		}
-
-		genreEn := ""
-		if len(bluray.Genre.En) > 0 {
-			for i, g := range bluray.Genre.En {
-				if i > 0 {
-					genreEn += ";"
-				}
-				genreEn += g
-			}
-		}
-
-		genreFr := ""
-		if len(bluray.Genre.Fr) > 0 {
-			for i, g := range bluray.Genre.Fr {
-				if i > 0 {
-					genreFr += ";"
-				}
-				genreFr += g
-			}
-		}
-
-		releaseYear := ""
-		if bluray.ReleaseYear != 0 {
-			releaseYear = strconv.Itoa(bluray.ReleaseYear)
-		}
-
-		runtime := ""
-		if bluray.Runtime != 0 {
-			runtime = strconv.Itoa(bluray.Runtime)
-		}
-
-		rating := ""
-		if bluray.Rating != 0 {
-			rating = strconv.FormatFloat(bluray.Rating, 'f', 1, 64)
-		}
-
-		purchasePrice := ""
-		if bluray.PurchasePrice != 0 {
-			purchasePrice = strconv.FormatFloat(bluray.PurchasePrice, 'f', 2, 64)
-		}
-
-		// Serialize seasons data (format: "number:episodeCount:year;number:episodeCount:year")
-		seasons := ""
-		if len(bluray.Seasons) > 0 {
-			for i, season := range bluray.Seasons {
-				if i > 0 {
-					seasons += ";"
-				}
-				seasons += strconv.Itoa(season.Number) + ":" + strconv.Itoa(season.EpisodeCount)
-				if season.Year != 0 {
-					seasons += ":" + strconv.Itoa(season.Year)
-				}
-			}
-		}
-
-		totalEpisodes := ""
-		if bluray.TotalEpisodes != 0 {
-			totalEpisodes = strconv.Itoa(bluray.TotalEpisodes)
-		}
-
-		purchaseDate := ""
-		if !bluray.PurchaseDate.IsZero() {
-			purchaseDate = bluray.PurchaseDate.Format("2006-01-02")
-		}
-
-		// Escape quotes in strings
-		title := escapeCSV(bluray.Title)
-		descEn := escapeCSV(bluray.Description.En)
-		descFr := escapeCSV(bluray.Description.Fr)
-		director := escapeCSV(bluray.Director)
-		coverURL := escapeCSV(bluray.CoverImageURL)
-		backdropURL := escapeCSV(bluray.BackdropURL)
-		tmdbID := escapeCSV(bluray.TMDBID)
-		typeStr := string(bluray.Type)
-
-		csv += title + "," + typeStr + "," + genreEn + "," + genreFr + "," + descEn + "," + descFr + "," + director + "," +
-			releaseYear + "," + runtime + "," + rating + "," + purchasePrice + "," +
-			purchaseDate + "," + coverURL + "," + backdropURL + "," + tmdbID + "," + tags + "," +
-			seasons + "," + totalEpisodes + "\n"
-	}
-
-	c.Header("Content-Type", "text/csv; charset=utf-8")
 	c.Header("Content-Disposition", "attachment; filename=bluray-collection.csv")
-	c.String(http.StatusOK, csv)
+	c.Data(http.StatusOK, "text/csv; charset=utf-8", buf.Bytes())
 }
 
 func (api *API) ImportBlurays(c *gin.Context) {
@@ -314,7 +250,6 @@ func (api *API) ImportBlurays(c *gin.Context) {
 		return
 	}
 
-	// Open the uploaded file
 	f, err := file.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
@@ -322,163 +257,77 @@ func (api *API) ImportBlurays(c *gin.Context) {
 	}
 	defer f.Close()
 
-	// Read CSV content
 	content, err := io.ReadAll(f)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read file"})
 		return
 	}
 
-	// Convert to string and strip UTF-8 BOM if present
-	csvContent := string(content)
-	if len(csvContent) >= 3 && csvContent[0] == '\xEF' && csvContent[1] == '\xBB' && csvContent[2] == '\xBF' {
-		csvContent = csvContent[3:]
-	}
-
-	// Validate UTF-8 encoding
-	if !utf8.ValidString(csvContent) {
+	if !utf8.Valid(content) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UTF-8 encoding in file"})
 		return
 	}
 
-	// Parse CSV
-	lines := parseCSVLines(csvContent)
-	if len(lines) < 2 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "CSV file is empty or invalid"})
+	records, err := readBluraysCSV(bytes.NewReader(content))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	success := 0
-	failed := 0
-	skipped := 0
+	ctx := c.Request.Context()
+	success, failed, skipped, tagsCreated := 0, 0, 0, 0
 	errors := []string{}
 
-	// Skip header row
-	for i := 1; i < len(lines); i++ {
-		fields := lines[i]
-		if len(fields) < 18 {
-			errors = append(errors, "Line "+strconv.Itoa(i+1)+": insufficient fields")
+	tags, err := api.ctrl.ListTags(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	tagResolver := newTagResolver(tags)
+	userID, _ := primitive.ObjectIDFromHex(c.GetString("userID"))
+
+	for i, fields := range records {
+		// +2: records exclude the header row, and file lines are 1-indexed.
+		line := "Line " + strconv.Itoa(i+2) + ": "
+
+		bluray, err := recordToBluray(fields)
+		if err != nil {
+			errors = append(errors, line+err.Error())
 			failed++
 			continue
 		}
 
-		// Parse fields
-		releaseYear, _ := strconv.Atoi(fields[7])
-		runtime, _ := strconv.Atoi(fields[8])
-		rating, _ := strconv.ParseFloat(fields[9], 64)
-		purchasePrice, _ := strconv.ParseFloat(fields[10], 64)
-		totalEpisodes, _ := strconv.Atoi(fields[17])
-
-		// Parse purchase date
-		var purchaseDate time.Time
-		if fields[11] != "" {
-			purchaseDate, _ = time.Parse("2006-01-02", fields[11])
-		}
-
-		// Split tags
-		var tags []string
-		if fields[15] != "" {
-			tags = parseCSVTags(fields[15])
-		}
-
-		// Split genres
-		var genreEn []string
-		if fields[2] != "" {
-			genreEn = parseCSVTags(fields[2])
-		}
-
-		var genreFr []string
-		if fields[3] != "" {
-			genreFr = parseCSVTags(fields[3])
-		}
-
-		// Parse seasons data (format: "number:episodeCount:year;number:episodeCount:year")
-		var seasons []models.Season
-		if fields[16] != "" {
-			seasonParts := parseCSVTags(fields[16])
-			for _, part := range seasonParts {
-				if part == "" {
-					continue
-				}
-				seasonData := []string{}
-				current := ""
-				for _, ch := range part {
-					if ch == ':' {
-						seasonData = append(seasonData, current)
-						current = ""
-					} else {
-						current += string(ch)
-					}
-				}
-				if current != "" {
-					seasonData = append(seasonData, current)
-				}
-
-				if len(seasonData) >= 2 {
-					number, _ := strconv.Atoi(seasonData[0])
-					episodeCount, _ := strconv.Atoi(seasonData[1])
-					season := models.Season{
-						Number:       number,
-						EpisodeCount: episodeCount,
-					}
-					if len(seasonData) >= 3 {
-						year, _ := strconv.Atoi(seasonData[2])
-						season.Year = year
-					}
-					seasons = append(seasons, season)
-				}
+		// Map tag names (or IDs from older exports) to this instance's tags,
+		// creating the ones that don't exist yet.
+		tagIDs, missing := tagResolver.resolve(bluray.Tags)
+		for _, name := range missing {
+			tag := &models.Tag{Name: name, Color: defaultTagColor, CreatedBy: userID}
+			if err := api.ctrl.CreateTag(ctx, tag); err != nil {
+				errors = append(errors, line+"tag \""+name+"\": "+err.Error())
+				continue
 			}
+			tagResolver.add(tag)
+			tagIDs = append(tagIDs, tag.ID.Hex())
+			tagsCreated++
 		}
+		bluray.Tags = tagIDs
 
-		// Parse media type
-		mediaType := models.MediaTypeMovie
-		if fields[1] == "series" {
-			mediaType = models.MediaTypeSeries
-		}
-
-		// Check for duplicates based on title, type, and release year
+		// Skip duplicates based on title, type, and release year
 		filters := map[string]interface{}{
-			"title": fields[0],
-			"type":  string(mediaType),
+			"title": bluray.Title,
+			"type":  string(bluray.Type),
 		}
-		if releaseYear != 0 {
-			filters["release_year"] = releaseYear
+		if bluray.ReleaseYear != 0 {
+			filters["release_year"] = bluray.ReleaseYear
 		}
-
-		existingBlurays, err := api.ctrl.ListBlurays(c.Request.Context(), filters, 0, 1)
-		if err == nil && len(existingBlurays) > 0 {
-			// Duplicate found, skip this entry
+		existing, err := api.ctrl.ListBlurays(ctx, filters, 0, 1)
+		if err == nil && len(existing) > 0 {
 			skipped++
 			continue
 		}
 
-		bluray := &models.Bluray{
-			Title: fields[0],
-			Type:  mediaType,
-			Genre: models.I18nTextArray{
-				En: genreEn,
-				Fr: genreFr,
-			},
-			Description: models.I18nText{
-				En: fields[4],
-				Fr: fields[5],
-			},
-			Director:      fields[6],
-			ReleaseYear:   releaseYear,
-			Runtime:       runtime,
-			Rating:        rating,
-			PurchasePrice: purchasePrice,
-			PurchaseDate:  purchaseDate,
-			CoverImageURL: fields[12],
-			BackdropURL:   fields[13],
-			TMDBID:        fields[14],
-			Tags:          tags,
-			Seasons:       seasons,
-			TotalEpisodes: totalEpisodes,
-		}
-
-		if err := api.ctrl.CreateBluray(c.Request.Context(), bluray); err != nil {
-			errors = append(errors, "Line "+strconv.Itoa(i+1)+": "+err.Error())
+		if err := api.ctrl.CreateBluray(ctx, bluray); err != nil {
+			errors = append(errors, line+err.Error())
 			failed++
 		} else {
 			success++
@@ -490,6 +339,8 @@ func (api *API) ImportBlurays(c *gin.Context) {
 		"failed":  failed,
 		"skipped": skipped,
 		"errors":  errors,
+		// Tags created because the file referenced names this instance lacked
+		"tagsCreated": tagsCreated,
 	})
 }
 

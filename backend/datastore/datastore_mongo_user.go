@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 	"eylexander/bluraymanager/models"
 	"time"
 
@@ -25,7 +24,7 @@ func (ds *MongoDatastore) GetUserByID(ctx context.Context, id primitive.ObjectID
 	var user models.User
 	err := ds.users.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 	}
 	return &user, err
 }
@@ -34,7 +33,7 @@ func (ds *MongoDatastore) GetUserByEmail(ctx context.Context, email string) (*mo
 	var user models.User
 	err := ds.users.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 	}
 	return &user, err
 }
@@ -43,7 +42,7 @@ func (ds *MongoDatastore) GetUserByUsername(ctx context.Context, username string
 	var user models.User
 	err := ds.users.FindOne(ctx, bson.M{"username": username}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 	}
 	return &user, err
 }
@@ -71,6 +70,14 @@ func (ds *MongoDatastore) ListUsers(ctx context.Context, skip, limit int) ([]*mo
 		return nil, err
 	}
 	return users, nil
+}
+
+func (ds *MongoDatastore) HasUserWithRole(ctx context.Context, role models.UserRole) (bool, error) {
+	count, err := ds.users.CountDocuments(ctx, bson.M{"role": role}, options.Count().SetLimit(1))
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 // EnsureGuestUser creates a guest user if it doesn't exist, or migrates

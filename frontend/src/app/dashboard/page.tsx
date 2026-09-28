@@ -96,6 +96,7 @@ export default function DashboardPage() {
 
   // Fetch initial data when search changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount
     fetchData();
   }, [fetchData]);
 
@@ -182,55 +183,49 @@ export default function DashboardPage() {
     return <LoaderCircle />;
   }
 
+  const isGuest = user?.role === "guest";
+
   return (
     <div className="w-full overflow-x-hidden space-y-4 sm:space-y-6 md:space-y-8">
-      {/* Homepage header */}
-      {user?.role === "guest" ? (
-        <>
-          <div className="hidden md:block jellyfin-gradient rounded-lg p-6 sm:p-8 text-white">
-            <h1 className="text-4xl font-bold mb-2">
-              {t("welcome.guestGreeting")}
-            </h1>
-            <p className="text-lg opacity-90">
-              {t("welcome.guestSubtitle", {
-                movies: stats?.total_movies || 0,
-                seasons: stats?.total_seasons || 0,
-              })}
-            </p>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="hidden md:block jellyfin-gradient rounded-lg p-6 sm:p-8 text-white">
-            <h1 className="text-4xl font-bold mb-2">
-              {t("welcome.greeting", { username: user?.username || "User" })} 👋
-            </h1>
-            <p className="text-lg opacity-90">
-              {t("welcome.subtitle", { count: stats?.total_blurays || 0 })}
-            </p>
-          </div>
+      {/* Welcome banner (desktop) */}
+      <section className="hidden md:block relative overflow-hidden rounded-xl brand-gradient text-white p-8">
+        <div aria-hidden className="absolute inset-0 noise opacity-60 mix-blend-overlay" />
+        <div aria-hidden className="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-white/10 blur-2xl" />
+        {/* Faint disc, echoing the logo */}
+        <div aria-hidden className="absolute -right-10 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full border-[28px] border-white/10" />
+        <div className="relative">
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+            {isGuest
+              ? t("welcome.guestGreeting")
+              : `${t("welcome.greeting", { username: user?.username || "" })} 👋`}
+          </h1>
+          <p className="text-base lg:text-lg text-white/85">
+            {isGuest
+              ? t("welcome.guestSubtitle", { movies: stats?.total_movies || 0, seasons: stats?.total_seasons || 0 })
+              : t("welcome.subtitle", { count: stats?.total_blurays || 0 })}
+          </p>
+        </div>
+      </section>
 
-          {stats && (
-            <div className="grid grid-cols-2 gap-4 sm:gap-4 md:gap-6 lg:gap-4 !mt-0 sm:!mt-2 md:!mt-6">
-              <Link href={`/dashboard?search=${encodeURIComponent("type:movie")}`}>
-                <StatsCard
-                  title={t("statistics.totalMovies")}
-                  value={stats.total_movies || 0}
-                  icon={<Film className="w-6 h-6 sm:w-8 sm:h-8" />}
-                  color="blue"
-                />
-              </Link>
-              <Link href={`/dashboard?search=${encodeURIComponent("type:series")}`}>
-                <StatsCard
-                  title={t("statistics.totalSeasons")}
-                  value={stats.total_seasons || 0}
-                  icon={<Tv className="w-6 h-6 sm:w-8 sm:h-8" />}
-                  color="purple"
-                />
-              </Link>
-            </div>
-          )}
-        </>
+      {!isGuest && stats && (
+        <div className="grid grid-cols-2 gap-4 md:gap-6 !mt-0 sm:!mt-2 md:!mt-6">
+          <Link href={`/dashboard?search=${encodeURIComponent("type:movie")}`}>
+            <StatsCard
+              title={t("statistics.totalMovies")}
+              value={stats.total_movies || 0}
+              icon={<Film className="w-6 h-6 sm:w-8 sm:h-8" />}
+              color="blue"
+            />
+          </Link>
+          <Link href={`/dashboard?search=${encodeURIComponent("type:series")}`}>
+            <StatsCard
+              title={t("statistics.totalSeasons")}
+              value={stats.total_seasons || 0}
+              icon={<Tv className="w-6 h-6 sm:w-8 sm:h-8" />}
+              color="purple"
+            />
+          </Link>
+        </div>
       )}
 
       {/* Recent Blurays */}
@@ -241,7 +236,7 @@ export default function DashboardPage() {
               {getSectionTitle()}
             </h2>
             {searchQuery && (
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 {t("welcome.resultsFound", {
                   count: recentBlurays.length,
                   query: searchQuery,
@@ -251,13 +246,13 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* View Mode Toggle */}
-            <div className="hidden vsm:flex items-center gap-1 bg-gray-100 dark:bg-dark-800 rounded-lg p-0.5 sm:p-1 border border-gray-300 dark:border-dark-700">
+            <div className="hidden vsm:flex items-center gap-1 bg-muted rounded-lg p-0.5 sm:p-1 border border-border">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-1.5 sm:p-2 rounded transition-colors ${
                   viewMode === "grid"
-                    ? "bg-primary-600 text-white"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-primary text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Grid view"
               >
@@ -267,8 +262,8 @@ export default function DashboardPage() {
                 onClick={() => setViewMode("list")}
                 className={`p-1.5 sm:p-2 rounded transition-colors ${
                   viewMode === "list"
-                    ? "bg-primary-600 text-white"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-primary text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="List view"
               >
@@ -283,7 +278,7 @@ export default function DashboardPage() {
             {searchQuery && (
               <button
                 onClick={() => window.history.pushState({}, "", "/dashboard")}
-                className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden md:inline">
@@ -295,7 +290,7 @@ export default function DashboardPage() {
         </div>
         {recentBlurays.length === 0 ? (
           <div className="text-center py-8 sm:py-12 md:py-16">
-            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-muted-foreground">
               {t("common.noResults")}
             </p>
           </div>
@@ -329,8 +324,8 @@ export default function DashboardPage() {
         {!searchQuery && recentBlurays.length > 0 && (
           <div ref={observerTarget} className="flex justify-center py-8">
             {loadingMore && hasMore && (
-              <div className="flex items-center gap-2 text-gray-500">
-                <div className="w-6 h-6 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin"></div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin"></div>
                 <span>{t("common.loading")}</span>
               </div>
             )}

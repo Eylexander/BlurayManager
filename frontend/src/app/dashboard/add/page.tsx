@@ -5,28 +5,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 import { apiClient } from "@/lib/api-client";
-import { Button } from "@/components/common";
-import {
-  Film,
-  Search,
-  Calendar,
-  Camera,
-  Tv,
-  TagIcon,
-  Edit,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import AddTagModal from "@/components/modals/AddTagModal";
+import { Button, Field, PageHeader, TagChip } from "@/components/common";
+import { Film, Search, Calendar, Camera, Tv, Tag as TagIcon, Tags, Euro, Hash, ChevronDown, ChevronUp, ScanBarcode } from "lucide-react";
+import TagPickerModal from "@/components/modals/TagPickerModal";
+import { Tag } from "@/types/tag";
 
 type MediaType = "movie" | "series";
-
-interface Tag {
-  id: string;
-  name: string;
-  color?: string;
-  icon?: string;
-}
 
 export default function AddBlurayPage() {
   const t = useTranslations();
@@ -112,261 +96,166 @@ export default function AddBlurayPage() {
     router.push(ROUTES.DASHBOARD.ADD.SCAN + `?${params.toString()}`);
   };
 
+  const typeOption = (value: MediaType, icon: React.ReactNode, label: string) => (
+    <button
+      type="button"
+      aria-pressed={type === value}
+      onClick={() => setType(value)}
+      className={`flex items-center justify-center gap-2 h-11 rounded-lg border text-sm font-medium transition-colors ${
+        type === value
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+
   return (
-    <div className="max-w-4xl mx-auto px-3 sm:px-4 pb-12 pt-6 space-y-8">
-      <div className="flex items-center space-x-3">
-        <Film className="w-8 h-8 text-blue-600 dark:text-blue-500" />
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-          {t("add.title")}
-        </h1>
-      </div>
+    <div className="max-w-3xl mx-auto pb-12 space-y-6">
+      <PageHeader icon={<Film />} title={t("add.title")} />
 
-      {/* Barcode Scanner Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 border border-purple-300 dark:border-purple-600/30 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-          <div className="flex-1">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-              <div className="w-1 h-6 bg-purple-500 rounded-full" />
-              {t("add.quickAddBarcode")}
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-3">
-              {t("add.barcodeScanDesc")}
-            </p>
-          </div>
-
-          <Button
-            variant="primary"
-            onClick={handleScanBarcode}
-            icon={<Camera className="w-5 h-5" />}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
-          >
-            {t("barcode.title")}
-          </Button>
+      {/* Barcode shortcut */}
+      <div className="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card">
+        <div className="shrink-0 hidden sm:grid place-items-center w-11 h-11 rounded-xl bg-primary text-primary-foreground">
+          <ScanBarcode className="w-5 h-5" />
         </div>
+        <div className="flex-1">
+          <h2 className="font-semibold text-foreground">{t("add.quickAddBarcode")}</h2>
+          <p className="text-sm text-muted-foreground">{t("add.barcodeScanDesc")}</p>
+        </div>
+        <Button onClick={handleScanBarcode} icon={<Camera />}>
+          {t("barcode.title")}
+        </Button>
       </div>
 
-      {/* Main Form Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-md">
-        <form onSubmit={handleSearch} className="space-y-3 sm:space-y-6">
-          {/* Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              {t("add.type")}
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setType("movie")}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                  type === "movie"
-                    ? "border-blue-500 bg-blue-500/20 text-blue-400"
-                    : "border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500"
-                }`}
-              >
-                <Film className="w-5 h-5" />
-                <span className="font-medium">{t("add.movie")}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setType("series")}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                  type === "series"
-                    ? "border-purple-500 bg-purple-500/20 text-purple-400"
-                    : "border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500"
-                }`}
-              >
-                <Tv className="w-5 h-5" />
-                <span className="font-medium">{t("add.series")}</span>
-              </button>
-            </div>
+      {/* Search form */}
+      <form onSubmit={handleSearch} className="card p-4 sm:p-6 space-y-5">
+        <Field label={t("add.type")}>
+          <div className="grid grid-cols-2 gap-3">
+            {typeOption("movie", <Film className="w-4 h-4" />, t("add.movie"))}
+            {typeOption("series", <Tv className="w-4 h-4" />, t("add.series"))}
           </div>
+        </Field>
 
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t("add.titleField")}{" "}
-              <span className="text-red-500 dark:text-red-400">*</span>
-            </label>
+        <Field
+          label={
+            <>
+              {t("add.titleField")} <span className="text-destructive">*</span>
+            </>
+          }
+          htmlFor="add-title"
+        >
+          <input
+            id="add-title"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={type === "movie" ? t("add.movieTitlePlaceholder") : t("add.seriesTitlePlaceholder")}
+            className="input"
+          />
+        </Field>
+
+        {/* Optional fields collapse on mobile */}
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+          className="sm:hidden w-full h-11 px-4 rounded-lg border border-border bg-muted/50 text-sm font-medium text-foreground/80 flex items-center justify-between"
+        >
+          {t("add.optionalFields")}
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+
+        <div className={`${isExpanded ? "grid" : "hidden sm:grid"} grid-cols-1 sm:grid-cols-2 gap-5`}>
+          <Field label={type === "movie" ? t("add.releaseYear") : t("add.firstAirYear")} icon={<Calendar />} htmlFor="add-year">
             <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={
-                type === "movie"
-                  ? t("add.movieTitlePlaceholder")
-                  : t("add.seriesTitlePlaceholder")
-              }
-              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              id="add-year"
+              type="number"
+              inputMode="numeric"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              placeholder={t("add.yearPlaceholder")}
+              className="input"
             />
-          </div>
+          </Field>
 
-          {/* Optional Fields Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="sm:hidden w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium flex items-center justify-between hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
-          >
-            <span>{t("add.optionalFields")}</span>
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
-            )}
-          </button>
+          <Field label={t("add.tmdbOrImdbId")} icon={<Hash />} htmlFor="add-id" hint={t("add.tmdbIdHint")}>
+            <input
+              id="add-id"
+              value={tmdbId}
+              onChange={(e) => setTmdbId(e.target.value)}
+              placeholder="tt0137523 / 550"
+              className="input font-mono text-sm"
+            />
+          </Field>
 
-          <div
-            className={
-              !isExpanded
-                ? "hidden sm:block space-y-3 sm:space-y-6"
-                : "space-y-3 sm:space-y-6"
-            }
-          >
-            {/* Year */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {type === "movie"
-                  ? t("add.releaseYear")
-                  : t("add.firstAirYear")}
-              </label>
+          <Field label={t("add.purchaseDate")} icon={<Calendar />} htmlFor="add-date">
+            <div className="flex gap-2">
               <input
-                type="number"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                placeholder={t("add.yearPlaceholder")}
-                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                id="add-date"
+                type="date"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+                className="input min-w-0 flex-1"
               />
-            </div>
-
-            {/* TMDB/IMDB ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("add.tmdbOrImdbId")}
-              </label>
-              <input
-                type="text"
-                value={tmdbId}
-                onChange={(e) => setTmdbId(e.target.value)}
-                placeholder="tt0137523 or 550"
-                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {t("add.tmdbIdHint")}
-              </p>
-            </div>
-
-            {/* Purchase Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Calendar className="w-4 h-4 inline mr-1" />
-                {t("add.purchaseDate")}
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="date"
-                    value={purchaseDate}
-                    onChange={(e) => setPurchaseDate(e.target.value)}
-                    className="w-full min-w-0 px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600/50 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-gray-50 dark:focus:bg-gray-700 transition-all duration-200 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:transition-opacity"
-                  />
-                </div>
-                <Button
-                  variant="primary"
-                  onClick={() =>
-                    setPurchaseDate(new Date().toISOString().split("T")[0])
-                  }
-                  size="md"
-                  className="min-w-0"
-                >
-                  <Calendar className="w-4 h-4 inline vsm:hidden" />
-                  <span className="hidden vsm:inline">{t("add.today")}</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Buying Price */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("details.purchasePrice")}
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
-                  €
-                </span>
-                <input
-                  type="number"
-                  value={buyingPrice}
-                  onChange={(e) => setBuyingPrice(e.target.value)}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  className="w-full pl-8 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Tags */}
-            {showTagModal && (
-              <AddTagModal
-                initialSelectedTags={selectedTags}
-                onClose={() => setShowTagModal(false)}
-                onSave={(ids, updatedAvailableTags) => {
-                  setSelectedTags(ids);
-                  setAvailableTags(updatedAvailableTags);
-                  setShowTagModal(false);
-                }}
-              />
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                <TagIcon className="w-4 h-4 inline mr-1" />
-                {t("add.tags")}
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowTagModal(true)}
-                className="group w-full px-5 py-3 rounded-xl font-medium bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-400 hover:from-blue-500/20 hover:to-blue-600/20 border-2 border-dashed border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
+              <Button
+                variant="secondary"
+                inline
+                onClick={() => setPurchaseDate(new Date().toISOString().split("T")[0])}
               >
-                <Edit className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                <span>{t("add.editTags")}</span>
-                {selectedTags.length > 0 && (
-                  <span className="ml-2 px-2.5 py-0.5 bg-blue-500/20 text-blue-300 rounded-full text-xs font-semibold border border-blue-500/30">
-                    {selectedTags.length}
-                  </span>
-                )}
-              </button>
-              {selectedTags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {availableTags
-                    .filter((tag) => selectedTags.includes(tag.id))
-                    .map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="px-4 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
-                      >
-                        {tag.icon && (
-                          <TagIcon className="w-4 h-4 inline mr-1.5" />
-                        )}
-                        {tag.name}
-                      </span>
-                    ))}
-                </div>
-              )}
+                {t("add.today")}
+              </Button>
             </div>
-          </div>
+          </Field>
 
-          {/* Search Button */}
-          <Button
-            variant="primary"
-            type="submit"
-            disabled={!name.trim() && !tmdbId.trim()}
-            icon={<Search className="w-5 h-5" />}
-            fullWidth
-          >
-            {tmdbId.trim() ? t("add.findById") : t("add.searchTMDB")}
-          </Button>
-        </form>
-      </div>
+          <Field label={t("details.purchasePrice")} icon={<Euro />} htmlFor="add-price">
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">€</span>
+              <input
+                id="add-price"
+                type="number"
+                inputMode="decimal"
+                value={buyingPrice}
+                onChange={(e) => setBuyingPrice(e.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                className="input pl-8 tabular-nums"
+              />
+            </div>
+          </Field>
+
+          <Field label={t("add.tags")} icon={<TagIcon />} className="sm:col-span-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {availableTags
+                .filter((tag) => selectedTags.includes(tag.id))
+                .map((tag) => (
+                  <TagChip key={tag.id} name={tag.name} color={tag.color} />
+                ))}
+              <Button variant="secondary" size="sm" inline onClick={() => setShowTagModal(true)} icon={<Tags />}>
+                {t("add.editTags")}
+                {selectedTags.length > 0 && ` (${selectedTags.length})`}
+              </Button>
+            </div>
+          </Field>
+        </div>
+
+        <Button type="submit" size="lg" fullWidth disabled={!name.trim() && !tmdbId.trim()} icon={<Search />}>
+          {tmdbId.trim() ? t("add.findById") : t("add.searchTMDB")}
+        </Button>
+      </form>
+
+      {showTagModal && (
+        <TagPickerModal
+          initialSelectedTags={selectedTags}
+          onClose={() => setShowTagModal(false)}
+          onSave={(ids, tags) => {
+            setSelectedTags(ids);
+            setAvailableTags(tags);
+          }}
+        />
+      )}
     </div>
   );
 }

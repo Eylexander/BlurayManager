@@ -9,28 +9,13 @@ import (
 
 // CheckSetup checks if the system needs initial setup (no admin exists)
 func (api *API) CheckSetup(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	// Try to find an admin user
-	users, err := api.ctrl.ListUsers(ctx, 0, 1)
+	hasAdmin, err := api.ctrl.HasAdmin(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	needsSetup := true
-	if len(users) > 0 {
-		// Check if any admin exists
-		allUsers, _ := api.ctrl.ListUsers(ctx, 0, 100)
-		for _, user := range allUsers {
-			if user.Role == models.RoleAdmin {
-				needsSetup = false
-				break
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"needsSetup": needsSetup})
+	c.JSON(http.StatusOK, gin.H{"needsSetup": !hasAdmin})
 }
 
 // InitialSetup creates the first admin user
@@ -38,13 +23,14 @@ func (api *API) InitialSetup(c *gin.Context) {
 	i18n := api.GetI18n(c)
 	ctx := c.Request.Context()
 
-	// Check if any admin already exists
-	allUsers, _ := api.ctrl.ListUsers(ctx, 0, 100)
-	for _, user := range allUsers {
-		if user.Role == models.RoleAdmin {
-			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("setup.adminAlreadyExists")})
-			return
-		}
+	hasAdmin, err := api.ctrl.HasAdmin(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if hasAdmin {
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("setup.adminAlreadyExists")})
+		return
 	}
 
 	var req struct {

@@ -1,54 +1,69 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Bluray } from "@/types/bluray";
-import { apiClient } from "@/lib/api-client";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { Trash2, Tag as TagIcon, ExternalLink } from "lucide-react";
+import { Bluray } from "@/types/bluray";
+import { apiClient } from "@/lib/api-client";
+import { useAuthStore } from "@/store/authStore";
+import { useConfirm } from "@/components/common";
+import ContextMenu from "@/components/common/ContextMenu";
+import TagPickerModal from "@/components/modals/TagPickerModal";
 import { ROUTES } from "./useRouteProtection";
 
+/**
+ * Shared behaviour for bluray cards and list rows: the context menu, tag
+ * editing and deletion. Render the returned `overlays` next to the item.
+ */
 export function useBlurayTools(initialBluray: Bluray, onUpdate?: () => void) {
+  const t = useTranslations();
   const router = useRouter();
+  const role = useAuthStore((s) => s.user?.role);
+  const canModify = role === "admin" || role === "moderator";
+  const { confirm, confirmDialog } = useConfirm();
+
   const [currentBluray, setCurrentBluray] = useState(initialBluray);
   const [showTagModal, setShowTagModal] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+  const detailHref = ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", currentBluray.id);
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${currentBluray.title}"?`))
-      return;
+    const ok = await confirm({
+      title: t("details.deleteTitle", { title: currentBluray.title }),
+      message: t("details.deleteWarning"),
+      confirmLabel: t("common.delete"),
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiClient.deleteBluray(currentBluray.id);
-      toast.success("Deleted successfully!");
-      if (onUpdate) onUpdate();
-    } catch (error) {
-      toast.error("Failed to delete");
+      toast.success(t("details.deleteSuccess"));
+      onUpdate?.();
+    } catch {
+      toast.error(t("details.deleteError"));
     }
   };
 
-  const handleTagUpdate = (tags: string[]) => {
-    setCurrentBluray({ ...currentBluray, tags });
-    if (onUpdate) onUpdate();
+  /** Opens the context menu at the pointer (right-click, or the ⋮ button on touch). */
+  const openMenu = (e: MouseEvent, offsetX = 0) => {
+    e.preventDefault();
+    if (canModify) setContextMenu({ x: e.clientX + offsetX, y: e.clientY });
   };
 
-  // Centralized Menu Options Definition
   const menuOptions = [
     {
-      label: "View Details",
+      label: t("details.viewDetails"),
       icon: <ExternalLink className="w-4 h-4" />,
-      onClick: () =>
-        router.push(
-          ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", currentBluray.id),
-        ),
+      onClick: () => router.push(detailHref),
     },
     {
-      label: "Edit Tags",
+      label: t("add.editTags"),
       icon: <TagIcon className="w-4 h-4" />,
       onClick: () => setShowTagModal(true),
     },
     {
-      label: "Delete",
+      label: t("common.delete"),
       icon: <Trash2 className="w-4 h-4" />,
       onClick: handleDelete,
       variant: "danger" as const,
@@ -56,13 +71,26 @@ export function useBlurayTools(initialBluray: Bluray, onUpdate?: () => void) {
     },
   ];
 
-  return {
-    currentBluray,
-    showTagModal,
-    setShowTagModal,
-    contextMenu,
-    setContextMenu,
-    handleTagUpdate,
-    menuOptions,
-  };
+  const overlays = (
+    <>
+      {contextMenu && (
+        <ContextMenu x={contextMenu.x} y={contextMenu.y} options={menuOptions} onClose={() => setContextMenu(null)} />
+      )}
+      {showTagModal && (
+        <TagPickerModal
+          blurayId={currentBluray.id}
+          blurayTitle={currentBluray.title}
+          initialSelectedTags={currentBluray.tags || []}
+          onClose={() => setShowTagModal(false)}
+          onSave={(tags) => {
+            setCurrentBluray({ ...currentBluray, tags });
+            onUpdate?.();
+          }}
+        />
+      )}
+      {confirmDialog}
+    </>
+  );
+
+  return { currentBluray, canModify, detailHref, openMenu, openTags: () => setShowTagModal(true), overlays };
 }

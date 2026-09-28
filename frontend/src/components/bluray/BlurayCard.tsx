@@ -2,20 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
-import { Bluray } from "@/types/bluray";
-import {
-  Star,
-  Calendar,
-  Tag as TagIcon,
-  MoreVertical,
-} from "lucide-react";
-import ContextMenu from "@/components/common/ContextMenu";
-import AddTagModal from "@/components/modals/AddTagModal";
 import { useTranslations } from "next-intl";
+import { Star, Calendar, Tag as TagIcon, MoreVertical, Film } from "lucide-react";
+import { Bluray } from "@/types/bluray";
 import { useBlurayTools } from "@/hooks/useBlurayTools";
-import { ROUTES } from "@/hooks/useRouteProtection";
 
 interface BlurayCardProps {
   bluray: Bluray;
@@ -24,49 +14,32 @@ interface BlurayCardProps {
 
 export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
   const t = useTranslations();
-  const { user } = useAuthStore();
-  const canModify = user?.role === "admin" || user?.role === "moderator";
-
-  const {
-    currentBluray,
-    showTagModal,
-    setShowTagModal,
-    contextMenu,
-    setContextMenu,
-    handleTagUpdate,
-    menuOptions,
-  } = useBlurayTools(bluray, onUpdate);
+  const { currentBluray, canModify, detailHref, openMenu, openTags, overlays } = useBlurayTools(bluray, onUpdate);
 
   return (
     <>
       <div
-        onContextMenu={(e) => {
-          e.preventDefault();
-          if (canModify) setContextMenu({ x: e.clientX, y: e.clientY });
-        }}
-        className="relative group h-full w-full perspective-1000"
+        onContextMenu={openMenu}
+        className="relative group h-full w-full"
       >
         <Link
-          href={ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", currentBluray.id.toString())}
+          href={detailHref}
           className="block h-full w-full"
         >
           <div
             className="
-            relative flex flex-col h-full w-full 
-            bg-white dark:bg-dark-800/40 backdrop-blur-md 
-            border border-gray-300 dark:border-white/5 
-            rounded-2xl overflow-hidden
-            transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
-            md:group-hover:scale-[1.02] md:group-hover:-translate-y-2 
-            3xl:group-hover:scale-[1.01]
-            md:group-hover:border-primary-500/40 md:group-hover:shadow-lg md:group-hover:shadow-black/20
-            active:scale-[0.97]
+            relative flex flex-col h-full w-full
+            bg-card border border-border rounded-lg overflow-hidden
+            transition-all duration-300 ease-out
+            md:group-hover:-translate-y-1 md:group-hover:border-primary/40
+            md:group-hover:shadow-lg md:group-hover:shadow-primary/10
+            active:scale-[0.98]
           "
           >
             {/* Image Container */}
-            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-t-2xl">
+            <div className="relative aspect-[2/3] w-full overflow-hidden bg-muted">
               {/* Motion Wrapper: Both image and gradient live here */}
-              <div className="relative w-full h-full transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1) md:group-hover:scale-110 3xl:group-hover:scale-105">
+              <div className="relative w-full h-full transition-transform duration-500 ease-out md:group-hover:scale-105">
                 {currentBluray.cover_image_url ? (
                   <Image
                     src={currentBluray.cover_image_url}
@@ -76,21 +49,21 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                     sizes="(max-width: 640px) 50vw, 20vw"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br dark:from-dark-700 dark:to-dark-900 flex items-center justify-center">
-                    <span className="text-4xl opacity-40">🎬</span>
+                  <div className="w-full h-full noise flex items-center justify-center text-muted-foreground/40">
+                    <Film className="w-10 h-10" />
                   </div>
                 )}
 
-                {/* Premium Gradient Overlay: Now inside the scaling wrapper */}
-                <div className="absolute inset-0 bg-gradient-to-t dark:from-dark-900 dark:via-black/0 via-25% dark:to-transparent" />
+                {/* Bottom shade so the badge and actions read on any cover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
               </div>
 
               {/* Floating Badge (Top Left) */}
               <div className="absolute top-3 left-3">
                 <span
                   className={`
-                  px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full backdrop-blur-md border border-white/10
-                  ${currentBluray.type === "movie" ? "bg-blue-500/60 text-blue-50" : "bg-purple-500/60 text-purple-50"}
+                  px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest rounded-full backdrop-blur-md border border-white/15 text-white
+                  ${currentBluray.type === "movie" ? "bg-primary/80" : "bg-violet-600/80"}
                 `}
                 >
                   {currentBluray.type === "movie"
@@ -105,9 +78,10 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      setShowTagModal(true);
+                      openTags();
                     }}
-                    className="p-2.5 bg-dark-950/90 backdrop-blur-xl hover:bg-primary-500 text-white rounded-xl border border-white/20 shadow-lg transition-colors"
+                    aria-label={t("tags.manageTags")}
+                    className="p-2.5 bg-black/60 backdrop-blur-xl hover:bg-primary text-white rounded-lg border border-white/15 shadow-lg transition-colors"
                   >
                     <TagIcon className="w-4 h-4" />
                   </button>
@@ -116,27 +90,27 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
             </div>
 
             {/* Details Section */}
-            <div className="p-3 sm:p-4 flex-1 flex flex-col bg-gradient-to-b from-transparent to-gray-50 dark:to-dark-900/50">
+            <div className="p-3 sm:p-4 flex-1 flex flex-col">
               <div className="flex-1">
-                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary-400 transition-colors">
+                <h3 className="font-semibold text-sm sm:text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                   {currentBluray.title}
                 </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-1 font-medium opacity-70">
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                   {currentBluray.director || t("common.unknownDirector")}
                 </p>
               </div>
 
               {/* Bottom Meta Row */}
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-white/5">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                 <div className="flex items-center gap-3">
                   {currentBluray.rating > 0 && (
-                    <div className="flex items-center gap-1 text-yellow-500 dark:text-yellow-500 text-xs font-bold">
+                    <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
                       <Star className="w-3 h-3 fill-current" />
                       <span>{currentBluray.rating.toFixed(1)}</span>
                     </div>
                   )}
                   {currentBluray.release_year && (
-                    <div className="flex items-center gap-1 text-gray-500 dark:text-gray-500 text-[11px]">
+                    <div className="flex items-center gap-1 text-muted-foreground text-[11px]">
                       <Calendar className="w-3 h-3" />
                       <span>{currentBluray.release_year}</span>
                     </div>
@@ -149,35 +123,16 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
         {/* Mobile More Trigger */}
         {canModify && (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              setContextMenu({ x: e.clientX - 100, y: e.clientY });
-            }}
-            className="md:hidden absolute bottom-1.5 right-1 p-2 text-gray-500 z-20 hover:text-white ease-in-out transition-colors"
+            onClick={(e) => openMenu(e, -100)}
+            aria-label={t("common.moreOptions")}
+            className="md:hidden absolute bottom-1.5 right-1 p-2 text-muted-foreground z-20 active:text-foreground transition-colors"
           >
             <MoreVertical className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          options={menuOptions}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-
-      {showTagModal && (
-        <AddTagModal
-          blurayId={currentBluray.id}
-          blurayTitle={currentBluray.title}
-          initialSelectedTags={currentBluray.tags || []}
-          onClose={() => setShowTagModal(false)}
-          onSave={handleTagUpdate}
-        />
-      )}
+      {overlays}
     </>
   );
 }

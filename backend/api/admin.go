@@ -61,6 +61,10 @@ func (api *API) CreateUser(c *gin.Context) {
 	if req.Role == "" {
 		req.Role = models.RoleUser
 	}
+	if !req.Role.Valid() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
+		return
+	}
 
 	user, err := api.ctrl.RegisterUser(c.Request.Context(), req.Username, req.Email, req.Password, req.Role)
 	if err != nil {
@@ -84,12 +88,18 @@ func (api *API) UpdateUser(c *gin.Context) {
 
 	var req struct {
 		Username string          `json:"username"`
-		Email    string          `json:"email"`
+		Email    string          `json:"email" binding:"omitempty,email"`
 		Role     models.UserRole `json:"role"`
+		// Optional: set a new password for the user
+		Password string `json:"password" binding:"omitempty,min=6"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.Role != "" && !req.Role.Valid() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
 		return
 	}
 
@@ -113,6 +123,12 @@ func (api *API) UpdateUser(c *gin.Context) {
 	if err := api.ctrl.UpdateUser(c.Request.Context(), user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+	if req.Password != "" {
+		if err := api.ctrl.UpdatePassword(c.Request.Context(), user, req.Password); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	user.PasswordHash = ""
@@ -147,6 +163,10 @@ func (api *API) UpdateUserRole(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !req.Role.Valid() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
 		return
 	}
 

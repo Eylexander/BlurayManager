@@ -1,7 +1,9 @@
 "use client";
 
+import { Button, Input } from "@/components/common";
+import { getApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/store/authStore";
-import { Eye, EyeOff, UserCircle } from "lucide-react";
+import { UserCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
@@ -17,7 +19,6 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect authenticated users to dashboard
   useRouteProtection(pathname, false);
@@ -41,7 +42,7 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login error:", error);
       const errorMessage =
-        error?.response?.data?.error || error?.message || t("auth.loginError");
+        getApiError(error, t("auth.loginError"));
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -76,92 +77,55 @@ export default function LoginPage() {
         <h3 className="text-2xl font-bold text-center">{t("auth.login")}</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label
-            htmlFor="identifier"
-            className="block text-sm font-medium mb-2"
-          >
-            {t("auth.emailOrUsername")}
-          </label>
-          <div className="relative">
-            <input
-              id="identifier"
-              name="identifier"
-              type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder={t("auth.emailOrUsername")}
-              autoComplete="username"
-              disabled={loading}
-              required
-              className="input"
-            />
-          </div>
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <Input
+          label={t("auth.emailOrUsername")}
+          id="identifier"
+          name="identifier"
+          type="text"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          placeholder={t("auth.emailOrUsername")}
+          autoComplete="username"
+          disabled={loading}
+          required
+        />
 
         <div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium mb-2"
-            >
-              {t("auth.password")}
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                disabled={loading}
-                required
-                className="input pr-10"
-              />
-              <div className="absolute right-3 top-[60%] -translate-y-1/2">
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
+          <Input
+            label={t("auth.password")}
+            revealable
+            id="password"
+            name="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            disabled={loading}
+            required
+          />
           <div className="mt-2 text-right">
             <Link
               href={ROUTES.AUTH.FORGOT_PASSWORD}
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              className="text-sm text-primary hover:underline underline-offset-4 font-medium"
             >
               {t("auth.forgotPassword")}
             </Link>
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? t("common.loading") : t("auth.loginButton")}
-        </button>
+        <Button type="submit" size="lg" fullWidth loading={loading}>
+          {t("auth.loginButton")}
+        </Button>
       </form>
 
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           {t("auth.dontHaveAccount")}{" "}
           <Link
             href={ROUTES.AUTH.REGISTER}
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="text-primary hover:text-primary font-medium"
           >
             {t("auth.register")}
           </Link>
@@ -169,29 +133,22 @@ export default function LoginPage() {
       </div>
 
       {/* Guest Login Section */}
-      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-6 pt-6 border-t border-border">
         <div className="text-center mb-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {t("auth.guestAccess")}
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
           onClick={handleGuestLogin}
           disabled={loading}
-          className="
-						w-full flex items-center justify-center
-						gap-2 px-4 py-3
-						bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
-						text-gray-700 dark:text-gray-300
-						rounded-lg font-medium
-						transition-colors duration-200
-						disabled:opacity-50 disabled:cursor-not-allowed border
-						border-gray-300 dark:border-gray-600"
+          icon={<UserCircle />}
         >
-          <UserCircle className="w-5 h-5" />
-          {loading ? t("common.loading") : t("auth.continueAsGuest")}
-        </button>
+          {t("auth.continueAsGuest")}
+        </Button>
       </div>
     </>
   );

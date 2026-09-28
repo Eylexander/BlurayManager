@@ -23,8 +23,8 @@ const MobileLink = ({ href, icon: Icon, label, onClick }: MobileLinkProps) => {
   const active = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
   
   const baseStyles = "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all active:scale-95";
-  const activeStyles = "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400";
-  const idleStyles = "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300";
+  const activeStyles = "bg-primary/10 text-primary";
+  const idleStyles = "hover:bg-accent text-foreground/80";
 
   return (
     <Link
@@ -32,7 +32,7 @@ const MobileLink = ({ href, icon: Icon, label, onClick }: MobileLinkProps) => {
       onClick={onClick}
       className={`${baseStyles} ${active ? activeStyles : idleStyles}`}
     >
-      <Icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+      <Icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
       <span className="font-semibold text-sm">{t(label)}</span>
     </Link>
   );
@@ -111,17 +111,17 @@ export default function MobileNav() {
           showMenu ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="mx-6 mb-32 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden">
-          <div className="p-8">
+        <div className="mx-6 mb-32 bg-card/95 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-border overflow-hidden">
+          <div className="p-4 sm:p-8">
             
             {/* Header / User Profile */}
             <div className="flex items-center gap-4 mb-6 px-2">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+              <div className="w-12 h-12 rounded-2xl brand-gradient flex items-center justify-center text-white shadow-lg shadow-primary/30">
                 <span className="text-lg font-bold">{user?.username?.charAt(0).toUpperCase()}</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">{user?.username}</h3>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 capitalize tracking-wider">{role}</p>
+                <h3 className="text-base font-bold text-foreground leading-tight">{user?.username}</h3>
+                <p className="text-xs font-medium text-muted-foreground capitalize tracking-wider">{role}</p>
               </div>
             </div>
 
@@ -137,19 +137,19 @@ export default function MobileNav() {
                   />
                 ))}
 
-              <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+              <div className="my-1 border-t border-border" />
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-destructive/30 bg-destructive/5 text-destructive text-sm font-semibold transition-all active:scale-95 active:bg-destructive/15"
               >
-                <LogOut className="w-5 h-5" />
-                <span className="font-semibold text-sm">{t('nav.logout')}</span>
+                <LogOut className="w-4 h-4" />
+                {t('nav.logout')}
               </button>
             </div>
 
             {/* Footer */}
-            <div className="mt-1 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <a
                 href="https://github.com/Eylexander/BlurayManager"
                 target="_blank"
@@ -157,7 +157,7 @@ export default function MobileNav() {
                 className="flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity"
               >
                 <Github className="w-4 h-4" />
-                <span className="text-[10px] font-medium tracking-tight">Eylexander © 2026</span>
+                <span className="text-[10px] font-medium tracking-tight">Eylexander © {new Date().getFullYear()}</span>
               </a>
             </div>
           </div>
@@ -166,13 +166,13 @@ export default function MobileNav() {
 
       {/* Floating Action Dock */}
       <div className="lg:hidden fixed bottom-6 left-0 right-0 flex justify-center items-center z-[80] pointer-events-none px-6">
-        <nav className="pointer-events-auto flex items-center dark:bg-gray-900/90 bg-white/90 backdrop-blur-lg px-4 py-3 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10 dark:border-black/10 gap-4">
+        <nav className="pointer-events-auto flex items-center bg-card/90 backdrop-blur-lg px-4 py-3 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-border gap-4">
           
           {/* Add Action (Only if permitted) */}
           {!isGuest && canModify && (
             <Link
               href={ROUTES.DASHBOARD.ADD.ADD}
-              className="w-12 h-12 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all active:scale-90 shadow-lg shadow-blue-500/40"
+              className="w-12 h-12 flex items-center justify-center bg-primary hover:bg-primary/90 text-white rounded-full transition-all active:scale-90 shadow-lg shadow-primary/40"
             >
               <Plus className="w-6 h-6" strokeWidth={2.5} />
             </Link>
@@ -180,14 +180,14 @@ export default function MobileNav() {
 
           {/* Vertical Divider (Only if Add button exists) */}
           {!isGuest && canModify && (
-            <div className="w-[1px] h-6 dark:bg-white/20 bg-black/20" />
+            <div className="w-px h-6 bg-border" />
           )}
 
           {/* Menu Toggle */}
           <button
             onClick={() => setShowMenu(!showMenu)}
             className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all active:scale-95 ${
-              showMenu ? 'text-blue-400' : 'dark:text-white text-gray-900'
+              showMenu ? 'text-primary' : 'text-foreground'
             }`}
           >
             {showMenu ? (

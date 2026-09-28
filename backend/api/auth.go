@@ -11,10 +11,9 @@ import (
 func (api *API) Register(c *gin.Context) {
 	i18n := api.GetI18n(c)
 	var req struct {
-		Username string          `json:"username" binding:"required"`
-		Email    string          `json:"email" binding:"required,email"`
-		Password string          `json:"password" binding:"required,min=6"`
-		Role     models.UserRole `json:"role"`
+		Username string `json:"username" binding:"required"`
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=6"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -22,12 +21,9 @@ func (api *API) Register(c *gin.Context) {
 		return
 	}
 
-	// Default to user role if not specified
-	if req.Role == "" {
-		req.Role = models.RoleUser
-	}
-
-	user, err := api.ctrl.RegisterUser(c.Request.Context(), req.Username, req.Email, req.Password, req.Role)
+	// Public sign-up always yields a regular user; elevated roles are granted
+	// by an admin through the /admin/users routes.
+	user, err := api.ctrl.RegisterUser(c.Request.Context(), req.Username, req.Email, req.Password, models.RoleUser)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

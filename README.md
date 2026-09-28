@@ -1,5 +1,8 @@
 # Bluray Library Manager
 
+[![CI](https://github.com/Eylexander/BlurayManager/actions/workflows/ci.yml/badge.svg)](https://github.com/Eylexander/BlurayManager/actions/workflows/ci.yml)
+[![Docker](https://github.com/Eylexander/BlurayManager/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Eylexander/BlurayManager/actions/workflows/docker-publish.yml)
+
 A modern web application for managing your personal Bluray collection with a beautiful, Jellyfin-inspired interface. Track movies and TV series, organize with tags, view statistics, and more.
 
 ![Bluray Library Manager](docs/example.png)
@@ -44,7 +47,7 @@ A modern web application for managing your personal Bluray collection with a bea
 ## Tech Stack
 
 ### Backend
-- **Language**: Go 1.24
+- **Language**: Go 1.26
 - **Web Framework**: Gin
 - **Database**: MongoDB 7.0
 - **Authentication**: JWT with golang-jwt/jwt
@@ -185,9 +188,11 @@ Use the provided build script:
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `MONGODB_URI` | MongoDB connection string | Yes | - |
-| `DB_NAME` | Database name | Yes | `bluray_manager` |
-| `JWT_SECRET` | Secret for JWT signing | Yes | - |
+| `DB_NAME` | Database name (`DATABASE_NAME` is still accepted) | No | `bluray_manager` |
+| `JWT_SECRET` | Secret for JWT signing; the server refuses to start without it | Yes | - |
 | `TMDB_API_KEY` | TMDB API key | Yes | - |
+| `APP_URL` | Public URL of the app, used in password reset links | Recommended | request `Origin` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated CORS allow-list (not needed behind the reverse proxy) | No | any origin |
 | `PORT` | Server port | No | `8080` |
 | `SMTP_HOST` | SMTP server host | No | - |
 | `SMTP_PORT` | SMTP server port | No | `587` |
@@ -204,6 +209,15 @@ The frontend uses environment variables at build time. Configure them in your Do
 |----------|-------------|---------|
 | `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:8080` |
 
+## Continuous Integration
+
+GitHub Actions workflows live in `.github/workflows/`:
+
+- **`ci.yml`**: on pull requests and non-`master` branches: `gofmt`, `go vet`, `go test -race` and `golangci-lint` for the backend; ESLint, `tsc` and a production build for the frontend.
+- **`docker-publish.yml`**: on pushes to `master`: runs CI, then builds and pushes `eylexander/bluray-backend` / `eylexander/bluray-frontend` (`latest` and the commit SHA) for whichever side changed. Requires the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
+
+Dependabot keeps Go, npm, Docker and Actions dependencies up to date.
+
 ## User Roles
 
 | Role | Permissions |
@@ -211,7 +225,9 @@ The frontend uses environment variables at build time. Configure them in your Do
 | **Admin** | Full access: manage users, all blurays, settings |
 | **Moderator** | Manage all blurays, view users |
 | **User** | Manage own blurays, view collection |
-| **Guest** | Read-only access to collection |
+| **Guest** | Read-only access to collection; the shared guest account cannot change its credentials |
+
+Public sign-up always creates a **User**; elevated roles are granted by an admin.
 
 ## Contributing
 

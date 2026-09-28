@@ -2,15 +2,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAuthStore } from '@/store/authStore';
+import { useLocale, useTranslations } from 'next-intl';
+import { Star, Calendar, Play, Film, MoreVertical } from 'lucide-react';
 import { Bluray } from '@/types/bluray';
-import { Star, Calendar, Play, Tag, MoreVertical } from 'lucide-react';
-import ContextMenu from '@/components/common/ContextMenu';
-import AddTagModal from '@/components/modals/AddTagModal';
 import { useBlurayTools } from '@/hooks/useBlurayTools';
 import { getLocalizedTextArray } from '@/lib/bluray-utils';
-import { useLocale } from 'use-intl/react';
-import { ROUTES } from '@/hooks/useRouteProtection';
 
 interface BlurayListItemProps {
   bluray: Bluray;
@@ -18,90 +14,77 @@ interface BlurayListItemProps {
 }
 
 export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps) {
-  const { user } = useAuthStore();
+  const t = useTranslations();
   const locale = useLocale() as 'en-US' | 'fr-FR';
-
-  const canModify = user?.role === 'admin' || user?.role === 'moderator';
-
-  const {
-    currentBluray, showTagModal, setShowTagModal,
-    contextMenu, setContextMenu, handleTagUpdate, menuOptions
-  } = useBlurayTools(bluray, onUpdate);
+  const { currentBluray, canModify, detailHref, openMenu, overlays } = useBlurayTools(bluray, onUpdate);
 
   return (
     <>
       <div
-        onContextMenu={(e) => { e.preventDefault(); if(canModify) setContextMenu({ x: e.clientX, y: e.clientY }); }}
+        onContextMenu={openMenu}
         className="relative group"
       >
-        <Link href={ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", currentBluray.id.toString())}>
+        <Link href={detailHref}>
           <div className="
-            flex gap-4 p-3 sm:p-4 
-            bg-white dark:bg-dark-800/40 backdrop-blur-md
-            border border-gray-200 dark:border-white/[0.03] 
-            rounded-xl
-            transition-all duration-300 ease-in-out
-            /* Desktop: Translate slightly and add a soft glow */
-            md:hover:scale-[1.005] md:hover:bg-gray-50 dark:md:hover:bg-dark-700/60 md:hover:border-primary-500/30
-            md:hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:md:hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
-            /* Mobile: Gentle feedback without horizontal movement */
-            active:scale-[0.98] active:bg-gray-100 dark:active:bg-dark-700
+            flex gap-4 p-3 sm:p-4
+            bg-card border border-border rounded-lg
+            transition-all duration-300 ease-out
+            md:hover:border-primary/40 md:hover:shadow-lg md:hover:shadow-primary/5
+            active:scale-[0.99] active:bg-accent
           ">
-            {/* Cover Image with Glow Effect */}
-            <div className="relative w-16 h-24 sm:w-20 sm:h-28 flex-shrink-0 shadow-2xl overflow-hidden rounded-lg border border-white/10">
+            {/* Cover */}
+            <div className="relative w-16 h-24 sm:w-20 sm:h-28 flex-shrink-0 shadow-md overflow-hidden rounded-md bg-muted">
               {currentBluray.cover_image_url ? (
                 <Image
                   src={currentBluray.cover_image_url}
                   alt={currentBluray.title}
                   fill
-                  className="object-cover transition-transform duration-500 md:group-hover:scale-110"
+                  className="object-cover transition-transform duration-500 md:group-hover:scale-105"
                   sizes="80px"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-dark-600 to-dark-800 flex items-center justify-center">
-                  <span className="opacity-50 text-2xl">🎬</span>
+                <div className="w-full h-full noise flex items-center justify-center text-muted-foreground/40">
+                  <Film className="w-6 h-6" />
                 </div>
               )}
-              {/* Glass overlay on image */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity" />
             </div>
 
             {/* Content Area */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate md:group-hover:text-primary-400 transition-colors tracking-tight">
+                  <h3 className="text-sm sm:text-base font-semibold text-foreground truncate md:group-hover:text-primary transition-colors tracking-tight">
                     {currentBluray.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium mt-0.5 opacity-80">
-                    {currentBluray.director || 'Unknown Director'}
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    {currentBluray.director || t('common.unknownDirector')}
                   </p>
                 </div>
 
                 {/* Visual Indicator for Desktop */}
-                <div className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-primary-500/10 text-primary-500 opacity-0 group-hover:opacity-100 transition-all transform scale-[0.98] group-hover:scale-100">
+                <div className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                   <Play className="w-4 h-4 fill-current" />
                 </div>
               </div>
 
               {/* Metadata Badges */}
-              <div className="flex items-center gap-3 mt-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-500">
+              <div className="flex items-center gap-3 mt-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {currentBluray.rating > 0 && (
-                  <div className="flex items-center gap-1 text-yellow-500 dark:text-yellow-500 bg-yellow-500/10 dark:bg-yellow-500/10 px-2 py-0.5 rounded">
+                  <div className="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
                     <Star className="w-3 h-3 fill-current" />
                     <span>{currentBluray.rating.toFixed(1)}</span>
                   </div>
                 )}
 
                 {currentBluray.release_year && (
-                  <div className="flex items-center gap-1 bg-gray-200 dark:bg-white/5 px-2 py-0.5 rounded">
+                  <div className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded">
                     <Calendar className="w-3 h-3" />
                     <span>{currentBluray.release_year}</span>
                   </div>
                 )}
 
                 {getLocalizedTextArray(currentBluray.genre, locale)?.[0] && (
-                  <span className="hidden sm:block bg-primary-500/5 dark:bg-primary-500/5 text-primary-600 dark:text-primary-400/80 px-2 py-0.5 rounded border border-primary-500/10 dark:border-primary-500/10">
+                  <span className="hidden sm:block bg-primary/10 text-primary px-2 py-0.5 rounded">
                     {getLocalizedTextArray(currentBluray.genre, locale)[0]}
                   </span>
                 )}
@@ -113,34 +96,16 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
         {/* Mobile-only Context Trigger (Optional, since right-click is hard on mobile) */}
         {canModify && (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              setContextMenu({ x: e.clientX - 100, y: e.clientY });
-            }}
-            className="md:hidden absolute top-2 right-2 p-2 text-gray-400 hover:text-white ease-in-out transition-colors"
+            onClick={(e) => openMenu(e, -100)}
+            aria-label={t('common.moreOptions')}
+            className="md:hidden absolute top-2 right-2 p-2 text-muted-foreground active:text-foreground transition-colors"
           >
             <MoreVertical className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {contextMenu &&
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          options={menuOptions}
-          onClose={() => setContextMenu(null)}
-        />}
-
-      {showTagModal && (
-        <AddTagModal
-          blurayId={currentBluray.id}
-          blurayTitle={currentBluray.title}
-          initialSelectedTags={currentBluray.tags || []}
-          onClose={() => setShowTagModal(false)}
-          onSave={handleTagUpdate}
-        />
-      )}
+      {overlays}
     </>
   );
 }

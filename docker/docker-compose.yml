@@ -28,6 +28,7 @@ services:
       MONGODB_URI: mongodb://mongodb:27017/bluray_manager
       DB_NAME: bluray_manager
       JWT_SECRET: dev-secret-key-not-for-production
+      APP_URL: http://localhost:3000
       TMDB_API_KEY: ${TMDB_API_KEY:-}
       PORT: 8080
 

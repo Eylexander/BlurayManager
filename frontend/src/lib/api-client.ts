@@ -316,7 +316,7 @@ class ApiClient {
     return response.data;
   }
 
-  async updateUser(userId: string, data: { username?: string; email?: string; role?: string }) {
+  async updateUser(userId: string, data: { username?: string; email?: string; role?: string; password?: string }) {
     const response = await this.client.put(`/admin/users/${userId}`, data);
     return response.data;
   }
@@ -332,15 +332,13 @@ class ApiClient {
   }
 
   // Import/Export endpoints
-  async exportBlurays() {
+  /** Collection as a CSV file; with `template`, only the header row. */
+  async exportBlurays(template = false): Promise<Blob> {
     const response = await this.client.get('/blurays/export', {
+      params: template ? { template: 'true' } : undefined,
       responseType: 'blob',
     });
-    
-    // Ensure we're treating it as UTF-8 text
-    const blob = new Blob([response.data], { type: 'text/csv; charset=utf-8' });
-    const text = await blob.text();
-    return text;
+    return response.data;
   }
 
   async importBlurays(formData: FormData) {
@@ -354,3 +352,12 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+
+/** Message from a failed API call: the backend's `error` field when present, otherwise the fallback. */
+export function getApiError(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { error?: string } | undefined;
+    if (data?.error) return data.error;
+  }
+  return fallback;
+}

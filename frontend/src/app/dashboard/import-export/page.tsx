@@ -1,16 +1,15 @@
 "use client";
 
+import { PageHeader } from "@/components/common";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  Download,
+import {  Download,
   Upload,
   FileText,
   AlertCircle,
-  CheckCircle,
-} from "lucide-react";
-import { apiClient } from "@/lib/api-client";
+  CheckCircle, ArrowDownUp } from "lucide-react";
+import { apiClient, getApiError } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import useRouteProtection from "@/hooks/useRouteProtection";
 
@@ -25,7 +24,7 @@ interface FeatureItemProps {
 }
 
 const FeatureItem = ({ icon, text }: FeatureItemProps) => (
-  <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+  <div className="flex items-start gap-2 text-sm text-muted-foreground">
     {icon}
     <span>{text}</span>
   </div>
@@ -122,7 +121,7 @@ export default function ImportExportPage() {
     } catch (error: any) {
       console.error("Import failed:", error);
       toast.error(
-        error?.response?.data?.error || t("importExport.importFailed"),
+        getApiError(error, t("importExport.importFailed")),
       );
     } finally {
       setImporting(false);
@@ -134,27 +133,20 @@ export default function ImportExportPage() {
   return (
     <>
       <div className="max-w-6xl mx-auto">
-        <div className="mb-16 mt-8 md:text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {t("importExport.title")}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t("importExport.subtitle")}
-          </p>
-        </div>
+        <PageHeader icon={<ArrowDownUp />} title={t("importExport.title")} description={t("importExport.subtitle")} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Export Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Download className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Download className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-foreground">
                   {t("importExport.export")}
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {t("importExport.exportDescription")}
                 </p>
               </div>
@@ -178,7 +170,7 @@ export default function ImportExportPage() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+              className="w-full px-4 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
               {exporting ? (
                 <>
@@ -195,16 +187,16 @@ export default function ImportExportPage() {
           </div>
 
           {/* Import Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <Upload className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-foreground">
                   {t("importExport.import")}
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {t("importExport.importDescription")}
                 </p>
               </div>
@@ -212,11 +204,11 @@ export default function ImportExportPage() {
 
             <div className="space-y-3 mb-6">
               <FeatureItem
-                icon={<FileText className="w-4 h-4 mt-0.5 text-blue-500" />}
+                icon={<FileText className="w-4 h-4 mt-0.5 text-primary" />}
                 text={t("importExport.importFeature1")}
               />
               <FeatureItem
-                icon={<FileText className="w-4 h-4 mt-0.5 text-blue-500" />}
+                icon={<FileText className="w-4 h-4 mt-0.5 text-primary" />}
                 text={t("importExport.importFeature2")}
               />
               <FeatureItem
@@ -258,8 +250,8 @@ export default function ImportExportPage() {
 
         {/* Import Results */}
         {importResult && (
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="mt-6 bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               {t("importExport.importResults")}
             </h3>
 
@@ -288,14 +280,14 @@ export default function ImportExportPage() {
                 </p>
               </div>
 
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/30">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  <AlertCircle className="w-5 h-5 text-destructive" />
                   <span className="font-semibold text-red-900 dark:text-red-100">
                     {t("importExport.failedCount")}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <p className="text-2xl font-bold text-destructive">
                   {importResult.failed}
                 </p>
               </div>
@@ -303,14 +295,14 @@ export default function ImportExportPage() {
 
             {importResult.errors.length > 0 && (
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                <h4 className="font-semibold text-foreground mb-2">
                   {t("importExport.errors")}
                 </h4>
                 <div className="space-y-1 max-h-40 overflow-y-auto">
                   {importResult.errors.map((error, index) => (
                     <p
                       key={index}
-                      className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 px-3 py-2 rounded"
+                      className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded"
                     >
                       {error}
                     </p>

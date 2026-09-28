@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Input } from "@/components/common";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -35,7 +36,6 @@ export default function InstallPage() {
         setLoading(false);
       }
     };
-    setLoading(false);
 
     checkSetup();
   }, [router, t]);
@@ -44,7 +44,7 @@ export default function InstallPage() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error(t("auth.passwordsDoNotMatch"));
+      toast.error(t("auth.passwordMismatch"));
       return;
     }
 
@@ -87,108 +87,67 @@ export default function InstallPage() {
     <>
       <div className="mb-6">
         <h3 className="text-2xl font-bold text-center">{t("auth.install")}</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+        <p className="text-sm text-muted-foreground text-center mt-2">
           {t("auth.installSubtitle")}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="username" className="block text-sm font-medium mb-2">
-            {t("auth.username")}
-          </label>
-          <div className="relative">
-            <input
-              id="username"
-              type="text"
-              value={formData.username}
-              onChange={(e) =>
-                setFormData({ ...formData, username: e.target.value })
-              }
-              disabled={loading}
-              placeholder={t("auth.username")}
-              required
-              minLength={3}
-              className="input"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
-            {t("auth.email")}
-          </label>
-          <div className="relative">
-            <input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              disabled={loading}
-              placeholder={t("auth.emailPlaceholder")}
-              required
-              className="input"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">
-            {t("auth.password")}
-          </label>
-          <div className="relative">
-            <input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              disabled={loading}
-              placeholder={t("auth.password")}
-              required
-              minLength={6}
-              className="input"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-sm font-medium mb-2"
-          >
-            {t("auth.confirmPassword")}
-          </label>
-          <div className="relative">
-            <input
-              id="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, confirmPassword: e.target.value })
-              }
-              disabled={loading}
-              placeholder={t("auth.confirmPassword")}
-              required
-              minLength={6}
-              className="input"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="w-full btn-primary py-3"
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <Input
+          label={t("auth.username")}
+          id="username"
+          type="text"
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value }) }
           disabled={loading}
-        >
-          {loading ? t("auth.installLoading") : t("auth.installButton")}
-        </button>
+          placeholder={t("auth.username")}
+          required
+          minLength={3}
+        />
+
+        <Input
+          label={t("auth.email")}
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value }) }
+          disabled={loading}
+          placeholder={t("auth.emailPlaceholder")}
+          required
+        />
+
+        <Input
+          label={t("auth.password")}
+          revealable
+          id="password"
+          type="password"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value }) }
+          disabled={loading}
+          placeholder={t("auth.password")}
+          required
+          minLength={6}
+        />
+
+        <Input
+          label={t("auth.confirmPassword")}
+          revealable
+          id="confirmPassword"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value }) }
+          disabled={loading}
+          placeholder={t("auth.confirmPassword")}
+          required
+          minLength={6}
+        />
+
+        <Button type="submit" size="lg" fullWidth loading={loading} loadingText={t("auth.installLoad")}>
+          {t("auth.installButton")}
+        </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-gray-400">
+      <div className="mt-6 text-center text-sm text-muted-foreground">
         <p>{t("auth.installNotice")}</p>
       </div>
     </>

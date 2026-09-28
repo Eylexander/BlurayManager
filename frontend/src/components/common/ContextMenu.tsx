@@ -40,7 +40,6 @@ export default function ContextMenu({ x, y, options, onClose }: ContextMenuProps
       }
 
       if (adjustedX !== x || adjustedY !== y) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPosition({ x: adjustedX, y: adjustedY });
       }
     }
@@ -71,7 +70,7 @@ export default function ContextMenu({ x, y, options, onClose }: ContextMenuProps
   return (
     <div
       ref={menuRef}
-      className="fixed z-[100] min-w-[200px] bg-gray-800 border border-gray-700 rounded-lg shadow-2xl py-1 animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[100] min-w-[200px] bg-card text-card-foreground border border-border rounded-lg shadow-xl shadow-black/10 p-1 animate-in fade-in zoom-in-95 duration-100"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -79,16 +78,16 @@ export default function ContextMenu({ x, y, options, onClose }: ContextMenuProps
     >
       {options.map((option, index) => (
         <div key={index}>
-          {option.divider && <div className="my-1 border-t border-gray-700" />}
+          {option.divider && <div className="my-1 border-t border-border" />}
           <button
             onClick={() => {
               option.onClick();
               onClose();
             }}
-            className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-colors ${
+            className={`w-full px-3 py-2 rounded-md text-left text-sm flex items-center gap-3 transition-colors ${
               option.variant === 'danger'
-                ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                ? 'text-destructive hover:bg-destructive/10'
+                : 'text-foreground/80 hover:bg-accent hover:text-foreground'
             }`}
           >
             {option.icon && <span className="w-4 h-4 flex-shrink-0">{option.icon}</span>}

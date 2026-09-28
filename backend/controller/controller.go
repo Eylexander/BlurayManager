@@ -8,12 +8,14 @@ import (
 )
 
 type Controller struct {
-	ds datastore.Datastore
+	ds        datastore.Datastore
+	jwtSecret []byte
 }
 
-func NewController(ds datastore.Datastore) *Controller {
+func NewController(ds datastore.Datastore, jwtSecret string) *Controller {
 	return &Controller{
-		ds: ds,
+		ds:        ds,
+		jwtSecret: []byte(jwtSecret),
 	}
 }
 

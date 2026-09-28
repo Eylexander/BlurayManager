@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
+	"time"
 )
 
 // DVDFrResponse represents the XML response from DVDFr API
@@ -67,10 +69,11 @@ type BarcodeItem struct {
 func (c *Controller) LookupBarcode(ctx context.Context, barcode string) ([]BarcodeItem, error) {
 	// Call DVDFr API with barcode (gencode parameter)
 	// Use BRD for Blu-ray filtering
-	url := fmt.Sprintf("http://www.dvdfr.com/api/search.php?gencode=%s", barcode)
+	url := "http://www.dvdfr.com/api/search.php?gencode=" + neturl.QueryEscape(barcode)
 
-	// Create HTTP client with custom User-Agent (required by DVDFr)
-	client := &http.Client{}
+	// Custom User-Agent is required by DVDFr; the timeout keeps a slow or
+	// unreachable DVDFr from hanging the scan.
+	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)

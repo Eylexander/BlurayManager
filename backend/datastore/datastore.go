@@ -2,12 +2,16 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"eylexander/bluraymanager/models"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+// ErrUserNotFound is returned by user lookups that match no document.
+var ErrUserNotFound = errors.New("user not found")
 
 // Datastore defines the interface for all database operations
 type Datastore interface {
@@ -19,6 +23,7 @@ type Datastore interface {
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id primitive.ObjectID) error
 	ListUsers(ctx context.Context, skip, limit int) ([]*models.User, error)
+	HasUserWithRole(ctx context.Context, role models.UserRole) (bool, error)
 	EnsureGuestUser(ctx context.Context) (bool, error)
 
 	// Bluray operations

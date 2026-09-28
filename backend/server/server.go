@@ -1,6 +1,11 @@
 package server
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"time"
+
 	"eylexander/bluraymanager/api"
 	"eylexander/bluraymanager/controller"
 	"eylexander/bluraymanager/datastore"
@@ -10,25 +15,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// maxBodyBytes caps request bodies; the largest legitimate payload is a CSV import.
+const maxBodyBytes = 10 << 20
+
+// Config holds the runtime settings the HTTP layer needs.
+type Config struct {
+	Port           string
+	JWTSecret      string
+	AppURL         string   // public frontend URL, used in password reset emails
+	AllowedOrigins []string // CORS allow-list; empty allows any origin
+}
+
 // Server handles HTTP routing
 type Server struct {
 	router               *gin.Engine
 	api                  *api.API
 	ctrl                 *controller.Controller
 	passwordResetHandler *controller.PasswordResetHandler
+	authLimiter          *controller.RateLimiter
+	http                 *http.Server
 }
 
 // NewServer creates a new server
-func NewServer(ds datastore.Datastore) *Server {
+func NewServer(ds datastore.Datastore, cfg Config) *Server {
 	gin.SetMode(gin.ReleaseMode)
 
-	ctrl := controller.NewController(ds)
+	ctrl := controller.NewController(ds, cfg.JWTSecret)
 	apiHandler := api.NewAPI(ctrl)
 	emailService := services.NewEmailService()
-	passwordResetHandler := ctrl.NewPasswordResetHandler(ds, emailService)
+	passwordResetHandler := ctrl.NewPasswordResetHandler(ds, emailService, cfg.AppURL)
 
 	router := gin.Default()
-	router.Use(ctrl.CORSMiddleware())
+	router.Use(controller.SecurityHeaders())
+	router.Use(ctrl.CORSMiddleware(cfg.AllowedOrigins))
+	router.Use(controller.MaxBodySize(maxBodyBytes))
 	router.Use(ctrl.LocaleMiddleware())
 
 	s := &Server{
@@ -36,30 +56,40 @@ func NewServer(ds datastore.Datastore) *Server {
 		api:                  apiHandler,
 		ctrl:                 ctrl,
 		passwordResetHandler: passwordResetHandler,
+		// Shared across login, sign-up, reset and setup to slow credential stuffing.
+		authLimiter: controller.NewRateLimiter(20, 15*time.Minute),
 	}
 
 	s.setupRoutes()
+	s.http = &http.Server{
+		Addr:              ":" + cfg.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
 	return s
 }
 
 func (s *Server) setupRoutes() {
 	// Health check
 	s.router.GET("/api/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	// API v1
 	v1 := s.router.Group("/api/v1")
 	{
 		// Setup routes (public, for initial installation)
+		rateLimited := s.ctrl.RateLimit(s.authLimiter)
+
 		setup := v1.Group("/setup")
 		{
 			setup.GET("/check", s.api.CheckSetup)
-			setup.POST("/install", s.api.InitialSetup)
+			setup.POST("/install", rateLimited, s.api.InitialSetup)
 		}
 
 		// Public routes
 		auth := v1.Group("/auth")
+		auth.Use(rateLimited)
 		{
 			auth.POST("/register", s.api.Register)
 			auth.POST("/login", s.api.Login)
@@ -76,8 +106,9 @@ func (s *Server) setupRoutes() {
 			{
 				user.GET("/me", s.api.GetCurrentUser)
 				user.PUT("/settings", s.api.UpdateUserSettings)
-				user.PUT("/username", s.api.UpdateUsername)
-				user.PUT("/password", s.api.UpdatePassword)
+				// The guest account is shared, so its credentials stay fixed.
+				user.PUT("/username", s.ctrl.DenyRole(models.RoleGuest), s.api.UpdateUsername)
+				user.PUT("/password", s.ctrl.DenyRole(models.RoleGuest), s.api.UpdatePassword)
 			}
 
 			// Bluray routes (all users can view)
@@ -137,7 +168,7 @@ func (s *Server) setupRoutes() {
 
 			// Admin-only routes
 			admin := protected.Group("/admin")
-			admin.Use(s.ctrl.RequireRole("admin"))
+			admin.Use(s.ctrl.RequireRole(models.RoleAdmin))
 			{
 				users := admin.Group("/users")
 				{
@@ -155,12 +186,20 @@ func (s *Server) setupRoutes() {
 	s.router.NoRoute(s.DefaultResponse)
 }
 
-// Start starts the HTTP server
-func (s *Server) Start(port string) error {
-	return s.router.Run(":" + port)
+// Start serves HTTP until Shutdown is called. It returns nil on a clean shutdown.
+func (s *Server) Start() error {
+	if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+// Shutdown gracefully stops the server, letting in-flight requests finish.
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.http.Shutdown(ctx)
 }
 
 // Default response return for unhandled routes
 func (s *Server) DefaultResponse(c *gin.Context) {
-	c.JSON(404, gin.H{"error": "not found"})
+	c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 }

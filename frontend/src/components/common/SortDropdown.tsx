@@ -37,7 +37,7 @@ const SortDropdown = ({ sortBy, setSortBy }: SortDropdownProps) => {
     <div className="relative p-[0.1rem]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 appearance-none pl-3 pr-3 sm:pl-4 sm:pr-4 py-[0.45rem] sm:py-[0.65rem] bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-lg text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 md:hover:bg-gray-200 md:dark:hover:bg-dark-700 md:focus:outline-none md:focus:ring-2 md:focus:ring-blue-500 transition-colors cursor-pointer"
+        className="flex items-center gap-2 appearance-none pl-3 pr-3 sm:pl-4 sm:pr-4 py-[0.45rem] sm:py-[0.65rem] bg-muted border border-border rounded-lg text-xs sm:text-sm font-medium text-foreground/80 md:hover:bg-accent md:focus:outline-none md:focus:ring-2 md:focus:ring-ring transition-colors cursor-pointer"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -45,12 +45,12 @@ const SortDropdown = ({ sortBy, setSortBy }: SortDropdownProps) => {
           {currentLabel}
         </span>
         
-        <ArrowUpDown className="w-4 h-4 text-gray-500" />
+        <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
       </button>
 
       {/* DROPDOWN MENU */}
       {isOpen && (
-        <div className="absolute top-full mt-1 w-48 sm:right-[1px] bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-lg shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full mt-1 w-48 sm:right-[1px] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
           <ul role="listbox">
             {options.map((option) => (
               <li
@@ -64,8 +64,8 @@ const SortDropdown = ({ sortBy, setSortBy }: SortDropdownProps) => {
                 className={`
                   flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer transition-colors
                   ${sortBy === option.value 
-                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700'}
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-foreground/80 hover:bg-accent'}
                 `}
               >
                 <span>{option.label}</span>

@@ -1,43 +1,47 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, getApiError } from "@/lib/api-client";
 import toast from "react-hot-toast";
-import { Sun, Moon, Globe, User, Lock, Check, Settings } from "lucide-react";
+import { Sun, Moon, Monitor, Globe, User, Lock, Check, Settings } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter, usePathname } from "next/navigation";
 import useRouteProtection from "@/hooks/useRouteProtection";
-import { Button, Input } from "@/components/common";
+import { Button, Input, PageHeader } from "@/components/common";
 
 // Local Components
 const SettingsCard = ({
   icon,
   title,
   subtitle,
+  tone = "primary",
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
+  tone?: "primary" | "danger";
   children: React.ReactNode;
 }) => (
-  <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-xl">
-    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-      {icon}
+  <section className="card p-5 sm:p-6">
+    <div className="flex items-center gap-3 mb-5">
+      <div
+        className={`grid place-items-center w-10 h-10 shrink-0 rounded-lg [&_svg]:w-5 [&_svg]:h-5 ${
+          tone === "danger" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+        }`}
+      >
+        {icon}
+      </div>
       <div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
-          {title}
-        </h2>
-        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-          {subtitle}
-        </p>
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
     </div>
     {children}
-  </div>
+  </section>
 );
 
 const OptionButton = ({
@@ -52,24 +56,18 @@ const OptionButton = ({
   onClick: () => void;
 }) => (
   <button
+    type="button"
+    aria-pressed={isSelected}
     onClick={onClick}
-    className={`relative group p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 ${
+    className={`relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 h-20 sm:h-16 rounded-lg border text-sm font-medium transition-colors [&_svg]:w-5 [&_svg]:h-5 ${
       isSelected
-        ? "border-blue-500 bg-gradient-to-br from-blue-500/10 to-blue-600/10 shadow-lg"
-        : "border-gray-200 dark:border-gray-700/50 bg-gray-100 dark:bg-gray-700/30 hover:border-blue-500/50 hover:bg-gray-200 dark:hover:bg-gray-700/50"
+        ? "border-primary bg-primary/10 text-primary"
+        : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
     }`}
   >
-    <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-      {icon}
-      <span
-        className={`font-semibold text-sm sm:text-lg ${isSelected ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300"}`}
-      >
-        {label}
-      </span>
-    </div>
-    {isSelected && (
-      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 absolute top-2 right-2 sm:top-4 sm:right-4" />
-    )}
+    {icon}
+    {label}
+    {isSelected && <Check className="!w-4 !h-4 absolute top-2 right-2" />}
   </button>
 );
 
@@ -80,17 +78,21 @@ export default function SettingsPage() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user, updateUser, setLanguage } = useAuthStore();
-  const [selectedTheme, setSelectedTheme] = useState(theme || "dark");
-  const [selectedLanguage, setSelectedLanguage] = useState(
-    locale || user?.settings?.language || "en-US",
-  );
+  // Unsaved picks; until the user chooses, fall back to the live values so the
+  // form stays in sync with the theme/locale/user as they load.
+  const [themeChoice, setSelectedTheme] = useState<string | null>(null);
+  const [languageChoice, setSelectedLanguage] = useState<string | null>(null);
+  const selectedTheme = themeChoice ?? theme ?? "dark";
+  const selectedLanguage =
+    languageChoice ?? locale ?? user?.settings?.language ?? "en-US";
   const [loading, setLoading] = useState(false);
 
   // Use route protection
   useRouteProtection(pathname);
 
   // Username change state
-  const [newUsername, setNewUsername] = useState("");
+  const [usernameDraft, setNewUsername] = useState<string | null>(null);
+  const newUsername = usernameDraft ?? user?.username ?? "";
   const [usernameLoading, setUsernameLoading] = useState(false);
 
   // Password change state
@@ -98,14 +100,6 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-
-  useEffect(() => {
-    if (theme) setSelectedTheme(theme);
-    // Use actual locale from next-intl as the source of truth
-    const currentLanguage = locale || user?.settings?.language;
-    if (currentLanguage) setSelectedLanguage(currentLanguage);
-    if (user) setNewUsername(user.username);
-  }, [theme, user, locale]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -178,7 +172,7 @@ export default function SettingsPage() {
       toast.success(t("settings.usernameUpdated"));
     } catch (error: any) {
       toast.error(
-        error.response?.data?.error || t("settings.usernameUpdateFailed"),
+        getApiError(error, t("settings.usernameUpdateFailed")),
       );
     } finally {
       setUsernameLoading(false);
@@ -214,7 +208,7 @@ export default function SettingsPage() {
       toast.success(t("settings.passwordUpdated"));
     } catch (error: any) {
       toast.error(
-        error.response?.data?.error || t("settings.passwordUpdateFailed"),
+        getApiError(error, t("settings.passwordUpdateFailed")),
       );
     } finally {
       setPasswordLoading(false);
@@ -222,255 +216,153 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-3 sm:px-4 pb-12">
-      <div className="py-4 sm:py-6 mb-6 sm:mb-8">
-        <div className="flex items-center space-x-5 sm:space-x-3 mb-4">
-          <div className="p-2 bg-blue-100 dark:bg-primary-900/30 rounded-lg">
-            <Settings className="w-6 h-6 text-blue-600 dark:text-primary-600" />
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            {t("settings.title")}
-          </h1>
-        </div>
-        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-lg">
-          {t("settings.subtitle")}
-        </p>
-      </div>
+    <div className="max-w-4xl mx-auto pb-12">
+      <PageHeader icon={<Settings />} title={t("settings.title")} description={t("settings.subtitle")} />
 
-      <div className="space-y-8">
-        {/* Account Settings Section - Hide for Guest */}
+      <div className="space-y-6">
+        {/* Account settings are hidden for the shared guest account */}
         {user?.role !== "guest" && (
-          <div className="bg-white dark:bg-gray-900/80 dark:backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-xl">
-            <div className="flex items-center gap-4 mb-4 sm:mb-6">
-              <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-500/10 rounded-lg">
-                <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
-                  {t("settings.profile")}
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  {t("settings.profileSubtitle")}
-                </p>
-              </div>
-            </div>
+          <SettingsCard icon={<User />} title={t("settings.profile")} subtitle={t("settings.profileSubtitle")}>
+            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 mb-5 rounded-lg bg-muted/40 border border-border">
+              {[
+                [t("settings.currentUsername"), user?.username],
+                [t("settings.email"), user?.email],
+                [t("settings.role"), user?.role ? t(`users.${user.role}`) : ""],
+              ].map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</dt>
+                  <dd className="mt-0.5 font-semibold text-foreground truncate">{value}</dd>
+                </div>
+              ))}
+            </dl>
 
-            {/* Current User Info */}
-            <div className="mb-4 sm:mb-6 p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-200 dark:border-gray-600/30">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    {t("settings.currentUsername")}
-                  </p>
-                  <p className="font-semibold text-gray-900 dark:text-white text-lg">
-                    {user?.username}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    {t("settings.email")}
-                  </p>
-                  <p className="font-semibold text-gray-900 dark:text-white text-lg">
-                    {user?.email}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    {t("settings.role")}
-                  </p>
-                  <p className="font-semibold text-gray-900 dark:text-white text-lg capitalize">
-                    {user?.role}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Username Change */}
-            <div className="border-t border-gray-200 dark:border-gray-700/50 pt-4 sm:pt-6">
-              <label
-                htmlFor="username"
-                className="block text-sm font-sm text-gray-700 dark:text-gray-300 mb-2 sm:mb-3"
+            <form
+              className="flex flex-col sm:flex-row sm:items-end gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUsernameUpdate();
+              }}
+            >
+              <Input
+                id="username"
+                label={t("settings.newUsername")}
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder={t("settings.newUsername")}
+                disabled={usernameLoading}
+              />
+              <Button
+                type="submit"
+                disabled={newUsername === user?.username}
+                loading={usernameLoading}
               >
-                {t("settings.newUsername")}
-              </label>
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                <input
-                  id="username"
-                  type="text"
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600/50 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-gray-50 dark:focus:bg-gray-700 transition-all duration-200"
-                  placeholder={t("settings.newUsername")}
-                  disabled={usernameLoading}
-                />
-                <Button
-                  onClick={handleUsernameUpdate}
-                  disabled={usernameLoading || newUsername === user?.username}
-                  loading={usernameLoading}
-                  className="whitespace-nowrap"
-                >
-                  {t("settings.updateUsername")}
-                </Button>
-              </div>
-            </div>
-          </div>
+                {t("settings.updateUsername")}
+              </Button>
+            </form>
+          </SettingsCard>
         )}
 
-        {/* Password Change Section - Hide for Guest */}
         {user?.role !== "guest" && (
-          <div className="bg-white dark:bg-gray-900/80 dark:backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-xl">
-            <div className="flex items-center gap-4 mb-4 sm:mb-6">
-              <div className="p-1.5 sm:p-2 bg-red-100 dark:bg-red-500/10 rounded-lg">
-                <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1.5 sm:mb-0.5">
-                  {t("settings.updatePassword")}
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  {t("settings.updatePasswordSubtitle")}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4 sm:space-y-5">
+          <SettingsCard
+            icon={<Lock />}
+            tone="danger"
+            title={t("settings.updatePassword")}
+            subtitle={t("settings.updatePasswordSubtitle")}
+          >
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handlePasswordUpdate();
+              }}
+            >
               <Input
                 id="currentPassword"
                 type="password"
+                revealable
+                autoComplete="current-password"
                 label={t("settings.currentPassword")}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder={t("settings.currentPassword")}
                 disabled={passwordLoading}
               />
-
-              <Input
-                id="newPassword"
-                type="password"
-                label={t("settings.newPassword")}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder={t("settings.newPassword")}
-                disabled={passwordLoading}
-              />
-
-              <Input
-                id="confirmPassword"
-                type="password"
-                label={t("settings.confirmPassword")}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t("settings.confirmPassword")}
-                disabled={passwordLoading}
-              />
-
-              <div className="flex justify-end pt-3 sm:pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  id="newPassword"
+                  type="password"
+                  revealable
+                  autoComplete="new-password"
+                  label={t("settings.newPassword")}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={passwordLoading}
+                />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  revealable
+                  autoComplete="new-password"
+                  label={t("settings.confirmPassword")}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={passwordLoading}
+                />
+              </div>
+              <div className="flex justify-end">
                 <Button
-                  onClick={handlePasswordUpdate}
-                  disabled={
-                    passwordLoading ||
-                    !currentPassword ||
-                    !newPassword ||
-                    !confirmPassword
-                  }
+                  type="submit"
+                  disabled={!currentPassword || !newPassword || !confirmPassword}
                   loading={passwordLoading}
                 >
                   {t("settings.updatePassword")}
                 </Button>
               </div>
-            </div>
-          </div>
+            </form>
+          </SettingsCard>
         )}
 
-        {/* Theme Setting */}
-        <div className="bg-white dark:bg-gray-900/80 dark:backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-xl">
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-              {t("settings.theme")}
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              {t("settings.themeSubtitle")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <SettingsCard icon={<Sun />} title={t("settings.theme")} subtitle={t("settings.themeSubtitle")}>
+          <div className="grid grid-cols-3 gap-3">
             <OptionButton
-              icon={
-                <Sun
-                  className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedTheme === "light" ? "text-blue-400" : "text-gray-400 group-hover:text-blue-400"}`}
-                />
-              }
+              icon={<Sun />}
               label={t("settings.light")}
               isSelected={selectedTheme === "light"}
               onClick={() => setSelectedTheme("light")}
             />
             <OptionButton
-              icon={
-                <Moon
-                  className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedTheme === "dark" ? "text-blue-400" : "text-gray-400 group-hover:text-blue-400"}`}
-                />
-              }
+              icon={<Moon />}
               label={t("settings.dark")}
               isSelected={selectedTheme === "dark"}
               onClick={() => setSelectedTheme("dark")}
             />
             <OptionButton
-              icon={
-                <Settings
-                  className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedTheme === "system" ? "text-blue-400" : "text-gray-400 group-hover:text-blue-400"}`}
-                />
-              }
+              icon={<Monitor />}
               label={t("settings.system")}
               isSelected={selectedTheme === "system"}
               onClick={() => setSelectedTheme("system")}
             />
           </div>
-        </div>
+        </SettingsCard>
 
-        {/* Language Setting */}
-        <div className="bg-white dark:bg-gray-900/80 dark:backdrop-blur-sm p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700/50 shadow-xl">
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-              {t("settings.language")}
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              {t("settings.languageSubtitle")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <SettingsCard icon={<Globe />} title={t("settings.language")} subtitle={t("settings.languageSubtitle")}>
+          <div className="grid grid-cols-2 gap-3">
             <OptionButton
-              icon={
-                <Globe
-                  className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedLanguage === "en-US" ? "text-blue-400" : "text-gray-400 group-hover:text-blue-400"}`}
-                />
-              }
+              icon={<span className="text-xs font-bold tracking-wide">EN</span>}
               label={t("settings.english")}
               isSelected={selectedLanguage === "en-US"}
               onClick={() => setSelectedLanguage("en-US")}
             />
             <OptionButton
-              icon={
-                <Globe
-                  className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${selectedLanguage === "fr-FR" ? "text-blue-400" : "text-gray-400 group-hover:text-blue-400"}`}
-                />
-              }
+              icon={<span className="text-xs font-bold tracking-wide">FR</span>}
               label={t("settings.french")}
               isSelected={selectedLanguage === "fr-FR"}
               onClick={() => setSelectedLanguage("fr-FR")}
             />
           </div>
-        </div>
+        </SettingsCard>
 
-        {/* Save Button */}
         <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            loading={loading}
-            size="lg"
-            className="font-semibold"
-          >
+          <Button onClick={handleSave} loading={loading} size="lg">
             {t("common.save")}
           </Button>
         </div>

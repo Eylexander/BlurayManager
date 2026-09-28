@@ -29,7 +29,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import AddTagModal from "@/components/modals/AddTagModal";
+import TagPickerModal from "@/components/modals/TagPickerModal";
 import SeasonSelectorModal from "@/components/modals/SeasonSelectorModal";
 import PurchaseInfoModal from "@/components/modals/PurchaseInfoModal";
 import { Bluray, Season } from "@/types/bluray";
@@ -39,7 +39,7 @@ import {
   isValidPurchaseDate,
   formatPurchaseDate,
 } from "@/lib/bluray-utils";
-import { Button } from "@/components/common";
+import { Button, IconButton, TagChip, useConfirm } from "@/components/common";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
 
 export default function BlurayDetailPage() {
@@ -63,6 +63,7 @@ export default function BlurayDetailPage() {
   >([]);
 
   const canModify = user?.role === "admin" || user?.role === "moderator";
+  const { confirm, confirmDialog } = useConfirm();
 
   // Use route protection
   useRouteProtection(pathname);
@@ -96,7 +97,13 @@ export default function BlurayDetailPage() {
   }, [params.id]);
 
   const handleDelete = async () => {
-    if (!confirm(t("details.confirmDelete"))) return;
+    const ok = await confirm({
+      title: t("details.deleteTitle", { title: bluray?.title ?? "" }),
+      message: t("details.deleteWarning"),
+      confirmLabel: t("common.delete"),
+      danger: true,
+    });
+    if (!ok) return;
 
     setDeleting(true);
     try {
@@ -117,7 +124,12 @@ export default function BlurayDetailPage() {
       return;
     }
 
-    if (!confirm(t("details.confirmRefresh"))) return;
+    const ok = await confirm({
+      title: t("details.refreshFromTmdb"),
+      message: t("details.confirmRefresh"),
+      confirmLabel: t("details.refreshFromTmdb"),
+    });
+    if (!ok) return;
 
     setRefreshing(true);
     try {
@@ -209,10 +221,14 @@ export default function BlurayDetailPage() {
     return <LoaderCircle />;
   }
 
+  // Floating actions over the hero backdrop
+  const heroAction =
+    "inline-grid place-items-center w-10 h-10 rounded-lg bg-card/85 backdrop-blur border border-border shadow-sm transition-colors [&_svg]:w-[18px] [&_svg]:h-[18px]";
+
   if (!bluray) {
     return (
       <div className="max-w-4xl mx-auto py-12 text-center">
-        <p className="text-gray-400">{t("details.notFound")}</p>
+        <p className="text-muted-foreground">{t("details.notFound")}</p>
         <Button
           variant="primary"
           onClick={() => router.push(ROUTES.DASHBOARD.HOME)}
@@ -225,24 +241,26 @@ export default function BlurayDetailPage() {
   }
 
   return (
-    <div className="relative min-h-screen text-slate-200 pb-20">
+    <div className="relative min-h-screen text-foreground pb-20">
       {/* Background Ambient Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] opacity-50" />
+        <div className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] opacity-50" />
         <div className="absolute top-[40%] -left-[10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] opacity-50" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Modals */}
         {editingTags && (
-          <AddTagModal
+          <TagPickerModal
             blurayId={params.id as string}
             initialSelectedTags={bluray?.tags || []}
             onClose={() => setEditingTags(false)}
-            onSave={(tags) => {
+            onSave={(tags, available) => {
               if (bluray) {
                 setBluray({ ...bluray, tags });
               }
+              // Include tags created from the picker so they render right away
+              setAllTags(available);
             }}
             blurayTitle={bluray?.title}
           />
@@ -275,25 +293,19 @@ export default function BlurayDetailPage() {
           />
         )}
 
+        {confirmDialog}
+
         {/* Navigation */}
         <div className="py-6">
-          <button
-            onClick={() => router.back()}
-            className="group flex items-center gap-2 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
-          >
-            <div className="p-2 rounded-full bg-gray-200 dark:bg-slate-800/50 group-hover:bg-gray-300 dark:group-hover:bg-slate-700 transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </div>
-            <span className="font-medium text-sm sm:text-base">
-              {t("common.back")}
-            </span>
-          </button>
+          <Button variant="ghost" inline onClick={() => router.back()} icon={<ArrowLeft />} className="-ml-3">
+            {t("common.back")}
+          </Button>
         </div>
 
         {/* Hero Section */}
-        <div className="relative group rounded-3xl overflow-hidden bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-12 transition-all duration-500 md:hover:border-gray-300 dark:md:hover:border-white/20">
+        <div className="relative group rounded-3xl overflow-hidden bg-card border border-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-12 transition-all duration-500 md:hover:border-border">
           {/* Action Buttons */}
-          <div className="absolute top-6 right-6 z-30 flex gap-3">
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 flex gap-2">
             <a
               href={
                 bluray.tmdb_id
@@ -302,37 +314,31 @@ export default function BlurayDetailPage() {
               }
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 bg-gray-100 dark:bg-slate-900/60 md:hover:bg-gray-200 dark:md:hover:bg-slate-800/80 backdrop-blur-xl text-gray-700 dark:text-slate-300 md:hover:text-gray-900 dark:md:hover:text-white rounded-xl transition-all duration-300 border border-gray-200 dark:border-white/10 md:hover:border-blue-500/50 shadow-lg md:hover:shadow-blue-500/20 group/btn"
+              aria-label={t("details.tmdb")}
               title={t("details.tmdb")}
+              className={`${heroAction} text-muted-foreground hover:text-foreground`}
             >
-              <ExternalLink className="w-5 h-5 transition-transform md:group-hover/btn:scale-110" />
+              <ExternalLink />
             </a>
             {canModify && (
               <>
-                <button
+                <IconButton
+                  label={t("details.refreshFromTmdb")}
                   onClick={handleRefreshFromTMDB}
                   disabled={refreshing || !bluray.tmdb_id}
-                  className="p-3 bg-gray-100 dark:bg-slate-900/60 md:hover:bg-green-500/20 backdrop-blur-xl text-gray-700 dark:text-slate-300 md:hover:text-green-600 dark:md:hover:text-green-400 rounded-xl transition-all duration-300 border border-gray-200 dark:border-white/10 md:hover:border-green-500/50 shadow-lg md:hover:shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
-                  title={t("details.refreshFromTmdb")}
+                  className={heroAction}
                 >
-                  {refreshing ? (
-                    <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-5 h-5 transition-transform md:group-hover/btn:scale-110" />
-                  )}
-                </button>
-                <button
+                  <RefreshCw className={refreshing ? "animate-spin" : ""} />
+                </IconButton>
+                <IconButton
+                  label={t("details.delete")}
+                  variant="danger"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="p-3 bg-gray-100 dark:bg-slate-900/60 md:hover:bg-red-500/20 backdrop-blur-xl text-gray-700 dark:text-slate-300 md:hover:text-red-600 dark:md:hover:text-red-400 rounded-xl transition-all duration-300 border border-gray-200 dark:border-white/10 md:hover:border-red-500/50 shadow-lg md:hover:shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
-                  title={t("details.delete")}
+                  className={heroAction}
                 >
-                  {deleting ? (
-                    <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Trash2 className="w-5 h-5 transition-transform md:group-hover/btn:scale-110" />
-                  )}
-                </button>
+                  <Trash2 />
+                </IconButton>
               </>
             )}
           </div>
@@ -349,11 +355,11 @@ export default function BlurayDetailPage() {
                   priority
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-950" />
+                <div className="w-full h-full bg-muted noise" />
               )}
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-neutral-50 via-neutral-50/20 dark:from-slate-950 dark:via-slate-950/10 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r dark:from-slate-950 dark:via-slate-950/5 to-transparent pointer-events-none hidden md:block" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/5 to-transparent pointer-events-none hidden md:block" />
           </div>
 
           {/* Main Content */}
@@ -361,7 +367,7 @@ export default function BlurayDetailPage() {
             <div className="flex flex-col md:flex-row gap-10 items-center md:items-end">
               {/* Poster */}
               <div className="flex-shrink-0 relative -mb-6 md:mb-0">
-                <div className="relative w-44 sm:w-56 md:w-64 lg:w-72 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-white/20 transform transition-transform duration-500 md:hover:scale-[1.02] will-change-transform">
+                <div className="relative w-44 sm:w-56 md:w-64 lg:w-72 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-border/20 transform transition-transform duration-500 md:hover:scale-[1.02] will-change-transform">
                   {bluray.cover_image_url ? (
                     <Image
                       src={bluray.cover_image_url}
@@ -371,15 +377,15 @@ export default function BlurayDetailPage() {
                       priority
                     />
                   ) : (
-                    <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                      <Film className="w-16 h-16 text-slate-700" />
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <Film className="w-16 h-16 text-foreground/80" />
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Info Content */}
-              <div className="flex-1 text-center md:text-left space-y-6">
+              <div className="flex-1 text-center md:text-left space-y-4 sm:space-y-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-center md:justify-start gap-2.5 flex-wrap">
                     <button
@@ -388,10 +394,10 @@ export default function BlurayDetailPage() {
                           `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`type:${bluray.type}`)}`,
                         )
                       }
-                      className={`px-3 py-[0.3rem] rounded-lg text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-1.5 border shadow-sm transition-all hover:scale-[1.02] active:scale-95 ${
+                      className={`px-3 py-[0.3rem] rounded-lg text-[10px] font-bold uppercase tracking-[0.15em] flex items-center gap-1.5 border transition-colors active:scale-95 ${
                         bluray.type === "movie"
-                          ? "bg-blue-100/50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-400/40 hover:bg-blue-200/50 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-400/60"
-                          : "bg-purple-100/50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-400/30 hover:bg-purple-200/50 dark:hover:bg-purple-500/20 hover:border-purple-300 dark:hover:border-purple-400/50"
+                          ? "bg-primary/10 text-primary border-primary/30 hover:bg-primary/15"
+                          : "bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/30 hover:bg-violet-500/15"
                       }`}
                       title={t("details.searchForType", { type: t(`common.${bluray.type}`) })}
                     >
@@ -409,36 +415,36 @@ export default function BlurayDetailPage() {
                             `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`year:${bluray.release_year}`)}`,
                           )
                         }
-                        className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/20 border border-gray-200 dark:border-white/30 text-gray-600 dark:text-slate-100 text-xs font-bold tracking-wide transition-all hover:scale-[1.02] active:scale-95 hover:bg-gray-200/50 dark:hover:bg-white/30 hover:border-gray-300 dark:hover:border-white/40"
+                        className="px-3 py-1 rounded-lg bg-muted/50 border border-border text-muted-foreground text-xs font-bold tracking-wide transition-all hover:scale-[1.02] active:scale-95 hover:bg-accent/50 hover:border-border"
                         title={t("details.searchForYear", { year: bluray.release_year })}
                       >
                         {bluray.release_year}
                       </button>
                     )}
                     {bluray.runtime && bluray.runtime > 0 && (
-                      <span className="px-3 py-1 rounded-lg bg-gray-100/50 dark:bg-white/20 border border-gray-200 dark:border-white/30 text-gray-600 dark:text-slate-100 text-xs font-bold flex items-center gap-1.5">
-                        <Clock className="w-3 h-3 text-gray-400 dark:text-slate-100" />
+                      <span className="px-3 py-1 rounded-lg bg-muted/50 border border-border text-muted-foreground text-xs font-bold flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
                         {Math.floor(bluray.runtime / 60)}h {bluray.runtime % 60}
                         m
                       </span>
                     )}
                   </div>
 
-                  <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-gray-900 dark:text-white leading-[1.1] tracking-tighter drop-shadow-2xl">
+                  <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-foreground leading-[1.1] tracking-tighter drop-shadow-2xl">
                     {bluray.title}
                   </h1>
 
                   {bluray.director && (
-                    <p className="text-lg sm:text-xl text-gray-600 dark:text-slate-400 font-light tracking-wide">
+                    <p className="text-lg sm:text-xl text-muted-foreground font-light tracking-wide">
                       {t("details.directedBy")}{" "}
-                      <span className="text-gray-900 dark:text-white font-medium">
+                      <span className="text-foreground font-medium">
                         <button
                           onClick={() =>
                             router.push(
                               `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`director:${bluray.director}`)}`,
                             )
                           }
-                          className="underline decoration-gray-400 dark:decoration-slate-600 decoration-2 underline-offset-2 hover:decoration-blue-500 dark:hover:decoration-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                          className="underline decoration-gray-400 dark:decoration-slate-600 decoration-2 underline-offset-2 hover:decoration-blue-500 dark:hover:decoration-blue-400 hover:text-primary transition-all duration-200"
                           title={t("details.searchForDirector", {
                             director: bluray.director,
                           })}
@@ -453,20 +459,20 @@ export default function BlurayDetailPage() {
                 <div className="flex flex-col md:flex-row items-center gap-6 pt-2">
                   {/* Rating */}
                   {bluray.rating != null && bluray.rating > 0 && (
-                    <div className="flex items-center gap-3 bg-gray-100/80 dark:bg-black/30 backdrop-blur-md px-4 py-2 rounded-2xl border border-gray-200 dark:border-white/5">
+                    <div className="flex items-center gap-3 bg-muted/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border">
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${star <= Math.round(bluray.rating / 2) ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-slate-700"}`}
+                            className={`w-4 h-4 ${star <= Math.round(bluray.rating / 2) ? "text-yellow-400 fill-yellow-400" : "text-border"}`}
                           />
                         ))}
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-gray-900 dark:text-white font-black text-xl leading-none">
+                        <span className="text-foreground font-black text-xl leading-none">
                           {bluray.rating}
                         </span>
-                        <span className="text-gray-500 dark:text-slate-500 text-xs font-bold uppercase tracking-tighter">
+                        <span className="text-muted-foreground text-xs font-bold uppercase tracking-tighter">
                           / 10
                         </span>
                       </div>
@@ -486,7 +492,7 @@ export default function BlurayDetailPage() {
                                   `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`genre:${g}`)}`,
                                 )
                               }
-                              className="px-4 py-1.5 bg-gray-200 dark:bg-white/5 hover:bg-gray-300 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 rounded-full text-xs font-medium text-gray-700 dark:text-slate-300 transition-all hover:text-gray-900 dark:hover:text-white hover:scale-[1.02] active:scale-95"
+                              className="px-4 py-1.5 bg-muted hover:bg-border border border-border hover:border-border rounded-full text-xs font-medium text-foreground/80 transition-all hover:text-foreground hover:scale-[1.02] active:scale-95"
                               title={t("details.searchForGenre", { genre: g })}
                             >
                               {g}
@@ -506,12 +512,12 @@ export default function BlurayDetailPage() {
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
             {bluray.description && (
-              <div className="bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-white/5 rounded-2xl p-6 sm:p-8 backdrop-blur-sm shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-sm shadow-sm">
+                <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-primary rounded-full"></div>
                   {t("details.synopsis")}
                 </h2>
-                <p className="text-gray-700 dark:text-slate-300 leading-relaxed text-lg">
+                <p className="text-foreground/80 leading-relaxed text-lg">
                   {typeof bluray.description === "string"
                     ? bluray.description
                     : getLocalizedText(bluray.description, locale)}
@@ -521,23 +527,19 @@ export default function BlurayDetailPage() {
 
             {/* Seasons Section for Series */}
             {bluray.type === "series" && (
-              <div className="bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-white/5 rounded-2xl p-6 sm:p-8 backdrop-blur-sm shadow-sm">
+              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-sm shadow-sm">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                     <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
                     {t("details.seasons")}
-                    <span className="ml-2 text-sm font-normal text-gray-500 dark:text-slate-500 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                    <span className="ml-2 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                       {bluray.seasons?.length || 0}
                     </span>
                   </h2>
                   {canModify && (
-                    <button
-                      onClick={() => setEditingSeasons(true)}
-                      className="text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" inline onClick={() => setEditingSeasons(true)} icon={<Edit />}>
                       {t("details.manageSeasons")}
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -546,24 +548,24 @@ export default function BlurayDetailPage() {
                     {bluray.seasons.map((season) => (
                       <div
                         key={season.number}
-                        className="relative group bg-gray-50 dark:bg-slate-800/40 hover:bg-gray-100 dark:hover:bg-slate-800/60 border border-gray-200 dark:border-white/5 rounded-xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-purple-500/10"
+                        className="relative group bg-background hover:bg-accent border border-border rounded-xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-purple-500/10"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-lg border border-purple-200 dark:border-purple-500/20 group-hover:border-purple-300 dark:group-hover:border-purple-500/50 transition-colors">
                             {season.number}
                           </div>
                           {season.year && (
-                            <span className="text-xs font-semibold text-gray-500 dark:text-slate-500 bg-gray-100 dark:bg-slate-900/50 px-2 py-1 rounded">
+                            <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded">
                               {season.year}
                             </span>
                           )}
                         </div>
                         <div>
-                          <p className="text-gray-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">
+                          <p className="text-muted-foreground text-xs uppercase font-bold tracking-wider mb-1">
                             {t("details.season")}
                           </p>
-                          <p className="text-gray-900 dark:text-white text-sm font-medium flex items-center gap-1.5">
-                            <Film className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" />
+                          <p className="text-foreground text-sm font-medium flex items-center gap-1.5">
+                            <Film className="w-3.5 h-3.5 text-muted-foreground" />
                             {season.episode_count} {t("details.episodes")}
                           </p>
                         </div>
@@ -571,19 +573,19 @@ export default function BlurayDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-slate-500 italic">
+                  <div className="text-center py-8 text-muted-foreground italic">
                     {t("details.noSeasons")}
                   </div>
                 )}
 
                 {/* Stats Summary */}
                 {bluray.seasons && bluray.seasons.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/5 flex gap-6 text-sm text-gray-600 dark:text-slate-400">
+                  <div className="mt-6 pt-6 border-t border-border flex gap-6 text-sm text-muted-foreground">
                     <div>
-                      <span className="block text-xs uppercase font-bold text-gray-500 dark:text-slate-500 mb-0.5">
+                      <span className="block text-xs uppercase font-bold text-muted-foreground mb-0.5">
                         {t("details.totalEpisodes")}
                       </span>
-                      <span className="text-gray-900 dark:text-white font-mono">
+                      <span className="text-foreground font-mono">
                         {bluray.seasons.reduce(
                           (acc, s) => acc + s.episode_count,
                           0,
@@ -597,29 +599,26 @@ export default function BlurayDetailPage() {
           </div>
 
           {/* Right Column - Sidebar Info */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Library Info Card */}
             {canModify && (
-              <div className="bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-800 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gray-100 dark:bg-white/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
+              <div className="card rounded-xl p-4 sm:p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-muted rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
 
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Euro className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                     {t("details.libraryInfo")}
                   </h3>
-                  <button
-                    onClick={() => setEditingPurchaseInfo(true)}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
+                  <IconButton label={t("details.editPurchaseInfo")} onClick={() => setEditingPurchaseInfo(true)} className="-mr-2">
+                    <Edit />
+                  </IconButton>
                 </div>
 
                 <div className="space-y-5">
                   {/* Price */}
                   <div className="flex items-center justify-between group">
-                    <span className="text-gray-600 dark:text-slate-400 text-sm flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm flex items-center gap-2">
                       <Euro className="w-4 h-4 opacity-50" />
                       {t("details.purchasePrice")}
                     </span>
@@ -632,11 +631,11 @@ export default function BlurayDetailPage() {
 
                   {/* Date */}
                   <div className="flex items-center justify-between group">
-                    <span className="text-gray-600 dark:text-slate-400 text-sm flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm flex items-center gap-2">
                       <Calendar className="w-4 h-4 opacity-50" />
                       {t("details.purchaseDate")}
                     </span>
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-foreground font-medium">
                       {isValidPurchaseDate(bluray.purchase_date)
                         ? formatPurchaseDate(bluray.purchase_date)
                         : "-"}
@@ -647,19 +646,16 @@ export default function BlurayDetailPage() {
             )}
 
             {/* Tags Card */}
-            <div className="bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-white/5 rounded-2xl p-6 backdrop-blur-sm">
+            <div className="card rounded-xl p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <TagIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <TagIcon className="w-4 h-4 text-primary" />
                   {t("details.tags")}
                 </h3>
                 {canModify && (
-                  <button
-                    onClick={() => setEditingTags(true)}
-                    className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  <IconButton label={t("add.editTags")} onClick={() => setEditingTags(true)} className="-mr-2">
+                    <Plus />
+                  </IconButton>
                 )}
               </div>
 
@@ -672,29 +668,21 @@ export default function BlurayDetailPage() {
                     return (
                       <button
                         key={fullTag.id}
+                        type="button"
                         onClick={() =>
                           router.push(
                             `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`tag:${fullTag.name}`)}`,
                           )
                         }
-                        style={{
-                          borderColor: `${fullTag.color}40`,
-                          color: fullTag.color,
-                          backgroundColor: `${fullTag.color}10`,
-                        }}
-                        className="px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 shadow-sm hover:scale-105 hover:shadow-md active:scale-95 transition-all"
+                        className="rounded-full transition-transform hover:scale-105 active:scale-95"
                         title={t("details.searchForTag", { tag: fullTag.name })}
                       >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{ backgroundColor: fullTag.color }}
-                        ></span>
-                        {fullTag.name}
+                        <TagChip name={fullTag.name} color={fullTag.color} />
                       </button>
                     );
                   })
                 ) : (
-                  <p className="text-gray-500 dark:text-slate-500 text-sm italic py-2">
+                  <p className="text-muted-foreground text-sm italic py-2">
                     {t("details.noTags")}
                   </p>
                 )}

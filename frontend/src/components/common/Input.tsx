@@ -1,44 +1,57 @@
-import React from "react";
+"use client";
+
+import React, { ReactNode, useId, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Eye, EyeOff } from "lucide-react";
+import { Field } from "./Field";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
+  label?: ReactNode;
+  /** Small icon shown before the label */
+  labelIcon?: ReactNode;
   error?: string;
-  helperText?: string;
+  helperText?: ReactNode;
+  /** For password fields: adds a show/hide toggle */
+  revealable?: boolean;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className = "", id, ...props }, ref) => {
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
+  ({ label, labelIcon, error, helperText, revealable, className = "", id, type, ...props }, ref) => {
+    const t = useTranslations();
+    const generatedId = useId();
+    const inputId = id || generatedId;
+    const [revealed, setRevealed] = useState(false);
+
+    const input = (
+      <input
+        ref={ref}
+        id={inputId}
+        type={revealable && revealed ? "text" : type}
+        aria-invalid={error ? true : undefined}
+        className={`input ${revealable ? "pr-11" : ""} ${error ? "border-destructive focus:border-destructive focus:ring-destructive/30" : ""} ${className}`}
+        {...props}
+      />
+    );
 
     return (
-      <div className="w-full">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 mb-2"
-          >
-            {label}
-          </label>
+      <Field label={label} icon={labelIcon} htmlFor={inputId} hint={helperText} error={error}>
+        {revealable ? (
+          <div className="relative">
+            {input}
+            <button
+              type="button"
+              onClick={() => setRevealed((r) => !r)}
+              aria-label={revealed ? t("auth.hidePassword") : t("auth.showPassword")}
+              aria-pressed={revealed}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        ) : (
+          input
         )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-gray-200/50 dark:bg-gray-800/50 border ${
-            error
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-600/50 dark:border-gray-700/50 focus:ring-blue-500/50 dark:focus:ring-blue-400/50"
-          } rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:border-blue-500/50 dark:focus:border-blue-400/50 focus:bg-gray-200 dark:focus:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-          {...props}
-        />
-        {error && (
-          <p className="mt-1 text-xs text-red-400 dark:text-red-300">{error}</p>
-        )}
-        {helperText && !error && (
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            {helperText}
-          </p>
-        )}
-      </div>
+      </Field>
     );
   },
 );

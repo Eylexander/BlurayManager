@@ -61,9 +61,9 @@ func (ds *MongoDatastore) ListTags(ctx context.Context) ([]*models.Tag, error) {
 	return tags, nil
 }
 
-// SearchTagsByName searches for tags by name pattern (case-insensitive)
-func (ds *MongoDatastore) SearchTagsByName(ctx context.Context, pattern string) ([]*models.Tag, error) {
-	regexPattern := bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}
+// SearchTagsByName returns tags whose name contains name (case-insensitive, literal match)
+func (ds *MongoDatastore) SearchTagsByName(ctx context.Context, name string) ([]*models.Tag, error) {
+	regexPattern := bson.M{"$regex": containsPattern(name)}
 	cursor, err := ds.tags.Find(ctx, bson.M{"name": regexPattern})
 	if err != nil {
 		return nil, err

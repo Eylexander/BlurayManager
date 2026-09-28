@@ -16,6 +16,15 @@ const (
 	RoleGuest     UserRole = "guest"
 )
 
+// Valid reports whether r is one of the known roles.
+func (r UserRole) Valid() bool {
+	switch r {
+	case RoleAdmin, RoleModerator, RoleUser, RoleGuest:
+		return true
+	}
+	return false
+}
+
 // User represents a user in the system
 type User struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`

@@ -1,0 +1,11 @@
+version: "2"
+
+linters:
+  settings:
+    errcheck:
+      # Deferred cleanup whose error has nowhere useful to go.
+      exclude-functions:
+        - (io.Closer).Close
+        - (*crypto/tls.Conn).Close
+        - (*go.mongodb.org/mongo-driver/mongo.Cursor).Close
+        - (*net/smtp.Client).Quit

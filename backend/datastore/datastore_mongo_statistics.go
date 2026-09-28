@@ -230,12 +230,14 @@ func (ds *MongoDatastore) GetSimplifiedStatistics(ctx context.Context) (*models.
 
 	cursor, err := ds.blurays.Find(ctx, bson.M{})
 	if err != nil {
-		return stats, nil
+		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var blurays []*models.Bluray
-	cursor.All(ctx, &blurays)
+	if err := cursor.All(ctx, &blurays); err != nil {
+		return nil, err
+	}
 
 	var physicalBlurayCount int
 	for _, b := range blurays {

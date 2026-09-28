@@ -38,7 +38,9 @@
       "searchByYear": "Search by year",
       "filterByType": "Filter by type",
       "combine": "Combine"
-    }
+    },
+    "moreOptions": "More options",
+    "confirm": "Confirm"
   },
   "filter": {
     "recentlyAdded": "Recently Added",
@@ -97,7 +99,10 @@
     "installLoad": "Installation in progress...",
     "installCheck": "Checking installation setup status...",
     "installError": "Installation failed. Please try again.",
-    "installNotice": "This account will have full administrative access."
+    "installNotice": "This account will have full administrative access.",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "settings": {
     "title": "Settings",
@@ -207,7 +212,10 @@
     "confirmRefresh": "Are you sure you want to refresh this item from TMDB? This will overwrite title, description, images, and other metadata while preserving your tags, seasons, and purchase information.",
     "refreshSuccess": "Successfully refreshed from TMDB",
     "refreshError": "Failed to refresh from TMDB",
-    "noTmdbId": "Cannot refresh: No TMDB ID available"
+    "noTmdbId": "Cannot refresh: No TMDB ID available",
+    "viewDetails": "View details",
+    "deleteTitle": "Delete “{title}”?",
+    "deleteWarning": "It will be removed from the collection. This can't be undone."
   },
   "bluray": {
     "title": "Title",
@@ -285,7 +293,6 @@
     "genreDistribution": "Genre Distribution",
     "tagDistribution": "Tag Distribution",
     "yearDistribution": "Release Year Distribution",
-    "ratingDistribution": "Rating Distribution",
     "physicalVolume": "Physical Volume",
     "shelfSpace": "Approx. shelf space needed",
     "dataStorage": "Data Storage",
@@ -301,7 +308,8 @@
     "timelineMilestones": "Timeline Milestones",
     "oldestBluray": "Oldest Bluray",
     "newestBluray": "Newest Bluray",
-    "top8Genres": "Top Genres in the Collection"
+    "top8Genres": "Top Genres in the Collection",
+    "loadFailed": "Failed to load statistics"
   },
   "add": {
     "title": "Add to Collection",
@@ -376,7 +384,9 @@
     "tagsUpdated": "Tags updated successfully!",
     "firstAirDate": "First Air Date",
     "addToBatch": "Add to Batch",
-    "batchComplete": "Batch processing complete!"
+    "batchComplete": "Batch processing complete!",
+    "failedToLoadTags": "Failed to load tags",
+    "failedToUpdateTags": "Failed to update tags"
   },
   "barcode": {
     "title": "Scan Barcode",
@@ -420,7 +430,10 @@
     "cameraError": "Failed to access camera. Please check permissions.",
     "manualEntry": "Enter barcode manually",
     "enterManually": "Enter Manually",
-    "seasonDetected": "Season {season} detected from barcode"
+    "seasonDetected": "Season {season} detected from barcode",
+    "directors": "Directors",
+    "publisher": "Publisher",
+    "edition": "Edition"
   },
   "tags": {
     "manageTags": "Manage Tags",
@@ -446,17 +459,15 @@
     "colorInfo": "Choose a color that represents this tag",
     "descriptionInfo": "Optional: provide a brief description for this tag",
     "selectTags": "Select Tags",
-    "availableTags": "Available Tags",
-    "createNewTag": "Create New Tag",
     "addTag": "Add Tag",
-    "enterTagName": "Enter tag name",
-    "createTagButton": "Create Tag",
     "tagCreated": "Tag created!",
     "title": "Tag Management",
     "totalTags": "total tags",
     "searchPlaceholder": "Search tags by name or description...",
     "descriptionPlaceholder": "e.g. This tag is for documenting movies",
-    "noTagsFound": "No tags found matching your search"
+    "noTagsFound": "No tags found matching your search",
+    "preview": "Preview",
+    "deleteWarning": "Blurays keep their other tags; this one is removed from all of them."
   },
   "users": {
     "title": "User Management",
@@ -495,21 +506,16 @@
     "createSuccess": "User created successfully",
     "saveFailed": "Failed to save user",
     "deleteSuccess": "User deleted successfully",
-    "deleteFailed": "Failed to delete user"
+    "deleteFailed": "Failed to delete user",
+    "deleteWarning": "This account will be removed. This can't be undone."
   },
   "importExport": {
-    "title": "Import/Export",
-    "subtitle": "Backup and restore your Bluray collection",
+    "title": "Migration",
+    "subtitle": "Back up your collection or move it to another Bluray Manager",
     "export": "Export Collection",
     "import": "Import Collection",
-    "exportDescription": "Download your collection as CSV",
-    "importDescription": "Upload CSV to add items",
-    "exportFeature1": "Complete collection data",
-    "exportFeature2": "Excel-compatible format",
-    "exportFeature3": "Perfect for backups",
-    "importFeature1": "CSV file format only",
-    "importFeature2": "Validates all entries",
-    "importFeature3": "Duplicates are skipped",
+    "exportDescription": "Download every Bluray as a CSV file",
+    "importDescription": "Add Blurays from a CSV file",
     "downloadCSV": "Download CSV",
     "uploadCSV": "Upload CSV File",
     "exportSuccess": "Collection exported successfully",
@@ -524,6 +530,34 @@
     "successCount": "Successful",
     "skippedCount": "Skipped",
     "failedCount": "Failed",
-    "errors": "Errors"
+    "errors": "Errors",
+    "collectionSummary": "{blurays} Blurays · {tags} tags",
+    "downloadTemplate": "Empty template",
+    "dropTitle": "Drop a CSV file here",
+    "dropHint": "or click to browse · max 10 MB",
+    "fileTooLarge": "The file is larger than 10 MB",
+    "rowsDetected": "{count, plural, one {# row} other {# rows}} detected",
+    "startImport": "Import {count, plural, one {# row} other {# rows}}",
+    "removeFile": "Remove file",
+    "importAnother": "Import another file",
+    "tagsCreatedCount": "Tags created",
+    "duplicatesNote": "Blurays already in the collection (same title, type and year) are skipped.",
+    "formatTitle": "CSV format",
+    "formatIntro": "UTF-8, comma-separated, one Bluray per row after the header. Only Title is required; leave other cells empty when unknown.",
+    "col_title": "Required",
+    "col_type": "movie or series",
+    "col_genre": "Genres separated by ;",
+    "col_description": "Plain text",
+    "col_director": "Director or creator",
+    "col_releaseYear": "e.g. 2024",
+    "col_runtime": "Minutes",
+    "col_rating": "0 – 10",
+    "col_purchasePrice": "e.g. 19.99",
+    "col_purchaseDate": "YYYY-MM-DD",
+    "col_images": "Image URLs",
+    "col_tmdbId": "Numeric TMDB id",
+    "col_tags": "Tag names separated by ; — missing tags are created",
+    "col_seasons": "number:episodes[:year] separated by ; — e.g. 1:10:2017;2:8",
+    "col_totalEpisodes": "Series only"
   }
 }

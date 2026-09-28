@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/common";
 import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
@@ -35,9 +36,9 @@ import { Statistics } from "@/types/statistics";
 import StatsCard from "@/components/common/StatsCard";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
 
-// Modern Chart Colors
+// Chart palette, led by the brand primary so it follows the theme
 const COLORS = [
-  "#6366f1",
+  "hsl(var(--primary))",
   "#8b5cf6",
   "#ec4899",
   "#f43f5e",
@@ -45,6 +46,14 @@ const COLORS = [
   "#10b981",
   "#06b6d4",
 ];
+
+const TOOLTIP_STYLE = {
+  borderRadius: "12px",
+  border: "1px solid hsl(var(--border))",
+  backgroundColor: "hsl(var(--card))",
+  color: "hsl(var(--card-foreground))",
+  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+};
 
 const ChartContainer = ({
   title,
@@ -55,12 +64,12 @@ const ChartContainer = ({
   children: React.ReactNode;
   subtitle?: string;
 }) => (
-  <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700/50">
+  <div className="bg-card rounded-2xl p-4 sm:p-6 shadow-sm border border-border">
     <div className="mb-6">
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+      <h3 className="text-lg font-bold text-foreground">
         {title}
       </h3>
-      {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+      {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
     </div>
     <div className="h-[300px] w-full outline-none">{children}</div>
   </div>
@@ -119,26 +128,11 @@ export default function StatisticsPage() {
   if (loading) return <LoaderCircle />;
 
   if (!stats)
-    return <div className="p-8 text-center">Failed to load statistics</div>;
+    return <div className="p-4 sm:p-8 text-center text-muted-foreground">{t("statistics.loadFailed")}</div>;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-12 p-2">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-5 sm:space-x-3 mb-2">
-            <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-primary-600" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              {t("statistics.title")}
-            </h1>
-          </div>
-          <p className="text-gray-500 dark:text-gray-400">
-            {t("statistics.subtitle")}
-          </p>
-        </div>
-      </div>
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      <PageHeader icon={<BarChart3 />} title={t("statistics.title")} description={t("statistics.subtitle")} />
 
       {/* Main KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -198,12 +192,8 @@ export default function StatisticsPage() {
                 />
                 {!isMobile && (
                   <Tooltip
-                    cursor={{ fill: "rgba(0,0,0,0.05)" }}
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "none",
-                      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-                    }}
+                    cursor={{ fill: "hsl(var(--muted))" }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                 )}
                 <Bar
@@ -246,7 +236,7 @@ export default function StatisticsPage() {
                 ))}
               </Pie>
 
-              {!isMobile && <Tooltip />}
+              {!isMobile && <Tooltip contentStyle={TOOLTIP_STYLE} />}
             </PieChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-6 mt-[-40px]">
@@ -256,7 +246,7 @@ export default function StatisticsPage() {
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: COLORS[index % COLORS.length] }}
                 />
-                <span className="text-xs font-medium text-gray-500">
+                <span className="text-xs font-medium text-muted-foreground">
                   {entry.name}
                 </span>
               </div>
@@ -267,7 +257,7 @@ export default function StatisticsPage() {
 
       {/* Technical & Storage Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <Euro className="w-8 h-8 opacity-80" />
             <span className="text-xs font-bold uppercase tracking-wider opacity-80">
@@ -285,7 +275,7 @@ export default function StatisticsPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50 flex flex-col justify-between">
+        <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border flex flex-col justify-between">
           <div className="flex items-center gap-3">
             <HardDrive className="text-indigo-500 w-6 h-6" />
             <h4 className="font-semibold">{t("statistics.dataStorage")}</h4>
@@ -294,7 +284,7 @@ export default function StatisticsPage() {
             <p className="text-3xl font-bold">
               {(stats.physical_storage_gb || 0).toLocaleString()} GB
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {t("statistics.digitalFootprint", {
                 value: ((stats.physical_storage_gb || 0) / 1024).toFixed(2),
               })}
@@ -302,7 +292,7 @@ export default function StatisticsPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50 flex flex-col justify-between">
+        <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border flex flex-col justify-between">
           <div className="flex items-center gap-3">
             <Clock className="text-purple-500 w-6 h-6" />
             <h4 className="font-semibold">{t("statistics.totalRuntime")}</h4>
@@ -314,7 +304,7 @@ export default function StatisticsPage() {
               {(stats.total_runtime_minutes || 0) % 60}
               <span className="text-lg">m</span>
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {t("statistics.nonstopPlayback", {
                 value: ((stats.total_runtime_minutes || 0) / 1440).toFixed(1),
               })}
@@ -325,16 +315,16 @@ export default function StatisticsPage() {
 
       {/* History & Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50 flex flex-col">
+        <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border flex flex-col">
           <div className="flex items-center gap-2 mb-6 text-amber-600 uppercase text-xs font-bold tracking-widest">
             <History className="w-4 h-4" /> {t("statistics.timelineMilestones")}
           </div>
 
           {/* Use flex-1 and justify-around to spread the two items out vertically */}
           <div className="flex-1 flex flex-col justify-around">
-            <div className="flex justify-between items-center group p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+            <div className="flex justify-between items-center group p-2 -mx-2 rounded-lg hover:bg-accent transition-colors">
               <div className="flex flex-col">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-tighter">
                   {t("statistics.oldest")}
                 </p>
                 <button
@@ -346,21 +336,21 @@ export default function StatisticsPage() {
                       ),
                     )
                   }
-                  className="font-bold text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1"
+                  className="font-bold text-left hover:text-primary transition-colors line-clamp-1"
                 >
                   {stats.oldest_bluray?.title}
                 </button>
               </div>
-              <span className="text-3xl font-black text-gray-600 dark:text-gray-100">
+              <span className="text-3xl font-black text-muted-foreground">
                 {stats.oldest_bluray?.release_year}
               </span>
             </div>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-gray-100 dark:via-gray-700 to-transparent w-full my-4" />
+            <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent w-full my-4" />
 
-            <div className="flex justify-between items-center group p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+            <div className="flex justify-between items-center group p-2 -mx-2 rounded-lg hover:bg-accent transition-colors">
               <div className="flex flex-col">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-tighter">
                   {t("statistics.newest")}
                 </p>
                 <button
@@ -372,20 +362,20 @@ export default function StatisticsPage() {
                       ),
                     )
                   }
-                  className="font-bold text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1"
+                  className="font-bold text-left hover:text-primary transition-colors line-clamp-1"
                 >
                   {stats.newest_bluray?.title}
                 </button>
               </div>
-              <span className="text-3xl font-black text-gray-600 dark:text-gray-100">
+              <span className="text-3xl font-black text-muted-foreground">
                 {stats.newest_bluray?.release_year}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50 flex flex-col">
-          <div className="flex items-center gap-2 mb-6 text-blue-600 uppercase text-xs font-bold tracking-widest">
+        <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border flex flex-col">
+          <div className="flex items-center gap-2 mb-6 text-primary uppercase text-xs font-bold tracking-widest">
             <Award className="w-4 h-4" /> {t("statistics.topRated")}
           </div>
           <div className="space-y-2 flex-1 flex flex-col justify-between">
@@ -397,13 +387,13 @@ export default function StatisticsPage() {
                     ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", item.id),
                   )
                 }
-                className="flex items-center justify-between group w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg p-2 -mx-2 transition-colors"
+                className="flex items-center justify-between group w-full hover:bg-accent rounded-lg p-2 -mx-2 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-gray-400 w-4">
+                  <span className="text-xs font-bold text-muted-foreground w-4">
                     {index + 1}
                   </span>
-                  <p className="font-medium group-hover:text-primary-600 transition-colors line-clamp-1">
+                  <p className="font-medium group-hover:text-primary transition-colors line-clamp-1">
                     {item.title}
                   </p>
                 </div>

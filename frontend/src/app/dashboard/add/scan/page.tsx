@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, getApiError } from "@/lib/api-client";
 import {
   Film,
   ChevronLeft,
@@ -432,7 +432,7 @@ export default function AddScanPage() {
       console.error("Failed to add/update series:", error);
       toast.dismiss();
       toast.error(
-        error.response?.data?.error || t("add.failedToAddToCollection")
+        getApiError(error, t("add.failedToAddToCollection"))
       );
       setSearching(false);
       startCamera();
@@ -489,7 +489,7 @@ export default function AddScanPage() {
     } catch (error: any) {
       toast.dismiss();
       toast.error(
-        error.response?.data?.error || t("add.failedToAddToCollection")
+        getApiError(error, t("add.failedToAddToCollection"))
       );
       setSearching(false);
       setDvdfrResult(null);
@@ -780,7 +780,7 @@ export default function AddScanPage() {
         />
       )}
 
-      <div className="max-w-4xl mx-auto px-4 pb-20 pt-6 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 pb-20 pt-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -788,21 +788,21 @@ export default function AddScanPage() {
           className="flex items-center justify-between"
         >
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 backdrop-blur-sm">
-              <ScanLine className="w-6 h-6 text-blue-400" />
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/20 backdrop-blur-sm">
+              <ScanLine className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 {t("add.title")}
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {tBarcode("title")}
               </p>
             </div>
           </div>
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 px-2 sm:px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 border border-gray-200 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-200 backdrop-blur-sm group"
+            className="flex items-center gap-2 px-2 sm:px-4 py-2 rounded-xl bg-muted hover:bg-accent border border-border text-foreground/80 hover:text-foreground transition-all duration-200 backdrop-blur-sm group"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             <span className="hidden sm:inline">{t("common.back")}</span>
@@ -814,16 +814,16 @@ export default function AddScanPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl p-1 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden"
+          className="bg-card backdrop-blur-xl rounded-3xl p-1 border border-border shadow-2xl overflow-hidden"
         >
           {/* Tab Switcher */}
-          <div className="flex bg-gray-50 dark:bg-gray-900/50 rounded-t-3xl border-b border-gray-200 dark:border-gray-800 gap-2 p-2">
+          <div className="flex bg-background rounded-t-3xl border-b border-border gap-2 p-2">
             <button
               onClick={() => setActiveTab("camera")}
               className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "camera"
-                  ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white shadow-lg"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                  ? "bg-muted text-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               <Camera
@@ -835,19 +835,19 @@ export default function AddScanPage() {
               onClick={() => setActiveTab("manual")}
               className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "manual"
-                  ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white shadow-lg"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                  ? "bg-muted text-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
               <Keyboard
-                className={`w-4 h-4 ${activeTab === "manual" ? "text-blue-400" : ""}`}
+                className={`w-4 h-4 ${activeTab === "manual" ? "text-primary" : ""}`}
               />
               Manual
             </button>
           </div>
 
           {/* Content Area */}
-          <div className="p-4 sm:p-8 bg-gradient-to-b from-gray-50 dark:from-gray-900/50 to-gray-100 dark:to-gray-900/80 min-h-[400px] flex flex-col">
+          <div className="p-4 sm:p-8 bg-gradient-to-b from-background to-muted min-h-[400px] flex flex-col">
             {/* Controls: Type Selector & Batch Mode Toggle */}
             <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
               {/* Media Type Selector */}
@@ -856,8 +856,8 @@ export default function AddScanPage() {
                   onClick={() => handleTypeChange("movie")}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
                     type === "movie"
-                      ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                      : "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-800/50"
+                      ? "bg-primary/20 text-primary border-primary/30"
+                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
                   }`}
                 >
                   <Film className="w-4 h-4" />
@@ -868,7 +868,7 @@ export default function AddScanPage() {
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
                     type === "series"
                       ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                      : "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-800/50"
+                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
                   }`}
                 >
                   <Tv className="w-4 h-4" />
@@ -877,15 +877,15 @@ export default function AddScanPage() {
               </div>
 
               {/* Batch Mode Toggle */}
-              <label className="flex items-center gap-3 px-4 py-2 rounded-xl border transition-all cursor-pointer bg-gray-100 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600/50">
+              <label className="flex items-center gap-3 px-4 py-2 rounded-xl border transition-all cursor-pointer bg-muted border-border hover:bg-accent hover:border-border">
                 <input
                   type="checkbox"
                   checked={isBatchMode}
                   onChange={(e) => setIsBatchMode(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-700 checked:bg-purple-600 checked:border-purple-600 cursor-pointer accent-purple-500"
+                  className="w-4 h-4 rounded border-border bg-gray-700 checked:bg-purple-600 checked:border-purple-600 cursor-pointer accent-purple-500"
                 />
-                <Layers className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                <Layers className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs font-medium uppercase tracking-wider text-foreground/80">
                   {tBarcode("batchMode")}
                 </span>
               </label>
@@ -903,14 +903,14 @@ export default function AddScanPage() {
                   {!isCameraActive ? (
                     <div className="flex flex-col items-center justify-center flex-1 py-10 min-h-[300px]">
                       {cameraError ? (
-                        <div className="text-red-400 flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
-                          <div className="p-4 bg-red-500/10 rounded-full border border-red-500/20">
+                        <div className="text-destructive flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+                          <div className="p-4 bg-destructive/10 rounded-full border border-destructive/20">
                             <X className="w-8 h-8" />
                           </div>
                           <p className="text-center max-w-xs">{cameraError}</p>
                           <button
                             onClick={startCamera}
-                            className="px-6 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-red-300 transition-colors"
+                            className="px-6 py-2 bg-destructive/10 hover:bg-destructive/20 border border-destructive/20 rounded-lg text-destructive transition-colors"
                           >
                             Try Again
                           </button>
@@ -920,15 +920,15 @@ export default function AddScanPage() {
                           <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="p-6 bg-gray-800/50 rounded-full border border-gray-700 shadow-xl"
+                            className="p-4 sm:p-6 bg-gray-800/50 rounded-full border border-border shadow-xl"
                           >
-                            <Camera className="w-12 h-12 text-gray-400" />
+                            <Camera className="w-12 h-12 text-muted-foreground" />
                           </motion.div>
                           <div className="space-y-2">
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                            <h3 className="text-lg font-medium text-foreground">
                               Camera is Inactive
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+                            <p className="text-sm text-muted-foreground max-w-xs">
                               {t("add.barcodeScanDesc") ||
                                 "Tap the button below to start scanning."}
                             </p>
@@ -944,7 +944,7 @@ export default function AddScanPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="relative w-full max-w-lg aspect-video bg-black rounded-2xl overflow-hidden border border-gray-700 shadow-2xl">
+                    <div className="relative w-full max-w-lg aspect-video bg-black rounded-2xl overflow-hidden border border-border shadow-2xl">
                       {!cameraReady && (
                         <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
                           <LoaderCircle />
@@ -992,15 +992,15 @@ export default function AddScanPage() {
                   exit={{ opacity: 0, x: -20 }}
                   className="flex-1 flex flex-col w-full max-w-md mx-auto justify-center"
                 >
-                  <div className="space-y-6 bg-gray-100 dark:bg-gray-800/30 p-8 rounded-3xl border border-gray-200 dark:border-gray-700/50">
+                  <div className="space-y-4 sm:space-y-6 bg-muted p-4 sm:p-8 rounded-3xl border border-border">
                     <div className="text-center space-y-2">
-                      <div className="mx-auto w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
-                        <Keyboard className="w-6 h-6 text-blue-400" />
+                      <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Keyboard className="w-6 h-6 text-primary" />
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-medium text-foreground">
                         Manual Entry
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      <p className="text-muted-foreground text-sm">
                         Type the barcode number found on the case
                       </p>
                     </div>
@@ -1017,13 +1017,13 @@ export default function AddScanPage() {
                           setManualInput(value);
                         }}
                         placeholder="e.g. 883904245645"
-                        className="w-full px-4 py-3 bg-white dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-lg tracking-widest font-mono text-gray-900 dark:text-white transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                        className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-ring text-center text-lg tracking-widest font-mono text-foreground transition-all placeholder:text-muted-foreground"
                         autoFocus
                       />
                       <button
                         type="submit"
                         disabled={!manualInput.trim()}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-primary hover:bg-primary text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {isBatchMode ? (
                           <Plus className="w-5 h-5" />
@@ -1055,7 +1055,7 @@ export default function AddScanPage() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => setScannedBarcodes([])}
-                        className="text-xs text-red-400 hover:text-red-300"
+                        className="text-xs text-destructive hover:text-destructive"
                       >
                         Clear All
                       </button>
@@ -1077,10 +1077,10 @@ export default function AddScanPage() {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, scale: 0.8 }}
-                          className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border border-gray-700/50 group hover:border-purple-500/30 transition-colors"
+                          className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border border-border/50 group hover:border-purple-500/30 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-xs text-gray-500 font-mono">
+                            <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-xs text-muted-foreground font-mono">
                               {scannedBarcodes.length - index}
                             </span>
                             <span className="font-mono text-gray-200">
@@ -1093,7 +1093,7 @@ export default function AddScanPage() {
                                 prev.filter((c) => c !== code),
                               )
                             }
-                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
                           >
                             <X className="w-4 h-4" />
                           </button>

@@ -1,15 +1,26 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
+import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import ToasterProvider from "@/components/providers/ToasterProvider";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f6f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#14161b" },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -71,12 +82,12 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const messages = await getMessages();
+  const [messages, locale] = await Promise.all([getMessages(), getLocale()]);
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <NextIntlClientProvider messages={messages}>
+    <html lang={locale} suppressHydrationWarning className={inter.variable}>
+      <body className="min-h-screen font-sans">
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             {children}
             <ToasterProvider />

@@ -1,22 +1,13 @@
 'use client';
 
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import { useEffect, useState } from 'react';
 
+// Rendered unconditionally: next-themes is SSR-safe (the root <html> carries
+// suppressHydrationWarning). Mounting it only after hydration would swap the
+// tree's root element and remount every page on first load.
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
   return (
-    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem={true}>
+    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       {children}
     </NextThemesProvider>
   );

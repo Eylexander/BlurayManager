@@ -15,12 +15,12 @@ WORKDIR /go/src
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bluray-server ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o bluray-server ./cmd/main.go
 
 ################
 # target image #
 ################
-FROM gcr.io/distroless/static-debian11
+FROM gcr.io/distroless/static-debian12:nonroot
 
 WORKDIR /opt/app
 
@@ -28,5 +28,8 @@ WORKDIR /opt/app
 COPY --from=builder /go/src/bluray-server /opt/app/bluray-server
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD ["/opt/app/bluray-server", "healthcheck"]
 
 ENTRYPOINT ["/opt/app/bluray-server"]

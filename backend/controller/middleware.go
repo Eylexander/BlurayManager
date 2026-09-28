@@ -1,12 +1,18 @@
 package controller
 
 import (
+	"errors"
+	"eylexander/bluraymanager/datastore"
 	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/models"
 	"net/http"
+	"slices"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // LocaleMiddleware detects language from Accept-Language header and sets i18n in context
@@ -52,6 +58,30 @@ func (c *Controller) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Refresh identity and role from the database: a token lives for 24h,
+		// and a role change or account deletion must apply immediately rather
+		// than when the token expires.
+		userID, err := primitive.ObjectIDFromHex(claims.UserID)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("jwt.invalid")})
+			ctx.Abort()
+			return
+		}
+		user, err := c.ds.GetUserByID(ctx.Request.Context(), userID)
+		if errors.Is(err, datastore.ErrUserNotFound) {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("jwt.invalid")})
+			ctx.Abort()
+			return
+		}
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.Abort()
+			return
+		}
+		claims.Username = user.Username
+		claims.Email = user.Email
+		claims.Role = user.Role
+
 		// Attach claims to context
 		ctx.Set("claims", claims)
 		ctx.Set("userID", claims.UserID)
@@ -95,19 +125,111 @@ func (c *Controller) RequireRole(allowedRoles ...models.UserRole) gin.HandlerFun
 	}
 }
 
-// CORSMiddleware handles CORS
-func (c *Controller) CORSMiddleware() gin.HandlerFunc {
+// DenyRole rejects callers with any of the given roles. Used to keep the
+// shared guest account from changing its own credentials, which would lock
+// everyone else out of guest access.
+func (c *Controller) DenyRole(deniedRoles ...models.UserRole) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		ctx.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		ctx.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		ctx.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
+		role, _ := ctx.Get("role")
+		if slices.Contains(deniedRoles, role.(models.UserRole)) {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": c.GetI18n(ctx).T("jwt.insufficientPermissions")})
+			ctx.Abort()
+			return
+		}
+		ctx.Next()
+	}
+}
 
-		if ctx.Request.Method == "OPTIONS" {
-			ctx.AbortWithStatus(204)
+// CORSMiddleware handles CORS. With no allowed origins configured every
+// origin is accepted, which is safe because auth travels in the
+// Authorization header rather than in cookies. In production the frontend
+// and API share one origin behind the reverse proxy, so CORS never applies.
+func (c *Controller) CORSMiddleware(allowedOrigins []string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		header := ctx.Writer.Header()
+		if len(allowedOrigins) == 0 {
+			header.Set("Access-Control-Allow-Origin", "*")
+		} else {
+			header.Add("Vary", "Origin")
+			if origin := ctx.GetHeader("Origin"); slices.Contains(allowedOrigins, origin) {
+				header.Set("Access-Control-Allow-Origin", origin)
+			}
+		}
+		header.Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, Accept-Language, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		header.Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
+
+		if ctx.Request.Method == http.MethodOptions {
+			ctx.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
+		ctx.Next()
+	}
+}
+
+// SecurityHeaders sets baseline hardening headers on every response.
+func SecurityHeaders() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		header := ctx.Writer.Header()
+		header.Set("X-Content-Type-Options", "nosniff")
+		header.Set("X-Frame-Options", "DENY")
+		header.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		ctx.Next()
+	}
+}
+
+// MaxBodySize rejects request bodies larger than the given number of bytes.
+func MaxBodySize(limit int64) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, limit)
+		ctx.Next()
+	}
+}
+
+// RateLimiter caps requests per client IP within a fixed window. It is
+// in-memory and per-instance, which is enough for a single-replica deployment.
+type RateLimiter struct {
+	mu       sync.Mutex
+	max      int
+	window   time.Duration
+	visitors map[string]*visitor
+}
+
+type visitor struct {
+	count   int
+	resetAt time.Time
+}
+
+func NewRateLimiter(maxRequests int, window time.Duration) *RateLimiter {
+	return &RateLimiter{max: maxRequests, window: window, visitors: map[string]*visitor{}}
+}
+
+func (rl *RateLimiter) allow(ip string, now time.Time) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	v, ok := rl.visitors[ip]
+	if !ok || now.After(v.resetAt) {
+		// Sweep expired entries on insert so the map can't grow without bound.
+		for key, old := range rl.visitors {
+			if now.After(old.resetAt) {
+				delete(rl.visitors, key)
+			}
+		}
+		v = &visitor{resetAt: now.Add(rl.window)}
+		rl.visitors[ip] = v
+	}
+	v.count++
+	return v.count <= rl.max
+}
+
+func (c *Controller) RateLimit(rl *RateLimiter) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if !rl.allow(ctx.ClientIP(), time.Now()) {
+			ctx.JSON(http.StatusTooManyRequests, gin.H{"error": c.GetI18n(ctx).T("api.tooManyRequests")})
+			ctx.Abort()
+			return
+		}
 		ctx.Next()
 	}
 }

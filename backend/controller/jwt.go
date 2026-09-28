@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	"eylexander/bluraymanager/models"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,11 +18,6 @@ type Claims struct {
 }
 
 func (c *Controller) GenerateToken(user *models.User) (string, error) {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "your-secret-key-change-this-in-production"
-	}
-
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
 		UserID:   user.ID.Hex(),
@@ -37,7 +31,7 @@ func (c *Controller) GenerateToken(user *models.User) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(secret))
+	tokenString, err := token.SignedString(c.jwtSecret)
 	if err != nil {
 		return "", err
 	}
@@ -46,15 +40,10 @@ func (c *Controller) GenerateToken(user *models.User) (string, error) {
 }
 
 func (c *Controller) ValidateToken(tokenString string) (*Claims, error) {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "your-secret-key-change-this-in-production"
-	}
-
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
-	})
+		return c.jwtSecret, nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
 	if err != nil {
 		return nil, err

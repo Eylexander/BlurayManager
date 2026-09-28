@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, getApiError } from "@/lib/api-client";
 import { Button } from "@/components/common";
 import {
   Film,
@@ -147,7 +147,7 @@ export default function AddSearchPage() {
       router.push(ROUTES.DASHBOARD.HOME);
     } catch (error: any) {
       toast.error(
-        error.response?.data?.error || t("add.failedToAddToCollection"),
+        getApiError(error, t("add.failedToAddToCollection")),
       );
     } finally {
       setAdding(null);
@@ -166,19 +166,19 @@ export default function AddSearchPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-20 pt-8 space-y-8">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-4">
-          <div className="p-3 bg-blue-500/10 rounded-2xl ring-1 ring-blue-500/20">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="p-3 bg-primary/10 rounded-2xl ring-1 ring-ring/20">
             {type === "movie" ? (
-              <Film className="w-6 h-6 text-blue-400" />
+              <Film className="w-6 h-6 text-primary" />
             ) : (
-              <Tv className="w-6 h-6 text-purple-400" />
+              <Tv className="w-6 h-6 text-primary" />
             )}
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
               {t("add.title")}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1 flex items-center gap-1">
+            <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1">
               <Search className="w-3 h-3" />
               {t("common.searchResults")} &ldquo;{name}&rdquo;
             </p>
@@ -188,7 +188,7 @@ export default function AddSearchPage() {
         <button
           type="button"
           onClick={() => router.push(ROUTES.DASHBOARD.ADD.ADD)}
-          className="flex items-center w-fit gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-all border border-transparent hover:border-gray-300 dark:hover:border-gray-700"
+          className="flex items-center w-fit gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all border border-transparent hover:border-border"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>{t("add.backToSearch")}</span>
@@ -198,12 +198,12 @@ export default function AddSearchPage() {
       {/* Results Container */}
       <div className="relative group">
         {/* Decorative glow */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
 
-        <div className="relative bg-white dark:bg-gray-800/40 backdrop-blur-xl rounded-3xl border border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="p-6">
+        <div className="relative bg-card backdrop-blur-xl rounded-3xl border border-border overflow-hidden">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-500">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("add.foundResults", { count: searchResults.length })}
               </h2>
             </div>
@@ -211,10 +211,10 @@ export default function AddSearchPage() {
             <div className="grid gap-4">
               {searchResults.length === 0 ? (
                 <div className="text-center py-16">
-                  <div className="bg-gray-200 dark:bg-gray-700/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                  <div className="bg-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
+                  <p className="text-muted-foreground font-medium">
                     {t("add.noResults")}
                   </p>
                 </div>
@@ -223,7 +223,7 @@ export default function AddSearchPage() {
                   <div
                     key={result.id}
                     onClick={() => handleSelectResult(result)}
-                    className="group/card relative flex items-center gap-4 p-3 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl border border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/20 transition-all duration-300 cursor-pointer overflow-hidden"
+                    className="group/card relative flex items-center gap-4 p-3 bg-background hover:bg-accent rounded-2xl border border-border hover:border-border transition-all duration-300 cursor-pointer overflow-hidden"
                   >
                     {/* Media Image */}
                     <div className="relative w-16 h-24 sm:w-20 sm:h-28 flex-shrink-0 overflow-hidden rounded-xl shadow-lg">
@@ -235,11 +235,11 @@ export default function AddSearchPage() {
                           className="object-cover transition-transform duration-500 group-hover/card:scale-110"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
+                        <div className="w-full h-full bg-border flex items-center justify-center">
                           {type === "movie" ? (
-                            <Film className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                            <Film className="w-6 h-6 text-muted-foreground" />
                           ) : (
-                            <Tv className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                            <Tv className="w-6 h-6 text-muted-foreground" />
                           )}
                         </div>
                       )}
@@ -248,12 +248,12 @@ export default function AddSearchPage() {
                     {/* Content */}
                     <div className="flex-1 min-w-0 py-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg truncate group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors">
+                        <h3 className="font-bold text-foreground text-base sm:text-lg truncate group-hover/card:text-primary transition-colors">
                           {result.title || result.name}
                         </h3>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground mb-2">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {result.release_date?.split("-")[0] ||
@@ -268,30 +268,22 @@ export default function AddSearchPage() {
                         )}
                       </div>
 
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-500 line-clamp-2 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                         {result.overview}
                       </p>
                     </div>
 
                     {/* Quick Add Button */}
-                    <button
+                    <Button
+                      inline
                       onClick={(e) => handleQuickAdd(result, e)}
-                      disabled={adding === result.id}
-                      className={`
-                          relative z-10 flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 flex-shrink-0 self-center
-                          ${
-                            adding === result.id
-                              ? "bg-gray-400 dark:bg-gray-700 cursor-not-allowed"
-                              : "bg-indigo-600 hover:bg-indigo-500 hover:shadow-[0_0_20px_rgba(79,70,229,0.4)] active:scale-95 text-white"
-                          }
-                        `}
+                      loading={adding === result.id}
+                      aria-label={t("add.addToCollection")}
+                      title={t("add.addToCollection")}
+                      className="relative z-10 self-center w-11 h-11 !px-0"
                     >
-                      {adding === result.id ? (
-                        <LoaderCircle />
-                      ) : (
-                        <Plus className="w-6 h-6" />
-                      )}
-                    </button>
+                      <Plus />
+                    </Button>
                   </div>
                 ))
               )}

@@ -2,8 +2,9 @@ package controller
 
 import (
 	"crypto/rand"
-	"encoding/hex"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"eylexander/bluraymanager/datastore"
@@ -16,6 +17,7 @@ type PasswordResetHandler struct {
 	store        datastore.Datastore
 	emailService *services.EmailService
 	ctrl         *Controller
+	appURL       string
 }
 
 type RequestPasswordResetRequest struct {
@@ -27,11 +29,16 @@ type ResetPasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
-func (c *Controller) NewPasswordResetHandler(store datastore.Datastore, emailService *services.EmailService) *PasswordResetHandler {
+// NewPasswordResetHandler builds the reset flow. appURL is the public
+// frontend URL used in reset links; when empty, the request's Origin header
+// is used instead, which a caller can forge to point the emailed link (and
+// its token) at another host, so APP_URL should be set in production.
+func (c *Controller) NewPasswordResetHandler(store datastore.Datastore, emailService *services.EmailService, appURL string) *PasswordResetHandler {
 	return &PasswordResetHandler{
 		store:        store,
 		emailService: emailService,
 		ctrl:         c,
+		appURL:       strings.TrimRight(appURL, "/"),
 	}
 }
 
@@ -58,8 +65,7 @@ func (h *PasswordResetHandler) RequestPasswordReset(ctx *gin.Context) {
 		return
 	}
 
-	// Generate reset token
-	token := generateResetToken()
+	token := rand.Text()
 	expiresAt := time.Now().Add(1 * time.Hour)
 
 	// Store reset token
@@ -70,7 +76,10 @@ func (h *PasswordResetHandler) RequestPasswordReset(ctx *gin.Context) {
 	}
 
 	// Send email
-	appURL := ctx.GetHeader("Origin")
+	appURL := h.appURL
+	if appURL == "" {
+		appURL = ctx.GetHeader("Origin")
+	}
 	if appURL == "" {
 		appURL = "http://localhost:3000"
 	}
@@ -107,14 +116,10 @@ func (h *PasswordResetHandler) ResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	// Delete used token
-	h.store.DeletePasswordResetToken(req.Token)
+	// The password is already changed; a leftover token just expires on its own.
+	if err := h.store.DeletePasswordResetToken(req.Token); err != nil {
+		log.Printf("failed to delete used password reset token: %v", err)
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": i18n.T("passwordReset.passwordResetSuccessfully")})
-}
-
-func generateResetToken() string {
-	bytes := make([]byte, 32)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)
 }

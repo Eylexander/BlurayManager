@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, Check, Search, Loader, Calendar, Film, Info } from 'lucide-react';
+import { Check, Search, Loader, Film, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { apiClient } from '@/lib/api-client';
 import { TMDBDetails } from '@/types/tmdb';
 import { Season } from '@/types/bluray';
 import { extractYear } from '@/lib/tmdb-utils';
 import toast from 'react-hot-toast';
+import { Button, Modal, SearchInput } from '@/components/common';
+import SeasonGrid from '@/components/bluray/SeasonGrid';
 
 interface SeasonSelectorModalProps {
   onClose: () => void;
@@ -28,12 +30,18 @@ export default function SeasonSelectorModal({
 }: SeasonSelectorModalProps) {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
-  const [availableSeasons, setAvailableSeasons] = useState<Season[]>([]);
+  // Start from the stored seasons so they stay visible (and saveable) even
+  // when there is no TMDB id to fetch the full list from.
+  // Snapshot of the stored seasons: callers pass fresh arrays on every
+  // render, which must not retrigger the TMDB fetch below.
+  const [storedSeasons] = useState(currentSeasons);
+  const [availableSeasons, setAvailableSeasons] = useState<Season[]>(() =>
+    [...storedSeasons].sort((a, b) => a.number - b.number),
+  );
   const [selectedSeasons, setSelectedSeasons] = useState<Set<number>>(
     new Set(currentSeasons.map(s => s.number))
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchedTmdbId, setSearchedTmdbId] = useState(tmdbId || '');
 
   const fetchSeasonsFromTMDB = useCallback(async (id: string) => {
     setLoading(true);
@@ -49,8 +57,15 @@ export default function SeasonSelectorModal({
             year: extractYear(s.air_date),
           }));
         
-        setAvailableSeasons(seasons);
-        setSearchedTmdbId(id);
+        // Keep stored seasons TMDB doesn't list (e.g. specials) instead of dropping them
+        setAvailableSeasons([
+          ...seasons,
+          ...storedSeasons.filter((c) => !seasons.some((s) => s.number === c.number)),
+        ].sort((a, b) => a.number - b.number));
+        // Pre-select the season detected by a barcode scan
+        if (detectedSeason && seasons.some(s => s.number === detectedSeason)) {
+          setSelectedSeasons(new Set([detectedSeason]));
+        }
       } else {
         toast.error(t('bluray.noSeasonsFound'));
       }
@@ -60,20 +75,14 @@ export default function SeasonSelectorModal({
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, detectedSeason, storedSeasons]);
 
   useEffect(() => {
     if (tmdbId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching from TMDB is a genuine external sync
       fetchSeasonsFromTMDB(tmdbId);
     }
   }, [tmdbId, fetchSeasonsFromTMDB]);
-
-  // Pre-select detected season from barcode scan
-  useEffect(() => {
-    if (detectedSeason && availableSeasons.length > 0) {
-      setSelectedSeasons(new Set([detectedSeason]));
-    }
-  }, [detectedSeason, availableSeasons]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim() && !tmdbId) {
@@ -88,7 +97,7 @@ export default function SeasonSelectorModal({
       if (isNaN(Number(idToUse))) {
         const response = await apiClient.searchTMDB('series', searchQuery);
         if (!response.results?.length) {
-          return toast.error(t('add.noResultsFound'));
+          return toast.error(t('add.noResults'));
         }
         idToUse = response.results[0].id.toString();
       }
@@ -127,185 +136,83 @@ export default function SeasonSelectorModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div className="bg-white dark:bg-dark-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-200 dark:border-dark-700 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-dark-700 bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 dark:from-dark-800 dark:to-dark-900">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Film className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              {t('bluray.selectSeasons')}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{title}</p>
-            {detectedSeason && (
-              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg text-xs font-medium">
-                <Film className="w-3.5 h-3.5" />
-                {t('barcode.seasonDetected', { season: detectedSeason })}
-              </div>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-200 dark:hover:bg-dark-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        {!tmdbId && (
-          <div className="p-6 border-b border-gray-200 dark:border-dark-700 bg-gray-50 dark:bg-dark-800/50">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder={t('bluray.searchByTitleOrTmdbId')}
-                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 outline-none transition-all"
-                />
-              </div>
-              <button
-                onClick={handleSearch}
-                disabled={loading}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 dark:disabled:bg-dark-700 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors flex items-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader className="w-5 h-5 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-5 h-5" />
-                    {t('common.search')}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[50vh]">
-          {loading && !availableSeasons.length ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-              <Loader className="w-12 h-12 animate-spin mb-4 text-purple-600 dark:text-purple-400" />
-              <p>{t('common.loading')}</p>
-            </div>
-          ) : availableSeasons.length > 0 ? (
-            <>
-              {/* Bulk Actions */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-dark-700">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedSeasons.size} of {availableSeasons.length} {t('bluray.seasonsSelected')}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={selectAll}
-                    className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-                  >
-                    {t('common.selectAll')}
-                  </button>
-                  <button
-                    onClick={deselectAll}
-                    className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-                  >
-                    {t('common.deselectAll')}
-                  </button>
-                </div>
-              </div>
-
-              {/* Season Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {availableSeasons.map((season) => {
-                  const isSelected = selectedSeasons.has(season.number);
-                  const isDetected = season.number === detectedSeason;
-                  return (
-                    <button
-                      key={season.number}
-                      onClick={() => toggleSeason(season.number)}
-                      className={`
-                        relative p-4 rounded-xl border-2 transition-all text-left
-                        ${isSelected
-                          ? isDetected
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg shadow-purple-500/20 ring-2 ring-purple-500/50'
-                            : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg shadow-purple-500/10'
-                          : 'border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 hover:border-gray-300 dark:hover:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-750'
-                        }
-                      `}
-                    >
-                      {/* Checkmark */}
-                      <div className={`
-                        absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
-                        ${isSelected
-                          ? 'border-purple-500 bg-purple-500'
-                          : 'border-gray-300 dark:border-dark-600 bg-gray-100 dark:bg-dark-900'
-                        }
-                      `}>
-                        {isSelected && <Check className="w-4 h-4 text-white" />}
-                      </div>
-
-                      {/* Season Info */}
-                      <div className="pr-8">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={`text-lg font-bold ${isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-900 dark:text-white'}`}>
-                            {t('details.season')} {season.number}
-                          </div>
-                          {isDetected && (
-                            <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
-                              {t('barcode.detected')}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                          <Film className="w-4 h-4" />
-                          {season.episode_count} {t('details.episodes')}
-                        </div>
-                        {season.year && (
-                          <div className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
-                            <Calendar className="w-3 h-3" />
-                            {season.year}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-              <Info className="w-12 h-12 mb-4 text-gray-300 dark:text-dark-600" />
-              <p className="text-center">
-                {tmdbId
-                  ? t('bluray.noSeasonsAvailable')
-                  : t('bluray.searchForSeasons')}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-dark-700 bg-gray-50 dark:bg-dark-800/50">
-          <button
-            onClick={onClose}
-            className="px-6 py-3 bg-gray-200 dark:bg-dark-800 hover:bg-gray-300 dark:hover:bg-dark-700 text-gray-900 dark:text-white font-medium rounded-xl transition-colors"
-          >
+    <Modal
+      size="xl"
+      onClose={onClose}
+      icon={<Film />}
+      title={t('bluray.selectSeasons')}
+      description={title}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.cancel')}
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={selectedSeasons.size === 0}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-dark-700 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors flex items-center gap-2"
-          >
-            <Check className="w-5 h-5" />
+          </Button>
+          <Button onClick={handleSave} disabled={selectedSeasons.size === 0} icon={<Check />}>
             {t('common.save')} ({selectedSeasons.size})
-          </button>
+          </Button>
+        </>
+      }
+    >
+      {detectedSeason && (
+        <div className="mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+          <Film className="w-3.5 h-3.5" />
+          {t('barcode.seasonDetected', { season: detectedSeason })}
         </div>
-      </div>
-    </div>
+      )}
+
+      {!tmdbId && (
+        <form
+          className="flex gap-2 mb-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSearch();
+          }}
+        >
+          <SearchInput
+            className="flex-1"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('bluray.searchByTitleOrTmdbId')}
+          />
+          <Button type="submit" inline loading={loading} icon={<Search />}>
+            {t('common.search')}
+          </Button>
+        </form>
+      )}
+
+      {loading && !availableSeasons.length ? (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <Loader className="w-8 h-8 animate-spin mb-3 text-primary" />
+          {t('common.loading')}
+        </div>
+      ) : availableSeasons.length > 0 ? (
+        <>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <span className="text-sm text-muted-foreground">
+              {selectedSeasons.size} / {availableSeasons.length} {t('bluray.seasonsSelected')}
+            </span>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" inline onClick={selectAll}>
+                {t('common.selectAll')}
+              </Button>
+              <Button variant="ghost" size="sm" inline onClick={deselectAll}>
+                {t('common.deselectAll')}
+              </Button>
+            </div>
+          </div>
+          <SeasonGrid
+            seasons={availableSeasons}
+            isSelected={(n) => selectedSeasons.has(n)}
+            onToggle={toggleSeason}
+            detectedSeason={detectedSeason}
+          />
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+          <Info className="w-10 h-10 mb-3 opacity-40" />
+          {tmdbId ? t('bluray.noSeasonsAvailable') : t('bluray.searchForSeasons')}
+        </div>
+      )}
+    </Modal>
   );
 }

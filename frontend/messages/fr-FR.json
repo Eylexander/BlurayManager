@@ -38,7 +38,9 @@
       "searchByYear": "Rechercher par année",
       "filterByType": "Filtrer par type",
       "combine": "Combiner"
-    }
+    },
+    "moreOptions": "Plus d'options",
+    "confirm": "Confirmer"
   },
   "filter": {
     "recentlyAdded": "Ajoutés récemment",
@@ -96,7 +98,11 @@
     "installSuccess": "Compte administrateur créé ! Vous pouvez maintenant vous connecter.",
     "installLoad": "Installation en cours...",
     "installError": "Échec de l'installation. Veuillez réessayer.",
-    "installNotice": "Ce compte aura un accès administratif complet."
+    "installNotice": "Ce compte aura un accès administratif complet.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+    "installCheck": "Vérification de l'état de l'installation...",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "settings": {
     "title": "Paramètres",
@@ -206,7 +212,10 @@
     "confirmRefresh": "Êtes-vous sûr de vouloir actualiser cet élément depuis TMDB ? Cela écrasera le titre, la description, les images et d'autres métadonnées tout en préservant vos tags, saisons et informations d'achat.",
     "refreshSuccess": "Actualisation depuis TMDB réussie",
     "refreshError": "Échec de l'actualisation depuis TMDB",
-    "noTmdbId": "Impossible d'actualiser : aucun ID TMDB disponible"
+    "noTmdbId": "Impossible d'actualiser : aucun ID TMDB disponible",
+    "viewDetails": "Voir les détails",
+    "deleteTitle": "Supprimer « {title} » ?",
+    "deleteWarning": "Il sera retiré de la collection. Cette action est irréversible."
   },
   "bluray": {
     "title": "Titre",
@@ -299,7 +308,8 @@
     "timelineMilestones": "Jalons de la chronologie",
     "oldestBluray": "Le plus ancien Bluray",
     "newestBluray": "Le plus récent Bluray",
-    "top8Genres": "Genres principaux dans la collection"
+    "top8Genres": "Genres principaux dans la collection",
+    "loadFailed": "Échec du chargement des statistiques"
   },
   "add": {
     "title": "Ajouter à la collection",
@@ -374,7 +384,9 @@
     "tagsUpdated": "Étiquettes mises à jour !",
     "firstAirDate": "Date de première diffusion",
     "addToBatch": "Ajouter au lot",
-    "batchComplete": "Traitement du lot terminé !"
+    "batchComplete": "Traitement du lot terminé !",
+    "failedToLoadTags": "Échec du chargement des étiquettes",
+    "failedToUpdateTags": "Échec de la mise à jour des étiquettes"
   },
   "barcode": {
     "title": "Scanner le code-barres",
@@ -418,7 +430,10 @@
     "cameraError": "Impossible d'accéder à la caméra. Veuillez vérifier les autorisations.",
     "manualEntry": "Saisir le code-barres manuellement",
     "enterManually": "Saisir manuellement",
-    "seasonDetected": "Saison {season} détectée du code-barres"
+    "seasonDetected": "Saison {season} détectée du code-barres",
+    "directors": "Réalisateurs",
+    "publisher": "Éditeur",
+    "edition": "Édition"
   },
   "tags": {
     "manageTags": "Gérer les étiquettes",
@@ -441,22 +456,18 @@
     "labelIcon": "Icône de l'étiquette",
     "labelColor": "Couleur de l'étiquette",
     "labelDescription": "Description de l'étiquette",
-    "loading": "Chargement des étiquettes...",
     "selectTags": "Sélectionner les étiquettes",
     "tagCreated": "Étiquette créée !",
-    "failedToCreateTag": "Échec de la création de l'étiquette",
-    "tagUpdated": "Étiquette mise à jour !",
-    "failedToUpdateTag": "Échec de la mise à jour de l'étiquette",
-    "tagDeleted": "Étiquette supprimée !",
-    "failedToDeleteTag": "Échec de la suppression de l'étiquette",
     "totalTags": " étiquette(s) au total",
     "searchPlaceholder": "Rechercher des étiquettes par nom...",
     "descriptionPlaceholder": "Entrez une description pour cette étiquette (optionnel)",
     "addTag": "Ajouter une étiquette",
-    "editTagTooltip": "Modifier l'étiquette",
-    "deleteTagTooltip": "Supprimer l'étiquette",
     "title": "Gestion des étiquettes",
-    "noTagsFound": "Aucune étiquette trouvée correspondant à votre recherche"
+    "noTagsFound": "Aucune étiquette trouvée correspondant à votre recherche",
+    "preview": "Aperçu",
+    "deleteWarning": "Les blurays gardent leurs autres étiquettes ; celle-ci leur est retirée.",
+    "colorInfo": "Choisissez une couleur qui représente cette étiquette",
+    "descriptionInfo": "Facultatif : décrivez brièvement cette étiquette"
   },
   "users": {
     "title": "Gestion des utilisateurs",
@@ -495,21 +506,16 @@
     "createSuccess": "Utilisateur créé avec succès",
     "saveFailed": "Échec de l'enregistrement de l'utilisateur",
     "deleteSuccess": "Utilisateur supprimé avec succès",
-    "deleteFailed": "Échec de la suppression de l'utilisateur"
+    "deleteFailed": "Échec de la suppression de l'utilisateur",
+    "deleteWarning": "Ce compte sera supprimé. Cette action est irréversible."
   },
   "importExport": {
-    "title": "Importer/Exporter",
-    "subtitle": "Sauvegarder et restaurer votre collection Bluray",
+    "title": "Migration",
+    "subtitle": "Sauvegardez votre collection ou transférez-la vers un autre Bluray Manager",
     "export": "Exporter la collection",
     "import": "Importer la collection",
-    "exportDescription": "Télécharger votre collection en CSV",
-    "importDescription": "Charger un CSV pour ajouter des éléments",
-    "exportFeature1": "Données complètes de la collection",
-    "exportFeature2": "Format compatible Excel",
-    "exportFeature3": "Parfait pour les sauvegardes",
-    "importFeature1": "Format CSV uniquement",
-    "importFeature2": "Valide toutes les entrées",
-    "importFeature3": "Les doublons sont ignorés",
+    "exportDescription": "Téléchargez tous les Blurays dans un fichier CSV",
+    "importDescription": "Ajoutez des Blurays depuis un fichier CSV",
     "downloadCSV": "Télécharger CSV",
     "uploadCSV": "Charger un fichier CSV",
     "exportSuccess": "Collection exportée avec succès",
@@ -524,6 +530,34 @@
     "successCount": "Réussis",
     "skippedCount": "Ignorés",
     "failedCount": "Échoués",
-    "errors": "Erreurs"
+    "errors": "Erreurs",
+    "collectionSummary": "{blurays} Blurays · {tags} étiquettes",
+    "downloadTemplate": "Modèle vide",
+    "dropTitle": "Déposez un fichier CSV ici",
+    "dropHint": "ou cliquez pour parcourir · 10 Mo max",
+    "fileTooLarge": "Le fichier dépasse 10 Mo",
+    "rowsDetected": "{count, plural, one {# ligne détectée} other {# lignes détectées}}",
+    "startImport": "Importer {count, plural, one {# ligne} other {# lignes}}",
+    "removeFile": "Retirer le fichier",
+    "importAnother": "Importer un autre fichier",
+    "tagsCreatedCount": "Étiquettes créées",
+    "duplicatesNote": "Les Blurays déjà présents (même titre, type et année) sont ignorés.",
+    "formatTitle": "Format CSV",
+    "formatIntro": "UTF-8, séparé par des virgules, un Bluray par ligne après l'en-tête. Seul Title est obligatoire ; laissez les autres cellules vides si inconnues.",
+    "col_title": "Obligatoire",
+    "col_type": "movie ou series",
+    "col_genre": "Genres séparés par ;",
+    "col_description": "Texte brut",
+    "col_director": "Réalisateur ou créateur",
+    "col_releaseYear": "ex. 2024",
+    "col_runtime": "Minutes",
+    "col_rating": "0 – 10",
+    "col_purchasePrice": "ex. 19.99",
+    "col_purchaseDate": "AAAA-MM-JJ",
+    "col_images": "URL d'images",
+    "col_tmdbId": "Identifiant TMDB numérique",
+    "col_tags": "Noms d'étiquettes séparés par ; — les étiquettes manquantes sont créées",
+    "col_seasons": "numéro:épisodes[:année] séparés par ; — ex. 1:10:2017;2:8",
+    "col_totalEpisodes": "Séries uniquement"
   }
 }

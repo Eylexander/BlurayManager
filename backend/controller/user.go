@@ -94,3 +94,8 @@ func (c *Controller) DeleteUser(ctx context.Context, id primitive.ObjectID) erro
 func (c *Controller) ListUsers(ctx context.Context, skip, limit int) ([]*models.User, error) {
 	return c.ds.ListUsers(ctx, skip, limit)
 }
+
+// HasAdmin reports whether at least one admin account exists.
+func (c *Controller) HasAdmin(ctx context.Context) (bool, error) {
+	return c.ds.HasUserWithRole(ctx, models.RoleAdmin)
+}

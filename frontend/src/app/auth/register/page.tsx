@@ -1,5 +1,7 @@
 "use client";
 
+import { Button, Input } from "@/components/common";
+import { getApiError } from "@/lib/api-client";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -39,7 +41,7 @@ export default function RegisterPage() {
         router.push(ROUTES.DASHBOARD.HOME);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t("auth.registerError"));
+      toast.error(getApiError(error, t("auth.registerError")));
     } finally {
       setLoading(false);
     }
@@ -55,105 +57,68 @@ export default function RegisterPage() {
         <h3 className="text-2xl font-bold text-center">{t("auth.register")}</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* --- Username Field --- */}
-        <div>
-          <label htmlFor="username" className="block text-sm font-medium mb-2">
-            {t("auth.username")}
-          </label>
-          <div className="relative">
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={loading}
-              placeholder={t("auth.username")}
-              required
-              minLength={3}
-              className="input"
-            />
-          </div>
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <Input
+          label={t("auth.username")}
+          id="username"
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          disabled={loading}
+          placeholder={t("auth.username")}
+          required
+          minLength={3}
+        />
 
-        {/* --- Email Field --- */}
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
-            {t("auth.email")}
-          </label>
-          <div className="relative">
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              placeholder={t("auth.emailPlaceholder")}
-              required
-              className="input"
-            />
-          </div>
-        </div>
+        <Input
+          label={t("auth.email")}
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
+          placeholder={t("auth.emailPlaceholder")}
+          required
+        />
 
-        {/* --- Password Field --- */}
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">
-            {t("auth.password")}
-          </label>
-          <div className="relative">
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              placeholder={t("auth.password")}
-              required
-              minLength={8}
-              className="input"
-            />
-          </div>
-        </div>
+        <Input
+          label={t("auth.password")}
+          revealable
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
+          placeholder={t("auth.password")}
+          required
+          minLength={8}
+        />
 
-        {/* --- Confirm Password Field --- */}
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-sm font-medium mb-2"
-          >
-            {t("auth.confirmPassword")}
-          </label>
-          <div className="relative">
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={loading}
-              placeholder={t("auth.confirmPassword")}
-              required
-              minLength={8}
-              className="input"
-            />
-          </div>
-        </div>
+        <Input
+          label={t("auth.confirmPassword")}
+          revealable
+          id="confirmPassword"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={loading}
+          placeholder={t("auth.confirmPassword")}
+          required
+          minLength={8}
+        />
 
         {/* --- Submit Button --- */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? t("common.loading") : t("auth.registerButton")}
-        </button>
+        <Button type="submit" size="lg" fullWidth loading={loading}>
+          {t("auth.registerButton")}
+        </Button>
       </form>
 
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           {t("auth.alreadyHaveAccount")}{" "}
           <Link
             href={ROUTES.AUTH.LOGIN}
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="text-primary hover:text-primary font-medium"
           >
             {t("auth.login")}
           </Link>

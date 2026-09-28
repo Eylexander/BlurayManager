@@ -42,7 +42,7 @@ func (ds *MongoDatastore) VerifyPasswordResetToken(token string) (string, error)
 
 	// Check if token is expired
 	if time.Now().After(resetToken.ExpiresAt) {
-		ds.DeletePasswordResetToken(token)
+		_ = ds.DeletePasswordResetToken(token)
 		return "", errors.New("token expired")
 	}
 
