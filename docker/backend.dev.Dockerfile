@@ -6,7 +6,7 @@
 
 # Keep the Go version in step with the `go` directive in backend/go.mod:
 # the air images bundle their own Go, which lagged behind and broke the build.
-FROM golang:1.26
+FROM golang:1.27
 
 ENV MONGODB_URI=mongodb://database:27017/bluray_manager
 
