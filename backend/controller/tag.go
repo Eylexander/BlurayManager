@@ -30,12 +30,29 @@ func (c *Controller) GetTagByName(ctx context.Context, name string) (*models.Tag
 	return c.ds.GetTagByName(ctx, name)
 }
 
-func (c *Controller) UpdateTag(ctx context.Context, tag *models.Tag) error {
+// UpdateTag applies the non-nil fields of req to the existing tag and returns the updated tag
+func (c *Controller) UpdateTag(ctx context.Context, id primitive.ObjectID, req *models.UpdateTagRequest) (*models.Tag, error) {
 	i18n := i18n.GetI18nFromContext(ctx)
-	if tag.Name == "" {
-		return errors.New(i18n.T("tag.nameRequired"))
+	tag, err := c.ds.GetTagByID(ctx, id)
+	if err != nil {
+		return nil, errors.New(i18n.T("tag.notFound"))
 	}
-	return c.ds.UpdateTag(ctx, tag)
+	if req.Name != nil {
+		tag.Name = *req.Name
+	}
+	if req.Color != nil {
+		tag.Color = *req.Color
+	}
+	if req.Description != nil {
+		tag.Description = *req.Description
+	}
+	if tag.Name == "" {
+		return nil, errors.New(i18n.T("tag.nameRequired"))
+	}
+	if err := c.ds.UpdateTag(ctx, tag); err != nil {
+		return nil, err
+	}
+	return tag, nil
 }
 
 func (c *Controller) DeleteTag(ctx context.Context, id primitive.ObjectID) error {

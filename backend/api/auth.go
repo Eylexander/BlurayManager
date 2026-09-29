@@ -3,6 +3,8 @@ package api
 import (
 	"eylexander/bluraymanager/models"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -116,8 +118,8 @@ func (api *API) UpdateUserSettings(c *gin.Context) {
 		return
 	}
 
-	var settings models.UserSettings
-	if err := c.ShouldBindJSON(&settings); err != nil {
+	var req models.UpdateUserSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -128,13 +130,44 @@ func (api *API) UpdateUserSettings(c *gin.Context) {
 		return
 	}
 
-	user.Settings = settings
+	if req.Theme != nil {
+		user.Settings.Theme = *req.Theme
+	}
+	if req.Language != nil {
+		user.Settings.Language = *req.Language
+	}
+	if req.JellyfinURL != nil {
+		jellyfinURL, ok := NormalizeJellyfinURL(*req.JellyfinURL)
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T("settings.invalidJellyfinURL")})
+			return
+		}
+		user.Settings.JellyfinURL = jellyfinURL
+	}
+	settings := user.Settings
+
 	if err := api.ctrl.UpdateUser(c.Request.Context(), user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": i18n.T("api.settingsUpdatedSuccessfully"), "settings": settings})
+}
+
+// NormalizeJellyfinURL trims a Jellyfin server URL down to its base (without
+// the /web client path) and checks it is an http(s) URL; an empty input is
+// valid and clears the setting.
+func NormalizeJellyfinURL(raw string) (string, bool) {
+	raw = strings.TrimRight(strings.TrimSpace(raw), "/")
+	raw = strings.TrimRight(strings.TrimSuffix(raw, "/web"), "/")
+	if raw == "" {
+		return "", true
+	}
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return "", false
+	}
+	return raw, true
 }
 
 func (api *API) UpdateUsername(c *gin.Context) {

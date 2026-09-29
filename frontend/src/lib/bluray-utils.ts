@@ -49,3 +49,10 @@ export const normalizePurchaseDateForInput = (dateString: string | null | undefi
   if (!isValidPurchaseDate(dateString)) return '';
   return dateString!.split('T')[0];
 };
+
+/**
+ * Link to a title search on the user's Jellyfin server. A search rather than a
+ * direct item link, since the bluray may not have been ripped to Jellyfin.
+ */
+export const getJellyfinSearchUrl = (baseUrl: string, title: string): string =>
+  `${baseUrl.replace(/\/+$/, "")}/web/#/search?query=${encodeURIComponent(title)}`;

@@ -75,6 +75,13 @@ func blurayToRecord(b *models.Bluray) []string {
 		seasons = append(seasons, entry)
 	}
 
+	// total_episodes was never persisted by older versions, so derive it from
+	// the seasons whenever they are known
+	totalEpisodes := b.TotalEpisodes
+	if len(b.Seasons) > 0 {
+		totalEpisodes = b.SeasonEpisodeCount()
+	}
+
 	purchaseDate := ""
 	if !b.PurchaseDate.IsZero() {
 		purchaseDate = b.PurchaseDate.Format(csvDateLayout)
@@ -98,7 +105,7 @@ func blurayToRecord(b *models.Bluray) []string {
 		b.TMDBID,
 		strings.Join(b.Tags, ";"),
 		strings.Join(seasons, ";"),
-		formatNonZeroInt(b.TotalEpisodes),
+		formatNonZeroInt(totalEpisodes),
 	}
 }
 

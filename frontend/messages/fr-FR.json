@@ -126,6 +126,12 @@
     "usernameRequired": "Le nom d'utilisateur est requis",
     "usernameUnchanged": "Le nouveau nom d'utilisateur doit être différent",
     "usernameUpdated": "Nom d'utilisateur mis à jour avec succès !",
+    "jellyfin": "Jellyfin",
+    "jellyfinSubtitle": "Reliez votre collection à votre serveur Jellyfin",
+    "jellyfinUrl": "URL du serveur",
+    "jellyfinHint": "Ajoute sur chaque titre un bouton qui le recherche sur votre serveur Jellyfin. Laissez vide pour le masquer.",
+    "jellyfinSaved": "Serveur Jellyfin enregistré !",
+    "jellyfinSaveFailed": "Échec de l'enregistrement du serveur Jellyfin",
     "usernameUpdateFailed": "Échec de la mise à jour du nom d'utilisateur",
     "currentPassword": "Mot de passe actuel",
     "newPassword": "Nouveau mot de passe",
@@ -209,6 +215,7 @@
     "searchForType": "Rechercher le type : {type}",
     "searchForYear": "Rechercher l'année : {year}",
     "refreshFromTmdb": "Actualiser depuis TMDB",
+    "openInJellyfin": "Rechercher dans Jellyfin",
     "confirmRefresh": "Êtes-vous sûr de vouloir actualiser cet élément depuis TMDB ? Cela écrasera le titre, la description, les images et d'autres métadonnées tout en préservant vos tags, saisons et informations d'achat.",
     "refreshSuccess": "Actualisation depuis TMDB réussie",
     "refreshError": "Échec de l'actualisation depuis TMDB",
@@ -309,7 +316,10 @@
     "oldestBluray": "Le plus ancien Bluray",
     "newestBluray": "Le plus récent Bluray",
     "top8Genres": "Genres principaux dans la collection",
-    "loadFailed": "Échec du chargement des statistiques"
+    "loadFailed": "Échec du chargement des statistiques",
+    "noData": "Rien à afficher pour le moment",
+    "topTags": "Étiquettes les plus utilisées dans la collection",
+    "splitSummary": "{series} séries · {episodes} épisodes"
   },
   "add": {
     "title": "Ajouter à la collection",

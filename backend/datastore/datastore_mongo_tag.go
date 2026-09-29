@@ -39,7 +39,13 @@ func (ds *MongoDatastore) GetTagByName(ctx context.Context, name string) (*model
 
 func (ds *MongoDatastore) UpdateTag(ctx context.Context, tag *models.Tag) error {
 	tag.UpdatedAt = time.Now()
-	_, err := ds.tags.UpdateOne(ctx, bson.M{"_id": tag.ID}, bson.M{"$set": tag})
+	// Only $set the editable fields so created_at / created_by are preserved
+	_, err := ds.tags.UpdateOne(ctx, bson.M{"_id": tag.ID}, bson.M{"$set": bson.M{
+		"name":        tag.Name,
+		"color":       tag.Color,
+		"description": tag.Description,
+		"updated_at":  tag.UpdatedAt,
+	}})
 	return err
 }
 

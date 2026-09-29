@@ -27,6 +27,9 @@ func (c *Controller) CreateBluray(ctx context.Context, bluray *models.Bluray) er
 		}
 	}
 
+	if len(bluray.Seasons) > 0 {
+		bluray.TotalEpisodes = bluray.SeasonEpisodeCount()
+	}
 	return c.ds.CreateBluray(ctx, bluray)
 }
 
@@ -38,6 +41,9 @@ func (c *Controller) UpdateBluray(ctx context.Context, bluray *models.Bluray) er
 	i18n := i18n.GetI18nFromContext(ctx)
 	if bluray.Title == "" {
 		return errors.New(i18n.T("bluray.titleRequired"))
+	}
+	if len(bluray.Seasons) > 0 {
+		bluray.TotalEpisodes = bluray.SeasonEpisodeCount()
 	}
 	return c.ds.UpdateBluray(ctx, bluray)
 }

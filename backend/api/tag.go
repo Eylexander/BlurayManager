@@ -63,14 +63,14 @@ func (api *API) UpdateTag(c *gin.Context) {
 		return
 	}
 
-	var tag models.Tag
-	if err := c.ShouldBindJSON(&tag); err != nil {
+	var req models.UpdateTagRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	tag.ID = id
-	if err := api.ctrl.UpdateTag(c.Request.Context(), &tag); err != nil {
+	tag, err := api.ctrl.UpdateTag(c.Request.Context(), id, &req)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

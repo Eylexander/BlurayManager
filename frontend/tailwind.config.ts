@@ -67,6 +67,7 @@ const config: Config = {
         'slide-in': 'slide-in 0.3s ease-out',
         'slide-up': 'slide-up 0.3s ease-out',
         shimmer: 'shimmer 2s infinite linear',
+        'grow-x': 'grow-x 0.6s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
       keyframes: {
         'fade-in': {
@@ -88,6 +89,10 @@ const config: Config = {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        'grow-x': {
+          '0%': { transform: 'scaleX(0)' },
+          '100%': { transform: 'scaleX(1)' },
         },
       },
       screens: {

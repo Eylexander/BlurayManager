@@ -4,9 +4,10 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/authStore';
-import { Home, BarChart3, Settings, Plus, Users, LogOut, Github, MoreHorizontal, X, TagIcon, FileDown, LucideIcon } from 'lucide-react';
+import { Home, BarChart3, Settings, Plus, Users, LogOut, MoreHorizontal, X, TagIcon, FileDown, LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { ROUTES } from '@/hooks/useRouteProtection';
+import { GithubIcon } from '@/components/common';
 
 interface MobileLinkProps {
   href: string;
@@ -156,7 +157,7 @@ export default function MobileNav() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity"
               >
-                <Github className="w-4 h-4" />
+                <GithubIcon className="w-4 h-4" />
                 <span className="text-[10px] font-medium tracking-tight">Eylexander © {new Date().getFullYear()}</span>
               </a>
             </div>

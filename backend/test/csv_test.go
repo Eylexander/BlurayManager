@@ -63,6 +63,27 @@ func TestCSVRoundTrip(t *testing.T) {
 	}
 }
 
+func TestCSVExportDerivesTotalEpisodes(t *testing.T) {
+	// Blurays saved before total_episodes was persisted only have seasons
+	in := []*models.Bluray{{
+		Title:   "Dark",
+		Type:    models.MediaTypeSeries,
+		Seasons: []models.Season{{Number: 1, EpisodeCount: 10}, {Number: 2, EpisodeCount: 8}},
+	}}
+
+	var buf bytes.Buffer
+	if err := api.WriteBluraysCSV(&buf, in); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	records, err := api.ReadBluraysCSV(&buf)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if got := records[0][len(api.CSVHeader)-1]; got != "18" {
+		t.Errorf("TotalEpisodes = %q, want %q", got, "18")
+	}
+}
+
 func TestRecordToBlurayShortRow(t *testing.T) {
 	if _, err := api.RecordToBluray([]string{"Only a title"}); err == nil {
 		t.Fatal("expected an error for a row with missing columns")

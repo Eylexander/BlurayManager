@@ -7,3 +7,4 @@ export { useConfirm } from './ConfirmDialog';
 export { PageHeader } from './PageHeader';
 export { SearchInput } from './SearchInput';
 export { TagChip, TAG_COLORS } from './TagChip';
+export { GithubIcon } from './GithubIcon';

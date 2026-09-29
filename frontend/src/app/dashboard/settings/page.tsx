@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient, getApiError } from "@/lib/api-client";
 import toast from "react-hot-toast";
-import { Sun, Moon, Monitor, Globe, User, Lock, Check, Settings } from "lucide-react";
+import { Sun, Moon, Monitor, Globe, User, Lock, Check, Settings, Play } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter, usePathname } from "next/navigation";
 import useRouteProtection from "@/hooks/useRouteProtection";
@@ -101,6 +101,11 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
 
+  // Jellyfin link state
+  const [jellyfinDraft, setJellyfinDraft] = useState<string | null>(null);
+  const jellyfinUrl = jellyfinDraft ?? user?.settings?.jellyfin_url ?? "";
+  const [jellyfinLoading, setJellyfinLoading] = useState(false);
+
   const handleSave = async () => {
     setLoading(true);
 
@@ -122,6 +127,7 @@ export default function SettingsPage() {
         updateUser({
           ...user,
           settings: {
+            ...user.settings,
             theme: selectedTheme as "light" | "dark",
             language: selectedLanguage as "en-US" | "fr-FR",
           },
@@ -212,6 +218,26 @@ export default function SettingsPage() {
       );
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const handleJellyfinUpdate = async () => {
+    setJellyfinLoading(true);
+
+    try {
+      const response = await apiClient.updateUserSettings({ jellyfin_url: jellyfinUrl });
+      const saved: string = response.settings?.jellyfin_url ?? "";
+
+      if (user) {
+        updateUser({ ...user, settings: { ...user.settings, jellyfin_url: saved } });
+      }
+      setJellyfinDraft(null);
+
+      toast.success(t("settings.jellyfinSaved"));
+    } catch (error: any) {
+      toast.error(getApiError(error, t("settings.jellyfinSaveFailed")));
+    } finally {
+      setJellyfinLoading(false);
     }
   };
 
@@ -318,6 +344,37 @@ export default function SettingsPage() {
                 </Button>
               </div>
             </form>
+          </SettingsCard>
+        )}
+
+        {user?.role !== "guest" && (
+          <SettingsCard icon={<Play />} title={t("settings.jellyfin")} subtitle={t("settings.jellyfinSubtitle")}>
+            <form
+              className="flex flex-col sm:flex-row sm:items-end gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleJellyfinUpdate();
+              }}
+            >
+              <Input
+                id="jellyfinUrl"
+                type="url"
+                inputMode="url"
+                label={t("settings.jellyfinUrl")}
+                value={jellyfinUrl}
+                onChange={(e) => setJellyfinDraft(e.target.value)}
+                placeholder="https://jellyfin.example.com"
+                disabled={jellyfinLoading}
+              />
+              <Button
+                type="submit"
+                disabled={jellyfinUrl === (user?.settings?.jellyfin_url ?? "")}
+                loading={jellyfinLoading}
+              >
+                {t("common.save")}
+              </Button>
+            </form>
+            <p className="mt-2 text-xs text-muted-foreground">{t("settings.jellyfinHint")}</p>
           </SettingsCard>
         )}
 

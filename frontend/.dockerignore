@@ -8,11 +8,13 @@ yarn-error.log*
 .next
 out
 build
+*.tsbuildinfo
 
 # Environment
 .env
 .env.local
 .env.*.local
+*.pem
 
 # Git
 .git

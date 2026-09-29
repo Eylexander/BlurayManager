@@ -10,6 +10,8 @@ export interface User {
 export interface UserSettings {
   theme: 'light' | 'dark' | 'system';
   language: 'en-US' | 'fr-FR';
+  /** Base URL of the user's Jellyfin server, if linked */
+  jellyfin_url?: string;
 }
 
 export interface LoginCredentials {

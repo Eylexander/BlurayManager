@@ -59,6 +59,15 @@ type Bluray struct {
 	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
+// SeasonEpisodeCount sums the episode counts of the bluray's seasons
+func (b *Bluray) SeasonEpisodeCount() int {
+	total := 0
+	for _, s := range b.Seasons {
+		total += s.EpisodeCount
+	}
+	return total
+}
+
 // SimplifiedBluray is a simplified version of Bluray for listings
 type SimplifiedBluray struct {
 	ID    primitive.ObjectID `bson:"_id,omitempty" json:"id"`

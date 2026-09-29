@@ -39,8 +39,16 @@ type User struct {
 
 // UserSettings stores user preferences
 type UserSettings struct {
-	Theme    string `bson:"theme" json:"theme"`       // "light" or "dark"
-	Language string `bson:"language" json:"language"` // "en-US" or "fr-FR"
+	Theme       string `bson:"theme" json:"theme"`                                   // "light" or "dark"
+	Language    string `bson:"language" json:"language"`                             // "en-US" or "fr-FR"
+	JellyfinURL string `bson:"jellyfin_url,omitempty" json:"jellyfin_url,omitempty"` // Base URL of the user's Jellyfin server
+}
+
+// UpdateUserSettingsRequest is the request body for updating settings; omitted fields are kept
+type UpdateUserSettingsRequest struct {
+	Theme       *string `json:"theme,omitempty"`
+	Language    *string `json:"language,omitempty"`
+	JellyfinURL *string `json:"jellyfin_url,omitempty"`
 }
 
 // UserCredentials for login

@@ -27,6 +27,7 @@ import {
   Hash,
   Euro,
   RefreshCw,
+  Play,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import TagPickerModal from "@/components/modals/TagPickerModal";
@@ -38,6 +39,7 @@ import {
   getLocalizedTextArray,
   isValidPurchaseDate,
   formatPurchaseDate,
+  getJellyfinSearchUrl,
 } from "@/lib/bluray-utils";
 import { Button, IconButton, TagChip, useConfirm } from "@/components/common";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
@@ -223,7 +225,11 @@ export default function BlurayDetailPage() {
 
   // Floating actions over the hero backdrop
   const heroAction =
-    "inline-grid place-items-center w-10 h-10 rounded-lg bg-card/85 backdrop-blur border border-border shadow-sm transition-colors [&_svg]:w-[18px] [&_svg]:h-[18px]";
+    "rounded-lg bg-card/85 backdrop-blur border border-border shadow-sm transition-colors [&_svg]:w-[18px] [&_svg]:h-[18px]";
+  // Links can't use IconButton, so they carry its lg size themselves
+  const heroLink =
+    "inline-grid place-items-center w-10 h-10 shrink-0 text-muted-foreground hover:text-foreground";
+  const jellyfinUrl = user?.settings?.jellyfin_url;
 
   if (!bluray) {
     return (
@@ -306,6 +312,18 @@ export default function BlurayDetailPage() {
         <div className="relative group rounded-3xl overflow-hidden bg-card border border-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-12 transition-all duration-500 md:hover:border-border">
           {/* Action Buttons */}
           <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 flex gap-2">
+            {jellyfinUrl && (
+              <a
+                href={getJellyfinSearchUrl(jellyfinUrl, bluray.title)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("details.openInJellyfin")}
+                title={t("details.openInJellyfin")}
+                className={`${heroAction} ${heroLink}`}
+              >
+                <Play />
+              </a>
+            )}
             <a
               href={
                 bluray.tmdb_id
@@ -316,7 +334,7 @@ export default function BlurayDetailPage() {
               rel="noopener noreferrer"
               aria-label={t("details.tmdb")}
               title={t("details.tmdb")}
-              className={`${heroAction} text-muted-foreground hover:text-foreground`}
+              className={`${heroAction} ${heroLink}`}
             >
               <ExternalLink />
             </a>
@@ -326,6 +344,7 @@ export default function BlurayDetailPage() {
                   label={t("details.refreshFromTmdb")}
                   onClick={handleRefreshFromTMDB}
                   disabled={refreshing || !bluray.tmdb_id}
+                  size="lg"
                   className={heroAction}
                 >
                   <RefreshCw className={refreshing ? "animate-spin" : ""} />
@@ -335,6 +354,7 @@ export default function BlurayDetailPage() {
                   variant="danger"
                   onClick={handleDelete}
                   disabled={deleting}
+                  size="lg"
                   className={heroAction}
                 >
                   <Trash2 />

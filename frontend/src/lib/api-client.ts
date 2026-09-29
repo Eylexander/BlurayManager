@@ -83,7 +83,8 @@ class ApiClient {
     return response.data.user || response.data;
   }
 
-  async updateUserSettings(settings: { theme: string; language: string }) {
+  /** Omitted fields keep their current value */
+  async updateUserSettings(settings: { theme?: string; language?: string; jellyfin_url?: string }) {
     const response = await this.client.put('/user/settings', settings);
     return response.data;
   }

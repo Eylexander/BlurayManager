@@ -1,0 +1,32 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+bluray-server
+bin/
+dist/
+
+# Air build output
+tmp/
+
+# Tests (not needed to build the server)
+test/
+**/*_test.go
+*.out
+coverage.txt
+
+# Environment
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store

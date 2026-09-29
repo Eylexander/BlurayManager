@@ -126,6 +126,12 @@
     "usernameRequired": "Username is required",
     "usernameUnchanged": "New username must be different",
     "usernameUpdated": "Username updated successfully!",
+    "jellyfin": "Jellyfin",
+    "jellyfinSubtitle": "Link your collection to your Jellyfin server",
+    "jellyfinUrl": "Server URL",
+    "jellyfinHint": "Adds a button on each title that searches for it on your Jellyfin server. Leave empty to hide it.",
+    "jellyfinSaved": "Jellyfin server saved!",
+    "jellyfinSaveFailed": "Failed to save the Jellyfin server",
     "usernameUpdateFailed": "Failed to update username",
     "currentPassword": "Current Password",
     "newPassword": "New Password",
@@ -209,6 +215,7 @@
     "searchForType": "Search for type: {type}",
     "searchForYear": "Search for year: {year}",
     "refreshFromTmdb": "Refresh from TMDB",
+    "openInJellyfin": "Find in Jellyfin",
     "confirmRefresh": "Are you sure you want to refresh this item from TMDB? This will overwrite title, description, images, and other metadata while preserving your tags, seasons, and purchase information.",
     "refreshSuccess": "Successfully refreshed from TMDB",
     "refreshError": "Failed to refresh from TMDB",
@@ -309,7 +316,10 @@
     "oldestBluray": "Oldest Bluray",
     "newestBluray": "Newest Bluray",
     "top8Genres": "Top Genres in the Collection",
-    "loadFailed": "Failed to load statistics"
+    "loadFailed": "Failed to load statistics",
+    "noData": "Nothing to show yet",
+    "topTags": "Most used tags in the collection",
+    "splitSummary": "{series} series · {episodes} episodes"
   },
   "add": {
     "title": "Add to Collection",

@@ -11,12 +11,12 @@ import {
   Plus,
   LogOut,
   Users,
-  Github,
   FileDown,
   TagIcon,
   LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "@/hooks/useRouteProtection";
+import { GithubIcon } from "@/components/common";
 
 interface SidebarItemProps {
   href: string;
@@ -139,7 +139,7 @@ export default function Sidebar() {
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 hover:text-foreground transition-colors"
             >
-              <Github className="w-3.5 h-3.5" />
+              <GithubIcon className="w-3.5 h-3.5" />
               <span>Eylexander &copy; {new Date().getFullYear()}</span>
             </a>
           </div>
