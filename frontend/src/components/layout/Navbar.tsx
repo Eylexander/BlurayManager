@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/store/authStore";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search, Bell, User, X, Film, Tv } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useNotifications, Notification } from "@/hooks/useNotification";
@@ -32,6 +32,15 @@ interface Tag {
   color: string;
 }
 
+const SEARCH_TIPS = [
+  ["title", "inception", "searchByTitle"],
+  ["director", "nolan", "searchByDirector"],
+  ["tag", "action", "searchByTag"],
+  ["genre", "thriller", "searchByGenre"],
+  ["year", "2010", "searchByYear"],
+  ["type", "movie", "filterByType"],
+] as const;
+
 export default function Navbar() {
   const t = useTranslations();
   const router = useRouter();
@@ -54,6 +63,21 @@ export default function Navbar() {
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlSearch =
+    pathname === ROUTES.DASHBOARD.HOME ? searchParams.get("search") ?? "" : "";
+
+  // Keep the active search in the bar so it can be edited
+  useEffect(() => {
+    setSearchQuery(urlSearch);
+  }, [urlSearch]);
+
+  const applyTip = (key: string) => {
+    setSearchQuery(`${key}:`);
+    inputRef.current?.focus();
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +95,6 @@ export default function Navbar() {
           `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(searchQuery.trim())}`,
         );
         setShowSearchResults(false);
-        setSearchQuery("");
       }
     }
   };
@@ -92,6 +115,7 @@ export default function Navbar() {
   // Debounced search
   useEffect(() => {
     const delaySearch = setTimeout(async () => {
+      if (/\w+:$/.test(searchQuery.trim())) return;
       if (searchQuery.trim().length >= 1) {
         setSearchLoading(true);
         setShowSearchTips(false);
@@ -99,7 +123,9 @@ export default function Navbar() {
           const query = searchQuery.toLowerCase();
           const filtered = await apiClient.searchBlurays(query, 0, 8);
           setSearchResults(filtered);
-          setShowSearchResults(filtered.length > 0);
+          setShowSearchResults(
+            filtered.length > 0 && document.activeElement === inputRef.current,
+          );
         } catch (error) {
           console.error("Search failed:", error);
         } finally {
@@ -208,6 +234,7 @@ export default function Navbar() {
           <form onSubmit={handleSearch} className="relative w-full">
             <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             <input
+              ref={inputRef}
               type="text"
               placeholder={t("common.search")}
               value={searchQuery}
@@ -231,42 +258,18 @@ export default function Navbar() {
                     {t("common.searchTips.title")}
                   </h4>
                   <div className="text-xs text-muted-foreground space-y-1">
-                    <p>
-                      <code className="bg-muted px-1 rounded">
-                        title:inception
-                      </code>{" "}
-                      - {t("common.searchTips.searchByTitle")}
-                    </p>
-                    <p>
-                      <code className="bg-muted px-1 rounded">
-                        director:nolan
-                      </code>{" "}
-                      - {t("common.searchTips.searchByDirector")}
-                    </p>
-                    <p>
-                      <code className="bg-muted px-1 rounded">
-                        tag:action
-                      </code>{" "}
-                      - {t("common.searchTips.searchByTag")}
-                    </p>
-                    <p>
-                      <code className="bg-muted px-1 rounded">
-                        genre:thriller
-                      </code>{" "}
-                      - {t("common.searchTips.searchByGenre")}
-                    </p>
-                    <p>
-                      <code className="bg-muted px-1 rounded">
-                        year:2010
-                      </code>{" "}
-                      - {t("common.searchTips.searchByYear")}
-                    </p>
-                    <p>
-                      <code className="bg-muted px-1 rounded">
-                        type:movie
-                      </code>{" "}
-                      - {t("common.searchTips.filterByType")}
-                    </p>
+                    {SEARCH_TIPS.map(([key, example, label]) => (
+                      <p key={key}>
+                        <button
+                          type="button"
+                          onClick={() => applyTip(key)}
+                          className="bg-muted px-1 rounded font-mono hover:bg-primary/10 hover:text-primary transition-colors"
+                        >
+                          {key}:{example}
+                        </button>{" "}
+                        - {t(`common.searchTips.${label}`)}
+                      </p>
+                    ))}
                     <p className="pt-1 text-xs">
                       <span className="font-medium">
                         {t("common.searchTips.combine")}:
@@ -389,7 +392,6 @@ export default function Navbar() {
                             `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(searchQuery.trim())}`,
                           );
                           setShowSearchResults(false);
-                          setSearchQuery("");
                         }}
                         className="w-full px-4 py-3 text-sm text-primary hover:bg-accent border-t border-border font-medium text-center"
                       >
