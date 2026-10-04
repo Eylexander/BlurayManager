@@ -46,7 +46,17 @@ export default function Navbar() {
   const router = useRouter();
   const locale = useLocale() as "en-US" | "fr-FR";
   const { user } = useAuthStore();
-  const [searchQuery, setSearchQuery] = useState("");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlSearch =
+    pathname === ROUTES.DASHBOARD.HOME ? searchParams.get("search") ?? "" : "";
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
+  // Keep the active search in the bar so it can be edited
+  const [prevUrlSearch, setPrevUrlSearch] = useState(urlSearch);
+  if (urlSearch !== prevUrlSearch) {
+    setPrevUrlSearch(urlSearch);
+    setSearchQuery(urlSearch);
+  }
   const [showNotifications, setShowNotifications] = useState(false);
   const {
     notifications,
@@ -64,15 +74,6 @@ export default function Navbar() {
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const urlSearch =
-    pathname === ROUTES.DASHBOARD.HOME ? searchParams.get("search") ?? "" : "";
-
-  // Keep the active search in the bar so it can be edited
-  useEffect(() => {
-    setSearchQuery(urlSearch);
-  }, [urlSearch]);
 
   const applyTip = (key: string) => {
     setSearchQuery(`${key}:`);
