@@ -16,7 +16,7 @@ interface BlurayListItemProps {
 export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps) {
   const t = useTranslations();
   const locale = useLocale() as 'en-US' | 'fr-FR';
-  const { currentBluray, canModify, detailHref, openMenu, overlays } = useBlurayTools(bluray, onUpdate);
+  const { currentBluray, title, canModify, detailHref, openMenu, overlays } = useBlurayTools(bluray, onUpdate);
 
   return (
     <>
@@ -37,7 +37,7 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
               {currentBluray.cover_image_url ? (
                 <Image
                   src={currentBluray.cover_image_url}
-                  alt={currentBluray.title}
+                  alt={title}
                   fill
                   className="object-cover transition-transform duration-500 md:group-hover:scale-105"
                   sizes="80px"
@@ -54,7 +54,7 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm sm:text-base font-semibold text-foreground truncate md:group-hover:text-primary transition-colors tracking-tight">
-                    {currentBluray.title}
+                    {title}
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                     {currentBluray.director || t('common.unknownDirector')}

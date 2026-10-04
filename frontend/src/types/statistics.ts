@@ -1,6 +1,7 @@
 export interface BlurayStats {
   id: string;
   title: string;
+  titles?: { "en-US"?: string; "fr-FR"?: string };
   type: string;
   purchase_price?: number;
   release_year?: number;

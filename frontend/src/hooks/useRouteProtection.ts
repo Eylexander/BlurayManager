@@ -24,7 +24,6 @@ export const ROUTES = {
     STATISTICS: '/dashboard/statistics',
     ADD: {
       ADD: '/dashboard/add',
-      SEARCH: '/dashboard/add/search',
       RESULTS: '/dashboard/add/results',
       SCAN: '/dashboard/add/scan',
     },
@@ -56,7 +55,6 @@ const ROUTE_CONFIGS: Record<string, RouteConfig> = {
 
   // Collection Management - Admin and Moderator only
   [ROUTES.DASHBOARD.ADD.ADD]: { allowedRoles: ['admin', 'moderator'] },
-  [ROUTES.DASHBOARD.ADD.SEARCH]: { allowedRoles: ['admin', 'moderator'] },
   [ROUTES.DASHBOARD.ADD.RESULTS]: { allowedRoles: ['admin', 'moderator'] },
   [ROUTES.DASHBOARD.ADD.SCAN]: { allowedRoles: ['admin', 'moderator'] },
 

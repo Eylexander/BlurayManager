@@ -42,6 +42,7 @@ func NewServer(ds datastore.Datastore, cfg Config) *Server {
 
 	ctrl := controller.NewController(ds, cfg.JWTSecret)
 	apiHandler := api.NewAPI(ctrl)
+	go apiHandler.BackfillTitles(context.Background())
 	emailService := services.NewEmailService()
 	passwordResetHandler := ctrl.NewPasswordResetHandler(ds, emailService, cfg.AppURL)
 

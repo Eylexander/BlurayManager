@@ -13,10 +13,14 @@ import BlurayCard from "@/components/bluray/BlurayCard";
 import BlurayListItem from "@/components/bluray/BlurayListItem";
 import StatsCard from "@/components/common/StatsCard";
 import SortDropdown from "@/components/common/SortDropdown";
-import { LoaderCircle } from "@/components/common/LoaderCircle";
+import { BlurayCardSkeleton, BlurayRowSkeleton, Skeleton } from "@/components/common";
+import { getTitle } from "@/lib/bluray-utils";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 
 type SortOption = "recent" | "name" | "release_date" | "rating";
+
+const GRID_CLASSES =
+  "w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 auto-rows-max gap-4 sm:gap-6 sm:p-4 md:p-2";
 
 export default function DashboardPage() {
   const t = useTranslations();
@@ -150,7 +154,7 @@ export default function DashboardPage() {
   const sortedBlurays = [...recentBlurays].sort((a, b) => {
     switch (sortBy) {
       case "name":
-        return a.title.localeCompare(b.title);
+        return getTitle(a, locale).localeCompare(getTitle(b, locale), locale);
       case "release_date":
         const yearA = a.release_year || 0;
         const yearB = b.release_year || 0;
@@ -180,7 +184,29 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return <LoaderCircle />;
+    return (
+      <div className="w-full space-y-4 sm:space-y-6 md:space-y-8" aria-busy>
+        <Skeleton className="hidden md:block h-36 rounded-xl" />
+        <div className="grid grid-cols-2 gap-4 md:gap-6">
+          <Skeleton className="h-24 sm:h-28 rounded-lg" />
+          <Skeleton className="h-24 sm:h-28 rounded-lg" />
+        </div>
+        <Skeleton className="h-8 w-56" />
+        {viewMode === "grid" ? (
+          <div className={GRID_CLASSES}>
+            {Array.from({ length: 12 }, (_, i) => (
+              <BlurayCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2 sm:space-y-3">
+            {Array.from({ length: 6 }, (_, i) => (
+              <BlurayRowSkeleton key={i} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   const isGuest = user?.role === "guest";
@@ -297,7 +323,7 @@ export default function DashboardPage() {
         ) : (
           <>
             {viewMode === "grid" ? (
-              <div className="w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 auto-rows-max gap-4 sm:gap-6 sm:p-4 md:p-2">
+              <div className={GRID_CLASSES}>
                 {sortedBlurays.map((bluray) => (
                   <BlurayCard
                     key={bluray.id}
@@ -305,6 +331,7 @@ export default function DashboardPage() {
                     onUpdate={handleUpdate}
                   />
                 ))}
+                {loadingMore && Array.from({ length: 6 }, (_, i) => <BlurayCardSkeleton key={`more-${i}`} />)}
               </div>
             ) : (
               <div className="space-y-2 sm:space-y-3 p-0 sm:p-1">
@@ -315,6 +342,7 @@ export default function DashboardPage() {
                     onUpdate={handleUpdate}
                   />
                 ))}
+                {loadingMore && Array.from({ length: 3 }, (_, i) => <BlurayRowSkeleton key={`more-${i}`} />)}
               </div>
             )}
           </>
@@ -324,10 +352,9 @@ export default function DashboardPage() {
         {!searchQuery && recentBlurays.length > 0 && (
           <div ref={observerTarget} className="flex justify-center py-8">
             {loadingMore && hasMore && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin"></div>
-                <span>{t("common.loading")}</span>
-              </div>
+              <span role="status" className="sr-only">
+                {t("common.loading")}
+              </span>
             )}
           </div>
         )}

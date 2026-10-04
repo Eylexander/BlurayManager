@@ -26,6 +26,7 @@ export interface TMDBDetails {
         crew?: Array<{ job: string; name: string }>;
     };
     fr?: {
+        title?: string;
         overview?: string;
         genres?: { id: number; name: string }[];
     }

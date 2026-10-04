@@ -20,7 +20,12 @@ var CSVHeader = []string{
 	"Title", "Type", "GenreEn", "GenreFr", "DescriptionEn", "DescriptionFr", "Director",
 	"ReleaseYear", "Runtime", "Rating", "PurchasePrice", "PurchaseDate",
 	"CoverImageURL", "BackdropURL", "TMDBID", "Tags", "Seasons", "TotalEpisodes",
+	"TitleEn", "TitleFr",
 }
+
+// legacyCSVColumns is the column count before TitleEn/TitleFr were appended;
+// such files still import, without localized titles.
+const legacyCSVColumns = 18
 
 const csvDateLayout = "2006-01-02"
 
@@ -106,13 +111,15 @@ func blurayToRecord(b *models.Bluray) []string {
 		strings.Join(b.Tags, ";"),
 		strings.Join(seasons, ";"),
 		formatNonZeroInt(totalEpisodes),
+		b.Titles.En,
+		b.Titles.Fr,
 	}
 }
 
 // RecordToBluray maps an import row back onto a Bluray. Malformed numeric or
 // date cells are treated as empty rather than failing the whole row.
 func RecordToBluray(fields []string) (*models.Bluray, error) {
-	if len(fields) < len(CSVHeader) {
+	if len(fields) < legacyCSVColumns {
 		return nil, fmt.Errorf("insufficient fields")
 	}
 
@@ -132,9 +139,15 @@ func RecordToBluray(fields []string) (*models.Bluray, error) {
 		mediaType = models.MediaTypeSeries
 	}
 
+	var titles models.I18nText
+	if len(fields) >= len(CSVHeader) {
+		titles = models.I18nText{En: fields[18], Fr: fields[19]}
+	}
+
 	return &models.Bluray{
-		Title: fields[0],
-		Type:  mediaType,
+		Title:  fields[0],
+		Titles: titles,
+		Type:   mediaType,
 		Genre: models.I18nTextArray{
 			En: splitList(fields[2]),
 			Fr: splitList(fields[3]),

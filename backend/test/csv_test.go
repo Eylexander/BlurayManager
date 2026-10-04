@@ -16,6 +16,7 @@ func TestCSVRoundTrip(t *testing.T) {
 	in := []*models.Bluray{
 		{
 			Title:         `Crouching Tiger, "Hidden" Dragon`,
+			Titles:        models.I18nText{En: `Crouching Tiger, "Hidden" Dragon`, Fr: "Tigre et Dragon"},
 			Type:          models.MediaTypeMovie,
 			Genre:         models.I18nTextArray{En: []string{"Action", "Drama"}, Fr: []string{"Action", "Drame"}},
 			Description:   models.I18nText{En: "Line one\nline two", Fr: "Été, à la plage"},
@@ -79,7 +80,7 @@ func TestCSVExportDerivesTotalEpisodes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	if got := records[0][len(api.CSVHeader)-1]; got != "18" {
+	if got := records[0][17]; got != "18" {
 		t.Errorf("TotalEpisodes = %q, want %q", got, "18")
 	}
 }
@@ -87,6 +88,19 @@ func TestCSVExportDerivesTotalEpisodes(t *testing.T) {
 func TestRecordToBlurayShortRow(t *testing.T) {
 	if _, err := api.RecordToBluray([]string{"Only a title"}); err == nil {
 		t.Fatal("expected an error for a row with missing columns")
+	}
+}
+
+func TestRecordToBlurayLegacyRow(t *testing.T) {
+	// Exports made before TitleEn/TitleFr existed have 18 columns
+	row := make([]string, 18)
+	row[0], row[1] = "Inception", "movie"
+	got, err := api.RecordToBluray(row)
+	if err != nil {
+		t.Fatalf("legacy row rejected: %v", err)
+	}
+	if got.Title != "Inception" || got.Titles != (models.I18nText{}) {
+		t.Errorf("got %+v", got)
 	}
 }
 

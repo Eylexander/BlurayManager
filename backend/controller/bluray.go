@@ -48,6 +48,10 @@ func (c *Controller) UpdateBluray(ctx context.Context, bluray *models.Bluray) er
 	return c.ds.UpdateBluray(ctx, bluray)
 }
 
+func (c *Controller) SetBlurayTitles(ctx context.Context, id primitive.ObjectID, titles models.I18nText) error {
+	return c.ds.SetBlurayTitles(ctx, id, titles)
+}
+
 func (c *Controller) DeleteBluray(ctx context.Context, id primitive.ObjectID) error {
 	return c.ds.DeleteBluray(ctx, id)
 }

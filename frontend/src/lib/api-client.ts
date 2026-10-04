@@ -169,22 +169,29 @@ class ApiClient {
     return response.data.blurays || [];
   }
 
-  /**
-   * Find a series by TMDB ID (Option C: Check if series exists)
-   */
+  /** The series with this TMDB ID, or null if it isn't in the collection. */
   async findSeriesByTmdbId(tmdbId: string) {
-    try {
-      const response = await this.client.get('/blurays', {
-        params: { type: 'series', skip: 0, limit: 100 },
-      });
-      const blurays = response.data.blurays || [];
-      
-      // Find series with matching TMDB ID
-      return blurays.find((b: any) => b.tmdb_id === tmdbId) || null;
-    } catch (error) {
-      console.error('Failed to search for series:', error);
-      return null;
+    const response = await this.client.get('/blurays', {
+      params: { type: 'series', tmdb_id: tmdbId, limit: 1 },
+    });
+    return response.data.blurays?.[0] || null;
+  }
+
+  /**
+   * Creates the bluray or, for a series already in the collection, adds the
+   * seasons it doesn't have yet. `addedSeasons` is empty when the series
+   * already had them all.
+   */
+  async addToCollection(data: { type: string; tmdb_id?: string; title: string; seasons?: { number: number }[] }) {
+    if (data.type === 'series' && data.tmdb_id) {
+      const existing = await this.findSeriesByTmdbId(data.tmdb_id);
+      if (existing) {
+        const { addedSeasons } = await this.addSeasonsToSeries(existing.id, data.seasons || [], data.title);
+        return { merged: true, addedSeasons };
+      }
     }
+    await this.createBluray(data);
+    return { merged: false, addedSeasons: (data.seasons || []).map((s) => s.number) };
   }
 
   /**
@@ -209,23 +216,8 @@ class ApiClient {
         (a, b) => a.number - b.number
       );
       
-      // Update the bluray - preserve all existing data, only update seasons
-      const response = await this.updateBluray(id, {
-        title: current.title,
-        type: current.type,
-        description: current.description,
-        director: current.director,
-        genre: current.genre,
-        cover_image_url: current.cover_image_url,
-        backdrop_url: current.backdrop_url,
-        purchase_price: current.purchase_price,
-        purchase_date: current.purchase_date,
-        tags: current.tags,
-        rating: current.rating,
-        tmdb_id: current.tmdb_id,
-        release_year: current.release_year,
-        seasons: mergedSeasons,
-      });
+      // PUT replaces the whole bluray, so send every field back, only seasons changed
+      const response = await this.updateBluray(id, { ...current, seasons: mergedSeasons });
       
       return {
         success: true,

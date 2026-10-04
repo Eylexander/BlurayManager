@@ -30,10 +30,11 @@ type SimplifiedStatistics struct {
 
 // BlurayStats is a simplified bluray info for statistics
 type BlurayStats struct {
-	ID            string  `json:"id"`
-	Title         string  `json:"title"`
-	Type          string  `json:"type"`
-	PurchasePrice float64 `json:"purchase_price,omitempty"`
-	ReleaseYear   int     `json:"release_year,omitempty"`
-	Rating        float64 `json:"rating,omitempty"`
+	ID            string   `json:"id"`
+	Title         string   `json:"title"`
+	Titles        I18nText `json:"titles,omitempty"`
+	Type          string   `json:"type"`
+	PurchasePrice float64  `json:"purchase_price,omitempty"`
+	ReleaseYear   int      `json:"release_year,omitempty"`
+	Rating        float64  `json:"rating,omitempty"`
 }

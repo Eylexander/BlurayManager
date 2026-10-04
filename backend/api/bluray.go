@@ -176,6 +176,9 @@ func (api *API) ListBlurays(c *gin.Context) {
 	if genre := c.Query("genre"); genre != "" {
 		filters["genre"] = genre
 	}
+	if tmdbID := c.Query("tmdb_id"); tmdbID != "" {
+		filters["tmdb_id"] = tmdbID
+	}
 
 	blurays, err := api.ctrl.ListBlurays(c.Request.Context(), filters, skip, limit)
 	if err != nil {
@@ -354,6 +357,9 @@ func (api *API) ListSimplifiedBlurays(c *gin.Context) {
 	}
 	if genre := c.Query("genre"); genre != "" {
 		filters["genre"] = genre
+	}
+	if tmdbID := c.Query("tmdb_id"); tmdbID != "" {
+		filters["tmdb_id"] = tmdbID
 	}
 
 	blurays, err := api.ctrl.ListSimplifiedBlurays(c.Request.Context(), filters, skip, limit)

@@ -14,7 +14,7 @@ interface BlurayCardProps {
 
 export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
   const t = useTranslations();
-  const { currentBluray, canModify, detailHref, openMenu, openTags, overlays } = useBlurayTools(bluray, onUpdate);
+  const { currentBluray, title, canModify, detailHref, openMenu, openTags, overlays } = useBlurayTools(bluray, onUpdate);
 
   return (
     <>
@@ -43,7 +43,7 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                 {currentBluray.cover_image_url ? (
                   <Image
                     src={currentBluray.cover_image_url}
-                    alt={currentBluray.title}
+                    alt={title}
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 50vw, 20vw"
@@ -93,7 +93,7 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
             <div className="p-3 sm:p-4 flex-1 flex flex-col">
               <div className="flex-1">
                 <h3 className="font-semibold text-sm sm:text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                  {currentBluray.title}
+                  {title}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                   {currentBluray.director || t("common.unknownDirector")}

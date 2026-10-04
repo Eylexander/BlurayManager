@@ -12,7 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"eylexander/bluraymanager/models"
+
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const tmdbBaseURL = "https://api.themoviedb.org/3"
@@ -174,9 +177,7 @@ func (api *API) GetTMDBDetails(c *gin.Context) {
 		delete(result, "credits")
 	case "tv":
 		extractTVCreator(result)
-		if name, ok := result["name"]; ok {
-			result["title"] = name
-		}
+		result["title"] = displayTitle(result)
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -233,23 +234,25 @@ func (api *API) enrichWithLocalization(ctx context.Context, result map[string]in
 	}
 
 	frData := make(map[string]interface{})
+	var frPoster interface{}
 
 	if otherLang == "fr-FR" {
 		// Current is English, we fetched French
+		frPoster = localizedResult["poster_path"]
+		frData["title"] = displayTitle(localizedResult)
 		frData["overview"] = localizedResult["overview"]
 		if genres, ok := localizedResult["genres"]; ok {
 			frData["genres"] = genres
 		}
 	} else {
 		// Current is French, we fetched English
+		frPoster = result["poster_path"]
+		frData["title"] = displayTitle(result)
 		frData["overview"] = result["overview"]
 		frData["genres"] = result["genres"]
 
 		// Overwrite with localized English data
-		result["title"] = localizedResult["title"]
-		if result["title"] == nil {
-			result["title"] = localizedResult["name"]
-		}
+		result["title"] = displayTitle(localizedResult)
 		result["poster_path"] = localizedResult["poster_path"]
 		result["overview"] = localizedResult["overview"]
 		if genres, ok := localizedResult["genres"]; ok {
@@ -257,8 +260,22 @@ func (api *API) enrichWithLocalization(ctx context.Context, result map[string]in
 		}
 	}
 
+	// French films (and shows) keep their French poster, the one on the case
+	if result["original_language"] == "fr" && frPoster != nil {
+		result["poster_path"] = frPoster
+	}
+
 	result["fr"] = frData
 	return result, nil
+}
+
+// displayTitle is a TMDB result's title in the language it was fetched in:
+// "title" for movies, "name" for TV shows.
+func displayTitle(result map[string]interface{}) interface{} {
+	if title, ok := result["title"]; ok && title != nil {
+		return title
+	}
+	return result["name"]
 }
 
 func extractMovieDirector(result map[string]interface{}) {
@@ -357,9 +374,7 @@ func (api *API) FindByExternalID(c *gin.Context) {
 			delete(result, "credits")
 		case "tv":
 			extractTVCreator(result)
-			if name, ok := result["name"]; ok {
-				result["title"] = name
-			}
+			result["title"] = displayTitle(result)
 		}
 
 		result["media_type"] = mediaType
@@ -409,4 +424,60 @@ func (api *API) FindByExternalID(c *gin.Context) {
 	foundResult["media_type"] = mediaType
 
 	c.JSON(http.StatusOK, foundResult)
+}
+
+// BackfillTitles fills the localized titles of blurays saved before titles
+// were stored, so existing collections show French titles too. It runs in the
+// background at startup; a bluray TMDB fails on is retried on the next start.
+func (api *API) BackfillTitles(ctx context.Context) {
+	apiKey := os.Getenv("TMDB_API_KEY")
+	if apiKey == "" {
+		return
+	}
+
+	filter := map[string]interface{}{
+		"tmdb_id":      bson.M{"$nin": bson.A{"", nil}},
+		"titles.en-US": bson.M{"$exists": false},
+	}
+	blurays, err := api.ctrl.ListBlurays(ctx, filter, 0, 0)
+	if err != nil {
+		log.Printf("title backfill: %v", err)
+		return
+	}
+
+	filled := 0
+	for _, b := range blurays {
+		mediaType := "movie"
+		if b.Type == models.MediaTypeSeries {
+			mediaType = "tv"
+		}
+
+		var titles models.I18nText
+		for _, lang := range []string{"en-US", "fr-FR"} {
+			params := url.Values{"api_key": {apiKey}, "language": {lang}}
+			result, err := api.FetchTMDB(ctx, fmt.Sprintf("%s/%s/%s?%s", tmdbBaseURL, mediaType, url.PathEscape(b.TMDBID), params.Encode()))
+			if err != nil {
+				log.Printf("title backfill %q: %v", b.Title, err)
+				break
+			}
+			title, _ := displayTitle(result).(string)
+			if lang == "en-US" {
+				titles.En = title
+			} else {
+				titles.Fr = title
+			}
+		}
+		if titles.En == "" || titles.Fr == "" {
+			continue
+		}
+
+		if err := api.ctrl.SetBlurayTitles(ctx, b.ID, titles); err != nil {
+			log.Printf("title backfill %q: %v", b.Title, err)
+			continue
+		}
+		filled++
+	}
+	if filled > 0 {
+		log.Printf("title backfill: added localized titles to %d blurays", filled)
+	}
 }

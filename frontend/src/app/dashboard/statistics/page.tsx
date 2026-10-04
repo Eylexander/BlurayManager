@@ -1,8 +1,8 @@
 "use client";
 
-import { PageHeader } from "@/components/common";
+import { PageHeader, Skeleton } from "@/components/common";
 import { useEffect, useState, useMemo, ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -25,9 +25,9 @@ import { apiClient } from "@/lib/api-client";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 import { Statistics } from "@/types/statistics";
 import StatsCard from "@/components/common/StatsCard";
-import { LoaderCircle } from "@/components/common/LoaderCircle";
+import { getTitle } from "@/lib/bluray-utils";
 
-type Datum = { name: string; value: number };
+type Datum = { name: string; value: number; search?: string };
 
 // Two-slot categorical pair for the movies/seasons split, validated for CVD
 // separation and 3:1 contrast on the card surface in both themes.
@@ -79,10 +79,15 @@ const BarList = ({
   data,
   total,
   emptyLabel,
+  onSelect,
+  selectLabel,
 }: {
   data: Datum[];
   total: number;
   emptyLabel: string;
+  /** Called with a bar's name; makes every bar a button */
+  onSelect: (name: string) => void;
+  selectLabel: (name: string) => string;
 }) => {
   if (data.length === 0) {
     return (
@@ -95,25 +100,32 @@ const BarList = ({
   const max = data[0].value;
 
   return (
-    <ul className="space-y-3.5">
+    <ul className="space-y-1">
       {data.map((d, index) => (
         <li key={d.name}>
-          <div className="flex items-baseline justify-between gap-3 mb-1.5 text-sm">
-            <span className="font-medium text-foreground truncate">{d.name}</span>
-            <span className="shrink-0 tabular-nums text-muted-foreground">
-              <span className="font-semibold text-foreground">{d.value}</span>
-              <span className="ml-1.5 text-xs">{percent(d.value, total)}%</span>
-            </span>
-          </div>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary origin-left motion-safe:animate-grow-x"
-              style={{
-                width: `${Math.max((d.value / max) * 100, 2)}%`,
-                animationDelay: `${index * 40}ms`,
-              }}
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => onSelect(d.name)}
+            title={selectLabel(d.name)}
+            className="group w-full text-left rounded-md px-2 py-1.5 -mx-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
+          >
+            <div className="flex items-baseline justify-between gap-3 mb-1.5 text-sm">
+              <span className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{d.name}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                <span className="font-semibold text-foreground">{d.value}</span>
+                <span className="ml-1.5 text-xs">{percent(d.value, total)}%</span>
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary origin-left motion-safe:animate-grow-x"
+                style={{
+                  width: `${Math.max((d.value / max) * 100, 2)}%`,
+                  animationDelay: `${index * 40}ms`,
+                }}
+              />
+            </div>
+          </button>
         </li>
       ))}
     </ul>
@@ -121,15 +133,20 @@ const BarList = ({
 };
 
 /** Single 100% bar split into segments, with a legend carrying the numbers. */
-const SplitBar = ({ data }: { data: Datum[] }) => {
+const SplitBar = ({ data, onSelect }: { data: Datum[]; onSelect: (d: Datum) => void }) => {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
     <div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         {data.map((d, index) => (
-          <div key={d.name} className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <button
+            type="button"
+            key={d.name}
+            onClick={() => onSelect(d)}
+            className="group min-w-0 text-left rounded-md p-2 -m-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${SPLIT_COLORS[index]}`} />
               <span className="truncate">{d.name}</span>
             </div>
@@ -138,7 +155,7 @@ const SplitBar = ({ data }: { data: Datum[] }) => {
               <span className="text-base font-semibold text-muted-foreground">%</span>
             </p>
             <p className="text-xs text-muted-foreground tabular-nums">{d.value}</p>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -188,6 +205,7 @@ export default function StatisticsPage() {
   const t = useTranslations();
   const pathname = usePathname();
   const router = useRouter();
+  const locale = useLocale() as "en-US" | "fr-FR";
   const [stats, setStats] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -214,12 +232,12 @@ export default function StatisticsPage() {
   const typeData = useMemo(() => {
     if (!stats) return [];
     return [
-      { name: t("statistics.totalMovies"), value: stats.total_movies || 0 },
-      { name: t("statistics.totalSeasons"), value: stats.total_seasons || 0 },
+      { name: t("statistics.totalMovies"), value: stats.total_movies || 0, search: "type:movie" },
+      { name: t("statistics.totalSeasons"), value: stats.total_seasons || 0, search: "type:series" },
     ];
   }, [stats, t]);
 
-  if (loading) return <LoaderCircle />;
+  if (loading) return <StatisticsSkeleton />;
 
   if (!stats)
     return <div className="p-4 sm:p-8 text-center text-muted-foreground">{t("statistics.loadFailed")}</div>;
@@ -229,6 +247,9 @@ export default function StatisticsPage() {
   const openBluray = (id?: string) => {
     if (id) router.push(ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", id));
   };
+  // Opens the collection filtered on what was clicked, e.g. "genre:Action"
+  const searchFor = (query: string) =>
+    router.push(`${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(query)}`);
 
   const milestones = [
     { label: t("statistics.oldest"), item: stats.oldest_bluray },
@@ -275,12 +296,24 @@ export default function StatisticsPage() {
           subtitle={t("statistics.top8Genres")}
           className={tagData.length === 0 ? "lg:col-span-2" : ""}
         >
-          <BarList data={genreData} total={totalBlurays} emptyLabel={t("statistics.noData")} />
+          <BarList
+            data={genreData}
+            total={totalBlurays}
+            emptyLabel={t("statistics.noData")}
+            onSelect={(genre) => searchFor(`genre:${genre}`)}
+            selectLabel={(genre) => t("statistics.showGenre", { genre })}
+          />
         </Panel>
 
         {tagData.length > 0 && (
           <Panel icon={<Tag />} title={t("statistics.tagDistribution")} subtitle={t("statistics.topTags")}>
-            <BarList data={tagData} total={totalBlurays} emptyLabel={t("statistics.noData")} />
+            <BarList
+              data={tagData}
+              total={totalBlurays}
+              emptyLabel={t("statistics.noData")}
+              onSelect={(tag) => searchFor(`tag:${tag}`)}
+              selectLabel={(tag) => t("statistics.showTag", { tag })}
+            />
           </Panel>
         )}
 
@@ -289,7 +322,7 @@ export default function StatisticsPage() {
           title={t("statistics.contentTypeSplit")}
           subtitle={t("statistics.moviesVsTvShows")}
         >
-          <SplitBar data={typeData} />
+          <SplitBar data={typeData} onSelect={(d) => d.search && searchFor(d.search)} />
           <p className="mt-auto pt-5 text-sm text-muted-foreground tabular-nums">
             {t("statistics.splitSummary", {
               series: stats.total_series || 0,
@@ -358,7 +391,7 @@ export default function StatisticsPage() {
                 <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
                   <p className="font-semibold truncate group-hover:text-primary transition-colors">
-                    {item?.title || "—"}
+                    {item ? getTitle(item, locale) : "—"}
                   </p>
                 </div>
                 <span className="shrink-0 text-2xl sm:text-3xl font-black tabular-nums text-muted-foreground/70">
@@ -382,7 +415,7 @@ export default function StatisticsPage() {
                       {index + 1}
                     </span>
                     <span className="flex-1 min-w-0 font-medium truncate group-hover:text-primary transition-colors">
-                      {item.title}
+                      {getTitle(item, locale)}
                     </span>
                     <span className="shrink-0 flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-md">
                       <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
@@ -400,6 +433,48 @@ export default function StatisticsPage() {
             </p>
           )}
         </Panel>
+      </div>
+    </div>
+  );
+}
+
+/** Mirrors the page layout while the statistics load. */
+function StatisticsSkeleton() {
+  const panel = (rows: number, className = "") => (
+    <div className={`card p-4 sm:p-6 space-y-4 ${className}`}>
+      <Skeleton className="h-3 w-32" />
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="space-y-1.5">
+          <Skeleton className="h-3" style={{ width: `${70 - i * 8}%` }} />
+          <Skeleton className="h-2 rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-12" aria-busy>
+      <div className="flex items-center gap-4 mb-6 sm:mb-8">
+        <Skeleton className="w-12 h-12 rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-56" />
+          <Skeleton className="h-4 w-72 max-w-[60vw]" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {Array.from({ length: 4 }, (_, i) => (
+          <Skeleton key={i} className="h-24 sm:h-28 rounded-lg" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {panel(6)}
+        {panel(6)}
+        {panel(2)}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        {Array.from({ length: 3 }, (_, i) => (
+          <Skeleton key={i} className="h-36 rounded-lg" />
+        ))}
       </div>
     </div>
   );

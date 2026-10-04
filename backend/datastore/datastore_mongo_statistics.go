@@ -8,7 +8,36 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics, error) {
+// statsItem is a bluray as projected by the statistics highlight facets.
+type statsItem struct {
+	ID            primitive.ObjectID `bson:"_id"`
+	Title         string             `bson:"title"`
+	Titles        models.I18nText    `bson:"titles"`
+	Type          string             `bson:"type"`
+	ReleaseYear   int                `bson:"release_year"`
+	PurchasePrice float64            `bson:"purchase_price"`
+	Rating        float64            `bson:"rating"`
+}
+
+func (i statsItem) toStats() *models.BlurayStats {
+	return &models.BlurayStats{
+		ID:            i.ID.Hex(),
+		Title:         i.Title,
+		Titles:        i.Titles,
+		Type:          i.Type,
+		ReleaseYear:   i.ReleaseYear,
+		PurchasePrice: i.PurchasePrice,
+		Rating:        i.Rating,
+	}
+}
+
+// GetStatistics computes the collection statistics. Genres are counted in
+// lang ("en-US" or "fr-FR"), falling back to English where a bluray has none.
+func (ds *MongoDatastore) GetStatistics(ctx context.Context, lang string) (*models.Statistics, error) {
+	if lang != "fr-FR" {
+		lang = "en-US"
+	}
+
 	stats := &models.Statistics{
 		GenreDistribution: make(map[string]int),
 		TagDistribution:   make(map[string]int),
@@ -36,7 +65,7 @@ func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics
 				"totalSeriesEpisodes": bson.M{
 					"$sum": "$seasons.episode_count",
 				},
-				"genres": "$genre.en-US",
+				"genres": bson.M{"$ifNull": bson.A{"$genre." + lang, "$genre.en-US"}},
 			},
 		},
 		{
@@ -69,24 +98,24 @@ func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics
 					bson.M{"$match": bson.M{"release_year": bson.M{"$gt": 0}}},
 					bson.M{"$sort": bson.M{"release_year": 1}},
 					bson.M{"$limit": 1},
-					bson.M{"$project": bson.M{"_id": 1, "title": 1, "type": 1, "release_year": 1, "purchase_date": 1}},
+					bson.M{"$project": bson.M{"_id": 1, "title": 1, "titles": 1, "type": 1, "release_year": 1, "purchase_date": 1}},
 				},
 				"newest": bson.A{
 					bson.M{"$match": bson.M{"release_year": bson.M{"$gt": 0}}},
 					bson.M{"$sort": bson.M{"release_year": -1}},
 					bson.M{"$limit": 1},
-					bson.M{"$project": bson.M{"_id": 1, "title": 1, "type": 1, "release_year": 1, "purchase_date": 1}},
+					bson.M{"$project": bson.M{"_id": 1, "title": 1, "titles": 1, "type": 1, "release_year": 1, "purchase_date": 1}},
 				},
 				"mostExpensive": bson.A{
 					bson.M{"$sort": bson.M{"purchase_price": -1}},
 					bson.M{"$limit": 1},
-					bson.M{"$project": bson.M{"_id": 1, "title": 1, "type": 1, "purchase_price": 1}},
+					bson.M{"$project": bson.M{"_id": 1, "title": 1, "titles": 1, "type": 1, "purchase_price": 1}},
 				},
 				"topRated": bson.A{
 					bson.M{"$match": bson.M{"rating": bson.M{"$gt": 0}}},
 					bson.M{"$sort": bson.M{"rating": -1}},
 					bson.M{"$limit": 10},
-					bson.M{"$project": bson.M{"_id": 1, "title": 1, "type": 1, "rating": 1}},
+					bson.M{"$project": bson.M{"_id": 1, "title": 1, "titles": 1, "type": 1, "rating": 1}},
 				},
 			},
 		},
@@ -124,30 +153,10 @@ func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics
 			ID    string `bson:"_id"`
 			Count int    `bson:"count"`
 		} `bson:"tags"`
-		Oldest []struct {
-			ID          primitive.ObjectID `bson:"_id"`
-			Title       string             `bson:"title"`
-			Type        string             `bson:"type"`
-			ReleaseYear int                `bson:"release_year"`
-		} `bson:"oldest"`
-		Newest []struct {
-			ID          primitive.ObjectID `bson:"_id"`
-			Title       string             `bson:"title"`
-			Type        string             `bson:"type"`
-			ReleaseYear int                `bson:"release_year"`
-		} `bson:"newest"`
-		MostExpensive []struct {
-			ID            primitive.ObjectID `bson:"_id"`
-			Title         string             `bson:"title"`
-			Type          string             `bson:"type"`
-			PurchasePrice float64            `bson:"purchase_price"`
-		} `bson:"mostExpensive"`
-		TopRated []struct {
-			ID     primitive.ObjectID `bson:"_id"`
-			Title  string             `bson:"title"`
-			Type   string             `bson:"type"`
-			Rating float64            `bson:"rating"`
-		} `bson:"topRated"`
+		Oldest        []statsItem `bson:"oldest"`
+		Newest        []statsItem `bson:"newest"`
+		MostExpensive []statsItem `bson:"mostExpensive"`
+		TopRated      []statsItem `bson:"topRated"`
 	}
 
 	if err := cursor.Decode(&result); err != nil {
@@ -180,41 +189,34 @@ func (ds *MongoDatastore) GetStatistics(ctx context.Context) (*models.Statistics
 	for _, g := range result.Genres {
 		stats.GenreDistribution[g.ID] = g.Count
 	}
-	for _, t := range result.Tags {
-		stats.TagDistribution[t.ID] = t.Count
+	// Tags are stored by ID; report them by name. IDs of deleted tags are skipped.
+	if len(result.Tags) > 0 {
+		tags, err := ds.ListTags(ctx)
+		if err != nil {
+			return stats, err
+		}
+		names := make(map[string]string, len(tags))
+		for _, tag := range tags {
+			names[tag.ID.Hex()] = tag.Name
+		}
+		for _, t := range result.Tags {
+			if name, ok := names[t.ID]; ok {
+				stats.TagDistribution[name] += t.Count
+			}
+		}
 	}
 
 	if len(result.Oldest) > 0 {
-		stats.OldestBluray = &models.BlurayStats{
-			ID:          result.Oldest[0].ID.Hex(),
-			Title:       result.Oldest[0].Title,
-			Type:        result.Oldest[0].Type,
-			ReleaseYear: result.Oldest[0].ReleaseYear,
-		}
+		stats.OldestBluray = result.Oldest[0].toStats()
 	}
 	if len(result.Newest) > 0 {
-		stats.NewestBluray = &models.BlurayStats{
-			ID:          result.Newest[0].ID.Hex(),
-			Title:       result.Newest[0].Title,
-			Type:        result.Newest[0].Type,
-			ReleaseYear: result.Newest[0].ReleaseYear,
-		}
+		stats.NewestBluray = result.Newest[0].toStats()
 	}
 	if len(result.MostExpensive) > 0 {
-		stats.MostExpensive = &models.BlurayStats{
-			ID:            result.MostExpensive[0].ID.Hex(),
-			Title:         result.MostExpensive[0].Title,
-			Type:          result.MostExpensive[0].Type,
-			PurchasePrice: result.MostExpensive[0].PurchasePrice,
-		}
+		stats.MostExpensive = result.MostExpensive[0].toStats()
 	}
 	for _, b := range result.TopRated {
-		stats.TopRated = append(stats.TopRated, models.BlurayStats{
-			ID:     b.ID.Hex(),
-			Title:  b.Title,
-			Type:   b.Type,
-			Rating: b.Rating,
-		})
+		stats.TopRated = append(stats.TopRated, *b.toStats())
 	}
 
 	return stats, nil

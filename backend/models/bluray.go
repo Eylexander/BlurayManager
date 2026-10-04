@@ -28,8 +28,10 @@ type I18nTextArray struct {
 // Bluray represents a physical bluray in the collection
 type Bluray struct {
 	ID    primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Title string             `bson:"title" json:"title" binding:"required"`
+	Title string             `bson:"title" json:"title" binding:"required"` // original title
 	Type  MediaType          `bson:"type" json:"type" binding:"required"`
+	// Titles holds the localized titles shown in the UI, falling back to Title.
+	Titles I18nText `bson:"titles,omitempty" json:"titles,omitempty"`
 
 	// For movies
 	ReleaseYear int    `bson:"release_year,omitempty" json:"release_year,omitempty"`
@@ -71,8 +73,10 @@ func (b *Bluray) SeasonEpisodeCount() int {
 // SimplifiedBluray is a simplified version of Bluray for listings
 type SimplifiedBluray struct {
 	ID    primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Title string             `bson:"title" json:"title" binding:"required"`
+	Title string             `bson:"title" json:"title" binding:"required"` // original title
 	Type  MediaType          `bson:"type" json:"type" binding:"required"`
+	// Titles holds the localized titles shown in the UI, falling back to Title.
+	Titles I18nText `bson:"titles,omitempty" json:"titles,omitempty"`
 
 	// For movies
 	ReleaseYear int    `bson:"release_year,omitempty" json:"release_year,omitempty"`

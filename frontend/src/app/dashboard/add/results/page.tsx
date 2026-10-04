@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 import { apiClient, getApiError } from "@/lib/api-client";
-import { useAuthStore } from "@/store/authStore";
 import {
   Film,
   ChevronLeft,
@@ -19,107 +18,19 @@ import {
   List,
 } from "lucide-react";
 import { TMDBDetails } from "@/types/tmdb";
-import { LoaderCircle } from "@/components/common/LoaderCircle";
-import { Button } from "@/components/common";
+import { Button, Skeleton } from "@/components/common";
 import SeasonGrid from "@/components/bluray/SeasonGrid";
-import { extractYear } from "@/lib/tmdb-utils";
+import { buildBlurayFromTMDB, extractYear } from "@/lib/tmdb-utils";
+import { getTitle } from "@/lib/bluray-utils";
 
 type MediaType = "movie" | "series";
-
-const buildBlurayData = (
-  details: TMDBDetails,
-  type: MediaType,
-  purchaseDate: string,
-  purchasePrice: string,
-  selectedTags: string[],
-  year?: string,
-  seasons?: number[],
-): any => {
-  const blurayData: any = {
-    title:
-      details.original_title ||
-      details.original_name ||
-      details.title ||
-      details.name ||
-      "Unknown Title",
-    type,
-    description: {
-      "en-US": details.overview || "",
-      "fr-FR": details.fr?.overview || "",
-    },
-    director: details.director || "",
-    genre: {
-      "en-US": details.genres ? details.genres.map((g) => g.name) : [],
-      "fr-FR": details.fr?.genres ? details.fr.genres.map((g) => g.name) : [],
-    },
-    cover_image_url: details.poster_path
-      ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
-      : null,
-    backdrop_url: details.backdrop_path
-      ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
-      : null,
-    purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
-    purchase_price: purchasePrice ? parseFloat(purchasePrice) : null,
-    rating: details.vote_average || 0,
-    tags: selectedTags,
-    tmdb_id: details.id?.toString(),
-  };
-
-  if (type === "movie") {
-    blurayData.release_year = details.release_date
-      ? parseInt(details.release_date.split("-")[0])
-      : year
-        ? parseInt(year)
-        : undefined;
-    blurayData.runtime = details.runtime || 0;
-  } else if (type === "series") {
-    if (seasons && seasons.length > 0) {
-      blurayData.seasons = seasons.map((seasonNum) => {
-        const season = details.seasons?.find(
-          (s) => s.season_number === seasonNum,
-        );
-        return {
-          number: seasonNum,
-          episode_count: season?.episode_count || 0,
-          year: season?.air_date
-            ? parseInt(season.air_date.split("-")[0])
-            : undefined,
-        };
-      });
-    } else if (details.seasons) {
-      // Auto-add all seasons if none specified
-      blurayData.seasons = details.seasons
-        .filter((s) => s.season_number > 0)
-        .map((season) => ({
-          number: season.season_number,
-          episode_count: season.episode_count || 0,
-          year: season.air_date
-            ? parseInt(season.air_date.split("-")[0])
-            : undefined,
-        }));
-    }
-    blurayData.release_year =
-      details.first_air_date && details.last_air_date
-        ? parseInt(
-            details.first_air_date.split("-")[0] +
-              "-" +
-              details.last_air_date?.split("-")[0],
-          )
-        : year
-          ? parseInt(year)
-          : undefined;
-  }
-
-  return blurayData;
-};
 
 export default function AddResultsPage() {
   const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
-  const language = user?.settings?.language || 'en-US';
+  const language = useLocale() as "en-US" | "fr-FR";
 
   useRouteProtection(pathname);
 
@@ -131,9 +42,11 @@ export default function AddResultsPage() {
   const type = (searchParams.get("type") as MediaType) || "movie";
   const id = searchParams.get("id");
   const source = searchParams.get("source") || "tmdb"; // 'tmdb' or 'imdb'
-  const year = searchParams.get("year") || "";
   const purchaseDate = searchParams.get("purchaseDate") || "";
+  const buyingPrice = searchParams.get("buyingPrice") || "";
   const tags = searchParams.get("tags")?.split(",").filter(Boolean) || [];
+  // Season read from a scanned barcode: preselect only that one
+  const scannedSeason = parseInt(searchParams.get("season") || "");
 
   useEffect(() => {
     if (!id) {
@@ -162,11 +75,8 @@ export default function AddResultsPage() {
         setDetails(data);
 
         if (type === "series" && data.seasons) {
-          setSelectedSeasons(
-            data.seasons
-              .filter((s) => s.season_number > 0)
-              .map((s) => s.season_number),
-          );
+          const numbers = data.seasons.filter((s) => s.season_number > 0).map((s) => s.season_number);
+          setSelectedSeasons(numbers.includes(scannedSeason) ? [scannedSeason] : numbers);
         }
       } catch (error) {
         console.error("Failed to fetch details:", error);
@@ -178,7 +88,7 @@ export default function AddResultsPage() {
     };
 
     fetchDetails();
-  }, [id, type, source, router, t]);
+  }, [id, type, source, scannedSeason, router, t]);
 
   const toggleSeason = (seasonNumber: number) => {
     setSelectedSeasons((prev) =>
@@ -192,17 +102,23 @@ export default function AddResultsPage() {
     if (!details) return;
     setSubmitting(true);
     try {
-      const blurayData = buildBlurayData(
+      const bluray = buildBlurayFromTMDB(
         details,
         type,
-        purchaseDate,
-        "",
-        tags,
-        year,
+        { purchaseDate, purchasePrice: buyingPrice, tags },
         selectedSeasons,
       );
-      await apiClient.createBluray(blurayData);
-      toast.success(t("add.success"));
+      const { merged, addedSeasons } = await apiClient.addToCollection(bluray);
+      const title = getTitle(bluray, language);
+      if (merged && addedSeasons.length === 0) {
+        toast(t("bluray.alreadyHasSeasons", { title }), { icon: "ℹ️" });
+        return;
+      }
+      toast.success(
+        merged
+          ? t("bluray.addedSeasonsToSeries", { seasons: addedSeasons.join(", "), title })
+          : t("add.addedToCollection", { title }),
+      );
       router.push(ROUTES.DASHBOARD.HOME);
     } catch (error: any) {
       toast.error(
@@ -215,11 +131,26 @@ export default function AddResultsPage() {
 
   if (loading || !details) {
     return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <LoaderCircle />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-8" aria-busy>
+        <Skeleton className="h-9 w-40 rounded-full" />
+        <div className="card p-6 sm:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <Skeleton className="w-full sm:w-64 aspect-[2/3] mx-auto lg:mx-0 rounded-3xl" />
+          <div className="flex-1 space-y-4">
+            <Skeleton className="h-12 w-3/4" />
+            <div className="flex gap-3">
+              <Skeleton className="h-7 w-20 rounded-full" />
+              <Skeleton className="h-7 w-24 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
       </div>
     );
   }
+
+  const displayTitle = (language === "fr-FR" && details.fr?.title) || details.title || details.name || "";
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -243,7 +174,7 @@ export default function AddResultsPage() {
                   {details.poster_path ? (
                     <Image
                       src={`https://image.tmdb.org/t/p/w500${details.poster_path}`}
-                      alt={details.title || details.name || ""}
+                      alt={displayTitle}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
@@ -259,7 +190,7 @@ export default function AddResultsPage() {
               <div className="flex-1 space-y-4 sm:space-y-6">
                 <div>
                   <h1 className="text-3xl sm:text-5xl font-extrabold text-foreground tracking-tight mb-4">
-                    {details.title || details.name}
+                    {displayTitle}
                   </h1>
 
                   <div className="flex flex-wrap gap-4 text-sm font-medium">

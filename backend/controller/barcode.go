@@ -2,137 +2,67 @@ package controller
 
 import (
 	"context"
-	"encoding/xml"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	neturl "net/url"
 	"time"
 )
 
-// DVDFrResponse represents the XML response from DVDFr API
-type DVDFrResponse struct {
-	XMLName   xml.Name `xml:"dvds"`
-	Generator string   `xml:"generator,attr"`
-	DVDs      []DVD    `xml:"dvd"`
-}
+// UPCItemDBURL is the UPCitemdb lookup endpoint. The keyless trial tier
+// allows 100 lookups a day, plenty for a personal collection. DVDFr, used
+// before, shut its API down in 2026. Exported so tests can point it at a stub.
+var UPCItemDBURL = "https://api.upcitemdb.com/prod/trial/lookup"
 
-type DVD struct {
-	ID      string `xml:"id"`
-	Media   string `xml:"media"`
-	Cover   string `xml:"cover"`
-	Titres  Titles `xml:"titres"`
-	Annee   string `xml:"annee"`
-	Edition string `xml:"edition"`
-	Editeur string `xml:"editeur"`
-	Stars   []Star `xml:"stars>star"`
-}
-
-type Titles struct {
-	FR           string `xml:"fr"`
-	VO           string `xml:"vo"`
-	Alternatif   string `xml:"alternatif"`
-	AlternatifVO string `xml:"alternatif_vo"`
-}
-
-type Star struct {
-	Type string `xml:"type,attr"`
-	ID   string `xml:"id,attr"`
-	Name string `xml:",chardata"`
-}
-
-// DVDFrError represents error response from DVDFr API
-type DVDFrError struct {
-	XMLName xml.Name `xml:"errors"`
-	Errors  []Error  `xml:"error"`
-}
-
-type Error struct {
-	Type    string `xml:"type,attr"`
-	Code    string `xml:"code"`
-	Message string `xml:"message"`
-}
-
-// BarcodeItem represents a standardized barcode lookup result
+// BarcodeItem is a product found for a barcode. Its title is the retail
+// listing ("Inception (Blu-ray) [Blu-ray]"), cleaned up by the frontend
+// before searching TMDB.
 type BarcodeItem struct {
-	Title     string   `json:"title"`
-	Year      string   `json:"year,omitempty"`
-	Media     string   `json:"media,omitempty"`
-	Edition   string   `json:"edition,omitempty"`
-	Cover     string   `json:"cover,omitempty"`
-	Publisher string   `json:"publisher,omitempty"`
-	Directors []string `json:"directors,omitempty"`
-	DVDFrID   string   `json:"dvdfr_id,omitempty"`
+	Title string `json:"title"`
 }
 
-// LookupBarcode performs barcode lookup using DVDFr API
-func (c *Controller) LookupBarcode(ctx context.Context, barcode string) ([]BarcodeItem, error) {
-	// Call DVDFr API with barcode (gencode parameter)
-	// Use BRD for Blu-ray filtering
-	url := "http://www.dvdfr.com/api/search.php?gencode=" + neturl.QueryEscape(barcode)
+type upcItemDBResponse struct {
+	Code    string        `json:"code"`
+	Message string        `json:"message"`
+	Items   []BarcodeItem `json:"items"`
+}
 
-	// Custom User-Agent is required by DVDFr; the timeout keeps a slow or
-	// unreachable DVDFr from hanging the scan.
-	client := &http.Client{Timeout: 10 * time.Second}
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+// ErrBarcodeRateLimited means too many lookups in a short time; retrying
+// after a few seconds works. The daily quota is a different, final error.
+var ErrBarcodeRateLimited = errors.New("barcode lookup rate limited, retry shortly")
+
+// barcodeClient keeps a slow or unreachable UPCitemdb from hanging the scan.
+var barcodeClient = &http.Client{Timeout: 10 * time.Second}
+
+// LookupBarcode returns the products matching an EAN/UPC barcode. An unknown
+// barcode is an empty list, not an error.
+func (c *Controller) LookupBarcode(ctx context.Context, barcode string) ([]BarcodeItem, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, UPCItemDBURL+"?upc="+neturl.QueryEscape(barcode), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("User-Agent", "BlurayManager/1.0")
+	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := barcodeClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup barcode: %w", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+	// Errors (invalid code, rate limit) come back as JSON too, with a code.
+	var result upcItemDBResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to parse response (status %d): %w", resp.StatusCode, err)
 	}
-
-	// Try to parse as error first
-	var errorResult DVDFrError
-	if err := xml.Unmarshal(body, &errorResult); err == nil && len(errorResult.Errors) > 0 {
-		return nil, fmt.Errorf("DVDFr API error: %s (code: %s)", errorResult.Errors[0].Message, errorResult.Errors[0].Code)
+	if result.Code == "TOO_FAST" {
+		return nil, ErrBarcodeRateLimited
 	}
-
-	// Parse the response as DVDFr result
-	var result DVDFrResponse
-	if err := xml.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+	if result.Code != "OK" {
+		return nil, fmt.Errorf("barcode lookup failed: %s (%s)", result.Message, result.Code)
 	}
-
-	// Convert DVDFr DVDs to standardized items
-	items := make([]BarcodeItem, 0, len(result.DVDs))
-	for _, dvd := range result.DVDs {
-		// Prefer original title (VO), fallback to French title
-		title := dvd.Titres.VO
-		if title == "" {
-			title = dvd.Titres.FR
-		}
-
-		// Extract director names
-		directors := make([]string, 0)
-		for _, star := range dvd.Stars {
-			if star.Type == "Réalisateur" {
-				directors = append(directors, star.Name)
-			}
-		}
-
-		item := BarcodeItem{
-			Title:     title,
-			Year:      dvd.Annee,
-			Media:     dvd.Media,
-			Edition:   dvd.Edition,
-			Cover:     dvd.Cover,
-			Publisher: dvd.Editeur,
-			Directors: directors,
-			DVDFrID:   dvd.ID,
-		}
-
-		items = append(items, item)
+	if result.Items == nil {
+		result.Items = []BarcodeItem{}
 	}
-
-	return items, nil
+	return result.Items, nil
 }

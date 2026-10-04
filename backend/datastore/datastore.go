@@ -30,6 +30,7 @@ type Datastore interface {
 	CreateBluray(ctx context.Context, bluray *models.Bluray) error
 	GetBlurayByID(ctx context.Context, id primitive.ObjectID) (*models.Bluray, error)
 	UpdateBluray(ctx context.Context, bluray *models.Bluray) error
+	SetBlurayTitles(ctx context.Context, id primitive.ObjectID, titles models.I18nText) error
 	DeleteBluray(ctx context.Context, id primitive.ObjectID) error
 	ListBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.Bluray, error)
 	SearchBlurays(ctx context.Context, query string, skip, limit int) ([]*models.Bluray, error)
@@ -44,7 +45,7 @@ type Datastore interface {
 	ListTags(ctx context.Context) ([]*models.Tag, error)
 
 	// Statistics operations
-	GetStatistics(ctx context.Context) (*models.Statistics, error)
+	GetStatistics(ctx context.Context, lang string) (*models.Statistics, error)
 	GetSimplifiedStatistics(ctx context.Context) (*models.SimplifiedStatistics, error)
 
 	// Notification operations

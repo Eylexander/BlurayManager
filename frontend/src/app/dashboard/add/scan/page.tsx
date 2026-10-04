@@ -1,1112 +1,386 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
+import { isAxiosError } from "axios";
+import { BrowserMultiFormatReader } from "@zxing/library";
+import { Camera, CameraOff, Keyboard, Layers, Plus, Search, ScanBarcode, X, ArrowLeft, Trash2 } from "lucide-react";
 import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
 import { apiClient, getApiError } from "@/lib/api-client";
-import {
-  Film,
-  ChevronLeft,
-  Camera,
-  X,
-  Keyboard,
-  ScanLine,
-  Smartphone,
-  Layers,
-  Search,
-  Plus,
-  Tv,
-} from "lucide-react";
-import { cleanProductTitle, extractSeasonNumber, cleanSeriesTitle } from "@/lib/tmdb-utils";
-import { LoaderCircle } from "@/components/common/LoaderCircle";
-import { BrowserMultiFormatReader } from "@zxing/library";
-import { motion, AnimatePresence } from "framer-motion";
-import DVDFrConfirmationModal from "@/components/modals/DVDFrConfirmationModal";
-import SeasonSelectorModal from "@/components/modals/SeasonSelectorModal";
+import { buildBlurayFromTMDB, parseProductTitle } from "@/lib/tmdb-utils";
+import { Button, Field, IconButton, LoaderCircle, PageHeader } from "@/components/common";
 
-type MediaType = "movie" | "series";
+type Tab = "camera" | "manual";
+
+// EAN-8, UPC-A and EAN-13
+const isValidBarcode = (code: string) => /^(\d{8}|\d{12}|\d{13})$/.test(code.trim());
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Looks a barcode up, waiting out the lookup service's burst limit (a few
+ * lookups a minute), which a batch easily hits. Returns the product title,
+ * or null for an unknown barcode.
+ */
+async function lookupTitle(barcode: string, onWait: () => void): Promise<string | null> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const data = await apiClient.lookupBarcode(barcode);
+      return data.items?.[0]?.title ?? null;
+    } catch (error) {
+      if (attempt < 6 && isAxiosError(error) && error.response?.status === 429) {
+        onWait();
+        await sleep(10_000);
+        continue;
+      }
+      throw error;
+    }
+  }
+}
 
 export default function AddScanPage() {
   const t = useTranslations();
-  const tBarcode = useTranslations("barcode");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useRouteProtection(pathname);
 
-  // Get params from URL
-  const purchaseDate = searchParams.get("purchaseDate") || "";
-  const tags = searchParams.get("tags")?.split(",") || [];
+  // Purchase details chosen on the add page, applied to what gets added
+  const purchase = {
+    purchaseDate: searchParams.get("purchaseDate") || "",
+    purchasePrice: searchParams.get("buyingPrice") || "",
+    tags: searchParams.get("tags")?.split(",").filter(Boolean) || [],
+  };
 
-  // State management
-  const [type, setType] = useState<MediaType>(
-    (searchParams.get("type") as MediaType) || "movie"
-  );
-  const [activeTab, setActiveTab] = useState<"camera" | "manual">("camera");
-  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [tab, setTab] = useState<Tab>("camera");
+  const [cameraOn, setCameraOn] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
   const [manualInput, setManualInput] = useState("");
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [isBatchMode, setIsBatchMode] = useState(false);
-  const [scannedBarcodes, setScannedBarcodes] = useState<string[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [dvdfrResult, setDvdfrResult] = useState<any>(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  
-  // Season selector modal state (Option B)
-  const [showSeasonSelector, setShowSeasonSelector] = useState(false);
-  const [detectedSeason, setDetectedSeason] = useState<number | null>(null);
-  const [tmdbDetails, setTmdbDetails] = useState<any>(null);
-  const [seriesTitle, setSeriesTitle] = useState<string>("");
-  
-  // Theme-aware styles applied to scan page elements
+  const [batchMode, setBatchMode] = useState(false);
+  const [batch, setBatch] = useState<string[]>([]);
+  const [busy, setBusy] = useState<string | null>(null); // status message while looking up
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
-  // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
-  const lastScannedRef = useRef<string | null>(null);
-  const lastScanTimeRef = useRef<number>(0);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const lastScanRef = useRef({ code: "", at: 0 });
+  // The decode callback outlives renders, so it calls the latest handler through a ref
+  const onScanRef = useRef<(code: string) => void>(() => {});
 
-  // Handle type change and update URL params
-  const handleTypeChange = (newType: MediaType) => {
-    setType(newType);
-    
-    // Update URL params
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("type", newType);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  const stopCamera = () => {
+    readerRef.current?.reset();
+    setCameraOn(false);
+    setCameraReady(false);
   };
 
-  // Validate barcode format (numeric, valid length for UPC/EAN)
-  const isValidBarcode = (barcode: string): boolean => {
-    const trimmed = barcode.trim();
-    // Check if numeric
-    if (!/^\d+$/.test(trimmed)) return false;
-    // Check common barcode lengths: EAN-8 (8), UPC-A (12), EAN-13 (13)
-    const validLengths = [8, 12, 13];
-    return validLengths.includes(trimmed.length);
-  };
-
-  // Initialize ZXing reader
   useEffect(() => {
-    codeReaderRef.current = new BrowserMultiFormatReader();
-    return () => {
-      stopCamera();
-    };
+    readerRef.current = new BrowserMultiFormatReader();
+    return () => readerRef.current?.reset();
   }, []);
 
-  // Handle Tab Change
+  // Start decoding once the <video> is mounted
   useEffect(() => {
-    if (activeTab !== "camera") {
-      stopCamera();
-    }
-  }, [activeTab]);
-
-  // Trigger scan when camera becomes active and video ref is ready
-  useEffect(() => {
-    if (isCameraActive && videoRef.current) {
-      startAutoScan();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCameraActive]);
-
-  function stopCamera() {
-    codeReaderRef.current?.reset();
-    setIsCameraActive(false);
-    setCameraReady(false);
-    lastScannedRef.current = null;
-    lastScanTimeRef.current = 0;
-  }
-
-  function startCamera() {
-    setCameraError(null);
-    setIsCameraActive(true);
-  }
-
-  async function startAutoScan() {
-    if (!codeReaderRef.current || !videoRef.current) return;
-
-    // Reset any previous session
-    codeReaderRef.current.reset();
-
-    try {
-      await codeReaderRef.current.decodeFromVideoDevice(
-        null, // first available video device
-        videoRef.current,
-        (result, error) => {
-          if (!cameraReady && videoRef.current?.readyState === 4) {
-            setCameraReady(true);
-          }
-
-          if (result) {
-            const barcode = result.getText();
-            const now = Date.now();
-
-            // Validate barcode format
-            if (!isValidBarcode(barcode)) {
-              return; // Ignore invalid barcodes (artifacts)
-            }
-
-            // Debounce Logic
-            if (
-              barcode !== lastScannedRef.current ||
-              now - lastScanTimeRef.current > 2000
-            ) {
-              lastScannedRef.current = barcode;
-              lastScanTimeRef.current = now;
-
-              if (isBatchMode) {
-                setScannedBarcodes((prev) => {
-                  if (!prev.includes(barcode)) {
-                    toast.success(`${tBarcode("scanned")}: ${barcode}`);
-                    return [barcode, ...prev]; // Add to top
-                  }
-                  return prev;
-                });
-              } else {
-                handleBarcodeScanned(barcode);
-              }
-            }
-          }
-        },
-      );
-    } catch (err) {
-      console.error("Barcode Scanner Start Error:", err);
-      setCameraError(
-        "Could not start camera scanner. Please ensure camera permissions are granted.",
-      );
-      setIsCameraActive(false);
-    }
-  }
-
-  async function handleBarcodeScanned(barcode: string) {
-    if (!barcode || !barcode.trim()) {
-      toast.error(tBarcode("invalidBarcode"));
-      return;
-    }
-
-    setSearching(true);
-    stopCamera();
-
-    try {
-      // Lookup the barcode using our backend proxy
-      toast.loading(tBarcode("lookingUp"));
-
-      try {
-        const dvdfrData = await apiClient.lookupBarcode(barcode);
-
-        if (dvdfrData.items && dvdfrData.items.length > 0) {
-          const product = dvdfrData.items[0];
-
-          toast.dismiss();
-          toast.success(`${tBarcode("found")}: ${product.title}`);
-
-          // Store DVDFr result and show confirmation modal
-          setDvdfrResult(product);
-          setShowConfirmModal(true);
-          setSearching(false);
-        } else {
-          // Barcode not found in database
-          toast.dismiss();
-          toast.error(tBarcode("notFound"));
-          setSearching(false);
-          startCamera(); // Restart camera
-        }
-      } catch (dvdfrError: any) {
-        console.error("DVDFr lookup error:", dvdfrError);
-        toast.dismiss();
-        toast.error(t("add.searchFailed"));
-        setSearching(false);
-        startCamera();
-      }
-    } catch (error: any) {
-      console.error("Barcode search error:", error);
-      const errorMessage = error?.message || t("add.failedToSearch");
-      toast.dismiss();
-      toast.error(t("add.searchFailed", { error: errorMessage }));
-      setSearching(false);
-      startCamera();
-    }
-  }
-
-  const handleConfirmDVDFr = async () => {
-    if (!dvdfrResult) return;
-
-    setShowConfirmModal(false);
-    setSearching(true);
-
-    // Option A: Extract season number from DVDFr data
-    const detectedSeasonNum = type === "series" ? extractSeasonNumber(dvdfrResult) : null;
-    setDetectedSeason(detectedSeasonNum);
-
-    // Clean title - remove season info for better TMDB search
-    let title = type === "series" 
-      ? cleanSeriesTitle(cleanProductTitle(dvdfrResult.title))
-      : cleanProductTitle(dvdfrResult.title);
-    const year = dvdfrResult.year;
-
-    try {
-      toast.loading(t("add.searchingTMDB"));
-
-      // Search TMDB with title and year as separate parameters
-      const response = await apiClient.searchTMDB(type, title, year);
-      const results = response.results || [];
-
-      toast.dismiss();
-
-      if (results.length === 0) {
-        toast.error(t("add.noTMDBResults"));
-        setSearching(false);
-        setDvdfrResult(null);
-        startCamera();
-        return;
-      }
-
-      const bestMatch = results[0];
-
-      // Get full TMDB details
-      const details = await apiClient.getTMDBDetails(type, bestMatch.id);
-      const fullTitle =
-        details.original_title ||
-        details.original_name ||
-        details.title ||
-        details.name ||
-        "Unknown Title";
-
-      setTmdbDetails(details);
-      setSeriesTitle(fullTitle);
-
-      // For movies or if TMDB search returned multiple results, handle differently
-      if (type === "movie" || results.length > 1) {
-        if (results.length === 1) {
-          // Single movie match - add directly
-          await addMovieToCollection(details, fullTitle, year);
-        } else {
-          // Multiple results - redirect to search page for manual selection
-          redirectToManualSelection(title, year);
-        }
-        return;
-      }
-
-      // For series: Check if seasons available
-      if (!details.seasons || details.seasons.length === 0) {
-        toast.error(t("bluray.noSeasonsForSeries"));
-        setSearching(false);
-        setDvdfrResult(null);
-        startCamera();
-        return;
-      }
-
-      // Option B: Show season selector modal
-      const availableSeasons = details.seasons
-        .filter((s: any) => s.season_number > 0)
-        .map((season: any) => ({
-          number: season.season_number,
-          episode_count: season.episode_count || 0,
-          year: season.air_date
-            ? parseInt(season.air_date.split("-")[0])
-            : undefined,
-          description: season.name || `Season ${season.season_number}`,
-        }));
-
-      setShowSeasonSelector(true);
-      setSearching(false);
-
-    } catch (error: any) {
-      console.error("TMDB search error:", error);
-      toast.dismiss();
-      toast.error(t("add.searchFailed"));
-      setSearching(false);
-      setDvdfrResult(null);
-      startCamera();
-    }
-  };
-
-  // Handle season selection from modal (Option B & C combined)
-  const handleSeasonSelection = async (selectedSeasonsData: any[]) => {
-    setShowSeasonSelector(false);
-    setSearching(true);
-
-    if (!tmdbDetails || !seriesTitle) {
-      toast.error(t("bluray.missingSeriesData"));
-      setSearching(false);
-      startCamera();
-      return;
-    }
-
-    const selectedSeasons = selectedSeasonsData.map(s => s.number);
-
-    try {
-      toast.loading(t("add.addingToCollection"));
-
-      // Option C: Check if series already exists by TMDB ID
-      const existingSeries = await apiClient.findSeriesByTmdbId(tmdbDetails.id?.toString());
-
-      if (existingSeries) {
-        // Series exists - update with new seasons
-        const result = await apiClient.addSeasonsToSeries(
-          existingSeries.id,
-          selectedSeasonsData,
-          seriesTitle
-        );
-
-        toast.dismiss();
-        
-        if (result.addedSeasons.length > 1) {
-          toast.success(
-            t("bluray.addedSeasonsToSeries", {
-              seasons: result.addedSeasons.join(', '),
-              title: seriesTitle
-            })
-          );
-        } else if (result.addedSeasons.length === 1) {
-          toast.success(
-            t("bluray.addedSeasonToSeries", {
-              season: result.addedSeasons[0],
-              title: seriesTitle
-            })
-          );
-        } else {
-          const message = selectedSeasons.length > 1
-            ? t("bluray.alreadyHasSeasons", { title: seriesTitle })
-            : t("bluray.alreadyHasSeason", { title: seriesTitle });
-          toast(message, { icon: 'ℹ️' });
-        }
-      } else {
-        // Series doesn't exist - create new entry
-        const blurayData = {
-          title: seriesTitle,
-          type: "series",
-          description: {
-            "en-US": tmdbDetails.overview || "",
-            "fr-FR": tmdbDetails.fr?.overview || "",
-          },
-          director: tmdbDetails.director || "",
-          genre: {
-            "en-US": tmdbDetails.genres
-              ? tmdbDetails.genres.map((g: any) => g.name)
-              : [],
-            "fr-FR": tmdbDetails.fr?.genres
-              ? tmdbDetails.fr.genres.map((g: any) => g.name)
-              : [],
-          },
-          cover_image_url: tmdbDetails.poster_path
-            ? `https://image.tmdb.org/t/p/w500${tmdbDetails.poster_path}`
-            : null,
-          backdrop_url: tmdbDetails.backdrop_path
-            ? `https://image.tmdb.org/t/p/original${tmdbDetails.backdrop_path}`
-            : null,
-          purchase_date: purchaseDate
-            ? new Date(purchaseDate).toISOString()
-            : null,
-          rating: tmdbDetails.vote_average || 0,
-          tags,
-          tmdb_id: tmdbDetails.id?.toString(),
-          seasons: selectedSeasonsData,
-          release_year: tmdbDetails.first_air_date
-            ? parseInt(tmdbDetails.first_air_date.split("-")[0])
-            : undefined,
-        };
-
-        await apiClient.createBluray(blurayData);
-        toast.dismiss();
-        const seasonList = selectedSeasons.join(', ');
-        const message = selectedSeasons.length > 1
-          ? t("bluray.addedSeriesWithMultipleSeasons", { title: seriesTitle, seasons: seasonList })
-          : t("bluray.addedSeriesWithSeasons", { title: seriesTitle, seasons: seasonList });
-        toast.success(message);
-      }
-
-      // Reset state and redirect
-      setDvdfrResult(null);
-      setTmdbDetails(null);
-      setSeriesTitle("");
-      setDetectedSeason(null);
-      setSearching(false);
-      router.push(ROUTES.DASHBOARD.HOME);
-
-    } catch (error: any) {
-      console.error("Failed to add/update series:", error);
-      toast.dismiss();
-      toast.error(
-        getApiError(error, t("add.failedToAddToCollection"))
-      );
-      setSearching(false);
-      startCamera();
-    }
-  };
-
-  // Helper: Add movie to collection
-  const addMovieToCollection = async (details: any, title: string, year: string) => {
-    try {
-      toast.loading(t("add.addingToCollection"));
-
-      const blurayData = {
-        title,
-        type: "movie",
-        description: {
-          "en-US": details.overview || "",
-          "fr-FR": details.fr?.overview || "",
-        },
-        director: details.director || "",
-        genre: {
-          "en-US": details.genres
-            ? details.genres.map((g: any) => g.name)
-            : [],
-          "fr-FR": details.fr?.genres
-            ? details.fr.genres.map((g: any) => g.name)
-            : [],
-        },
-        cover_image_url: details.poster_path
-          ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
-          : null,
-        backdrop_url: details.backdrop_path
-          ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
-          : null,
-        purchase_date: purchaseDate
-          ? new Date(purchaseDate).toISOString()
-          : null,
-        rating: details.vote_average || 0,
-        tags,
-        tmdb_id: details.id?.toString(),
-        release_year: details.release_date
-          ? parseInt(details.release_date.split("-")[0])
-          : year
-            ? parseInt(year)
-            : undefined,
-        runtime: details.runtime || 0,
-      };
-
-      await apiClient.createBluray(blurayData);
-      toast.dismiss();
-      toast.success(t("add.addedToCollection", { title }));
-      setDvdfrResult(null);
-      setSearching(false);
-      router.push(ROUTES.DASHBOARD.HOME);
-    } catch (error: any) {
-      toast.dismiss();
-      toast.error(
-        getApiError(error, t("add.failedToAddToCollection"))
-      );
-      setSearching(false);
-      setDvdfrResult(null);
-      startCamera();
-    }
-  };
-
-  // Helper: Redirect to manual selection page
-  const redirectToManualSelection = (title: string, year: string) => {
-    const params = new URLSearchParams({
-      type,
-      name: title,
-      ...(year && { year }),
-      ...(purchaseDate && { purchaseDate }),
-      ...(tags.length > 0 && { tags: tags.join(",") }),
-    });
-
-    router.push(`${ROUTES.DASHBOARD.ADD.SEARCH}?${params.toString()}`);
-  };
-
-  const handleManualSearch = () => {
-    setShowConfirmModal(false);
-    setDvdfrResult(null);
-    setSearching(false);
-    startCamera();
-  };
-
-  const handleManualSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const trimmed = manualInput.trim();
-
-    if (!trimmed) {
-      toast.error(tBarcode("invalidBarcode"));
-      return;
-    }
-
-    if (!isValidBarcode(trimmed)) {
-      toast.error(tBarcode("invalidBarcode"));
-      return;
-    }
-
-    if (isBatchMode) {
-      setScannedBarcodes((prev) => {
-        if (!prev.includes(trimmed)) {
-          toast.success(`${tBarcode("added")}: ${trimmed}`);
-          return [trimmed, ...prev];
-        }
-        toast(tBarcode("alreadyScanned"), { icon: "ℹ️" });
-        return prev;
+    if (!cameraOn || !videoRef.current || !readerRef.current) return;
+    const reader = readerRef.current;
+    reader
+      .decodeFromVideoDevice(null, videoRef.current, (result) => {
+        if (videoRef.current?.readyState === 4) setCameraReady(true);
+        const code = result?.getText();
+        if (!code || !isValidBarcode(code)) return;
+        // The same code is read many times a second; take it once per 2s
+        const now = Date.now();
+        if (code === lastScanRef.current.code && now - lastScanRef.current.at < 2000) return;
+        lastScanRef.current = { code, at: now };
+        onScanRef.current(code);
+      })
+      .catch((err) => {
+        console.error("Barcode scanner error:", err);
+        setCameraError(true);
+        setCameraOn(false);
       });
-      setManualInput("");
-    } else {
-      handleBarcodeScanned(trimmed);
-    }
+    return () => reader.reset();
+  }, [cameraOn]);
+
+  const startCamera = () => {
+    setCameraError(false);
+    setCameraOn(true);
   };
 
-  const handleFinishBatch = async () => {
-    if (scannedBarcodes.length === 0) {
-      toast.error(t("add.noResults"));
+  const addToBatch = (code: string) => {
+    if (batch.includes(code)) {
+      toast(t("barcode.alreadyScanned"), { icon: "ℹ️" });
       return;
     }
-
-    stopCamera();
-    setSearching(true);
-
-    let successCount = 0;
-    let failCount = 0;
-    const total = scannedBarcodes.length;
-
-    try {
-      toast.loading(`${tBarcode("processing")} (0/${total})`);
-
-      // Process each barcode sequentially
-      for (let i = 0; i < scannedBarcodes.length; i++) {
-        const barcode = scannedBarcodes[i];
-        toast.loading(`${tBarcode("processing")} (${i + 1}/${total})`);
-
-        try {
-          // Lookup the barcode
-          const dvdfrData = await apiClient.lookupBarcode(barcode);
-
-          if (dvdfrData.items && dvdfrData.items.length > 0) {
-            const product = dvdfrData.items[0];
-            
-            // Extract season number for series
-            const detectedSeasonNum = type === "series" ? extractSeasonNumber(product) : null;
-            
-            // Clean title appropriately
-            let title = type === "series" 
-              ? cleanSeriesTitle(cleanProductTitle(product.title))
-              : cleanProductTitle(product.title);
-            const year = product.year;
-
-            // Search TMDB
-            const response = await apiClient.searchTMDB(type, title, year);
-            const results = response.results || [];
-
-            if (results.length > 0) {
-              const bestMatch = results[0];
-              const details = await apiClient.getTMDBDetails(type, bestMatch.id);
-
-              const fullTitle =
-                details.original_title ||
-                details.original_name ||
-                details.title ||
-                details.name ||
-                "Unknown Title";
-
-              if (type === "movie") {
-                // Add movie
-                const blurayData = {
-                  title: fullTitle,
-                  type: "movie",
-                  description: {
-                    "en-US": details.overview || "",
-                    "fr-FR": details.fr?.overview || "",
-                  },
-                  director: details.director || "",
-                  genre: {
-                    "en-US": details.genres ? details.genres.map((g: any) => g.name) : [],
-                    "fr-FR": details.fr?.genres ? details.fr.genres.map((g: any) => g.name) : [],
-                  },
-                  cover_image_url: details.poster_path
-                    ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
-                    : null,
-                  backdrop_url: details.backdrop_path
-                    ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
-                    : null,
-                  purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
-                  rating: details.vote_average || 0,
-                  tags,
-                  tmdb_id: details.id?.toString(),
-                  release_year: details.release_date
-                    ? parseInt(details.release_date.split("-")[0])
-                    : year ? parseInt(year) : undefined,
-                  runtime: details.runtime || 0,
-                };
-
-                await apiClient.createBluray(blurayData);
-                successCount++;
-              } else {
-                // Handle series with season detection
-                if (!details.seasons || details.seasons.length === 0) {
-                  failCount++;
-                  continue;
-                }
-
-                // Filter seasons: use detected season or all seasons
-                const seasonsToAdd = details.seasons
-                  .filter((s: any) => {
-                    if (detectedSeasonNum) {
-                      return s.season_number === detectedSeasonNum;
-                    }
-                    return s.season_number > 0;
-                  })
-                  .map((season: any) => ({
-                    number: season.season_number,
-                    episode_count: season.episode_count || 0,
-                    year: season.air_date
-                      ? parseInt(season.air_date.split("-")[0])
-                      : undefined,
-                    description: season.name || `Season ${season.season_number}`,
-                  }));
-
-                if (seasonsToAdd.length === 0) {
-                  failCount++;
-                  continue;
-                }
-
-                // Check if series exists
-                const existingSeries = await apiClient.findSeriesByTmdbId(details.id?.toString());
-
-                if (existingSeries) {
-                  // Update existing series with new seasons
-                  await apiClient.addSeasonsToSeries(
-                    existingSeries.id,
-                    seasonsToAdd,
-                    fullTitle
-                  );
-                  successCount++;
-                } else {
-                  // Create new series entry
-                  const blurayData = {
-                    title: fullTitle,
-                    type: "series",
-                    description: {
-                      "en-US": details.overview || "",
-                      "fr-FR": details.fr?.overview || "",
-                    },
-                    director: details.director || "",
-                    genre: {
-                      "en-US": details.genres ? details.genres.map((g: any) => g.name) : [],
-                      "fr-FR": details.fr?.genres ? details.fr.genres.map((g: any) => g.name) : [],
-                    },
-                    cover_image_url: details.poster_path
-                      ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
-                      : null,
-                    backdrop_url: details.backdrop_path
-                      ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
-                      : null,
-                    purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
-                    rating: details.vote_average || 0,
-                    tags,
-                    tmdb_id: details.id?.toString(),
-                    seasons: seasonsToAdd,
-                    release_year: details.first_air_date
-                      ? parseInt(details.first_air_date.split("-")[0])
-                      : year ? parseInt(year) : undefined,
-                  };
-
-                  await apiClient.createBluray(blurayData);
-                  successCount++;
-                }
-              }
-            } else {
-              failCount++;
-            }
-          } else {
-            failCount++;
-          }
-        } catch (error) {
-          console.error(`Failed to process barcode ${barcode}:`, error);
-          failCount++;
-        }
-      }
-
-      toast.dismiss();
-
-      if (successCount > 0) {
-        toast.success(
-          `${t("add.addedToCollection", { title: `${successCount} item(s)` })}`,
-        );
-      }
-
-      if (failCount > 0) {
-        toast.error(`Failed to add ${failCount} item(s)`);
-      }
-
-      // Clear the batch and redirect
-      setScannedBarcodes([]);
-      setSearching(false);
-
-      if (successCount > 0) {
-        router.push(ROUTES.DASHBOARD.HOME);
-      } else {
-        startCamera();
-      }
-    } catch (error) {
-      console.error("Batch processing error:", error);
-      toast.dismiss();
-      toast.error(t("add.searchFailed"));
-      setSearching(false);
-      startCamera();
-    }
+    setBatch((prev) => [code, ...prev]);
+    toast.success(`${t("barcode.scanned")}: ${code}`);
   };
 
-  if (searching) {
-    return <LoaderCircle />;
-  }
+  /** Single scan: look the title up, then pick the exact match on the add page. */
+  const handleBarcode = async (code: string) => {
+    if (batchMode) {
+      addToBatch(code);
+      return;
+    }
+    stopCamera();
+    setBusy(t("barcode.lookingUp"));
+    try {
+      const productTitle = await lookupTitle(code, () => setBusy(t("barcode.rateLimited")));
+      if (!productTitle) {
+        toast.error(t("barcode.notFound"));
+        return;
+      }
+      const { title, year, season } = parseProductTitle(productTitle);
+      toast.success(`${t("barcode.found")}: ${productTitle}`);
+      // Most blurays are movies; a season in the title means a series
+      const params = new URLSearchParams({ type: season ? "series" : "movie", name: title });
+      if (year) params.set("year", year);
+      if (season) params.set("season", String(season));
+      if (purchase.purchaseDate) params.set("purchaseDate", purchase.purchaseDate);
+      if (purchase.purchasePrice) params.set("buyingPrice", purchase.purchasePrice);
+      if (purchase.tags.length > 0) params.set("tags", purchase.tags.join(","));
+      router.push(`${ROUTES.DASHBOARD.ADD.ADD}?${params.toString()}`);
+    } catch (error) {
+      toast.error(getApiError(error, t("barcode.searchFailed")));
+    } finally {
+      setBusy(null);
+    }
+  };
+  useEffect(() => {
+    onScanRef.current = handleBarcode;
+  });
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = manualInput.trim();
+    if (!isValidBarcode(code)) {
+      toast.error(t("barcode.invalidBarcode"));
+      return;
+    }
+    setManualInput("");
+    handleBarcode(code);
+  };
+
+  /** Adds the best TMDB match for every scanned barcode; the ones that fail stay listed. */
+  const handleProcessBatch = async () => {
+    stopCamera();
+    const failed: string[] = [];
+    let added = 0;
+
+    for (const [index, code] of batch.entries()) {
+      setProgress({ done: index, total: batch.length });
+      setBusy(t("barcode.processingCode", { code }));
+      try {
+        const productTitle = await lookupTitle(code, () => setBusy(t("barcode.rateLimited")));
+        if (!productTitle) throw new Error("not found");
+        const { title, year, season } = parseProductTitle(productTitle);
+
+        // Most blurays are movies: try that first, unless a season is named
+        let type: "movie" | "series" = season ? "series" : "movie";
+        let results = (await apiClient.searchTMDB(type, title, year)).results || [];
+        if (results.length === 0 && type === "movie") {
+          type = "series";
+          results = (await apiClient.searchTMDB(type, title, year)).results || [];
+        }
+        if (results.length === 0) throw new Error("no TMDB match");
+
+        const details = await apiClient.getTMDBDetails(type, results[0].id);
+        await apiClient.addToCollection(buildBlurayFromTMDB(details, type, purchase, season ? [season] : undefined));
+        added++;
+      } catch (error) {
+        console.error(`Barcode ${code}:`, error);
+        failed.push(code);
+      }
+    }
+
+    setProgress(null);
+    setBusy(null);
+    setBatch(failed);
+    if (added > 0) toast.success(t("barcode.batchAdded", { count: added }));
+    if (failed.length > 0) toast.error(t("barcode.batchFailed", { count: failed.length }), { duration: 6000 });
+    if (failed.length === 0) router.push(ROUTES.DASHBOARD.HOME);
+  };
+
+  const tabButton = (value: Tab, icon: React.ReactNode, label: string) => (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={tab === value}
+      onClick={() => {
+        setTab(value);
+        if (value !== "camera") stopCamera();
+      }}
+      className={`flex-1 flex items-center justify-center gap-2 h-9 rounded-md text-sm font-medium transition-colors [&_svg]:w-4 [&_svg]:h-4 ${
+        tab === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
 
   return (
-    <>
-      {/* DVDFr Confirmation Modal */}
-      <DVDFrConfirmationModal
-        isOpen={showConfirmModal}
-        item={dvdfrResult}
-        onConfirm={handleConfirmDVDFr}
-        onCancel={handleManualSearch}
+    <div className="max-w-3xl mx-auto pb-12 space-y-4 sm:space-y-6">
+      <PageHeader
+        icon={<ScanBarcode />}
+        title={t("barcode.title")}
+        description={t("barcode.subtitle")}
+        actions={
+          <Button variant="secondary" onClick={() => router.back()} icon={<ArrowLeft />}>
+            {t("common.back")}
+          </Button>
+        }
       />
 
-      {/* Season Selector Modal (Option B) */}
-      {showSeasonSelector && tmdbDetails && (
-        <SeasonSelectorModal
-          onClose={() => {
-            setShowSeasonSelector(false);
-            setSearching(false);
-            setDvdfrResult(null);
-            setTmdbDetails(null);
-            setSeriesTitle("");
-            setDetectedSeason(null);
-            startCamera();
-          }}
-          onSave={handleSeasonSelection}
-          currentSeasons={[]}
-          tmdbId={tmdbDetails?.id?.toString()}
-          title={seriesTitle}
-          detectedSeason={detectedSeason}
-        />
-      )}
+      <div className="card p-3 sm:p-4 space-y-4">
+        <div role="tablist" className="flex p-0.5 rounded-lg bg-muted">
+          {tabButton("camera", <Camera />, t("barcode.camera"))}
+          {tabButton("manual", <Keyboard />, t("barcode.manualEntry"))}
+        </div>
 
-      <div className="max-w-4xl mx-auto px-4 pb-20 pt-6 space-y-4 sm:space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/20 backdrop-blur-sm">
-              <ScanLine className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                {t("add.title")}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {tBarcode("title")}
+        {busy ? (
+          <div className="py-6 text-center">
+            <LoaderCircle inline />
+            <p className="-mt-6 text-sm text-muted-foreground">{busy}</p>
+            {progress && (
+              <div className="mt-4 mx-auto max-w-xs h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-300"
+                  style={{ width: `${(progress.done / progress.total) * 100}%` }}
+                />
+              </div>
+            )}
+          </div>
+        ) : tab === "camera" ? (
+          cameraOn ? (
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+              <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+              {!cameraReady && (
+                <div className="absolute inset-0 grid place-items-center bg-black/60">
+                  <LoaderCircle inline />
+                </div>
+              )}
+              {cameraReady && (
+                // Viewfinder with a sweeping scan line
+                <div className="absolute inset-0 grid place-items-center pointer-events-none">
+                  <div className="relative w-4/5 h-3/5 rounded-lg border-2 border-white/30 shadow-[0_0_0_100vmax_rgb(0_0_0/0.35)] overflow-hidden">
+                    <div className="absolute inset-x-0 h-0.5 bg-primary shadow-[0_0_12px_2px_hsl(var(--primary))] animate-scan-line" />
+                  </div>
+                </div>
+              )}
+              <IconButton
+                label={t("barcode.stopCamera")}
+                onClick={stopCamera}
+                className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 hover:text-white"
+              >
+                <X />
+              </IconButton>
+              <p className="absolute bottom-3 inset-x-0 text-center text-sm text-white/90 drop-shadow">
+                {batchMode ? t("barcode.batchScanning") : t("barcode.position")}
               </p>
             </div>
-          </div>
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 px-2 sm:px-4 py-2 rounded-xl bg-muted hover:bg-accent border border-border text-foreground/80 hover:text-foreground transition-all duration-200 backdrop-blur-sm group"
-          >
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="hidden sm:inline">{t("common.back")}</span>
-          </button>
-        </motion.div>
-
-        {/* Main Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-card backdrop-blur-xl rounded-3xl p-1 border border-border shadow-2xl overflow-hidden"
-        >
-          {/* Tab Switcher */}
-          <div className="flex bg-background rounded-t-3xl border-b border-border gap-2 p-2">
-            <button
-              onClick={() => setActiveTab("camera")}
-              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                activeTab === "camera"
-                  ? "bg-muted text-foreground shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <Camera
-                className={`w-4 h-4 ${activeTab === "camera" ? "text-purple-400" : ""}`}
-              />
-              Camera
-            </button>
-            <button
-              onClick={() => setActiveTab("manual")}
-              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                activeTab === "manual"
-                  ? "bg-muted text-foreground shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <Keyboard
-                className={`w-4 h-4 ${activeTab === "manual" ? "text-primary" : ""}`}
-              />
-              Manual
-            </button>
-          </div>
-
-          {/* Content Area */}
-          <div className="p-4 sm:p-8 bg-gradient-to-b from-background to-muted min-h-[400px] flex flex-col">
-            {/* Controls: Type Selector & Batch Mode Toggle */}
-            <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
-              {/* Media Type Selector */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleTypeChange("movie")}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                    type === "movie"
-                      ? "bg-primary/20 text-primary border-primary/30"
-                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
-                  }`}
-                >
-                  <Film className="w-4 h-4" />
-                  Movie
-                </button>
-                <button
-                  onClick={() => handleTypeChange("series")}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                    type === "series"
-                      ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
-                  }`}
-                >
-                  <Tv className="w-4 h-4" />
-                  Series
-                </button>
+          ) : (
+            <div className="py-10 flex flex-col items-center text-center gap-4">
+              <div
+                className={`grid place-items-center w-16 h-16 rounded-full ${
+                  cameraError ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                }`}
+              >
+                {cameraError ? <CameraOff className="w-7 h-7" /> : <Camera className="w-7 h-7" />}
               </div>
-
-              {/* Batch Mode Toggle */}
-              <label className="flex items-center gap-3 px-4 py-2 rounded-xl border transition-all cursor-pointer bg-muted border-border hover:bg-accent hover:border-border">
-                <input
-                  type="checkbox"
-                  checked={isBatchMode}
-                  onChange={(e) => setIsBatchMode(e.target.checked)}
-                  className="w-4 h-4 rounded border-border bg-gray-700 checked:bg-purple-600 checked:border-purple-600 cursor-pointer accent-purple-500"
-                />
-                <Layers className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs font-medium uppercase tracking-wider text-foreground/80">
-                  {tBarcode("batchMode")}
-                </span>
-              </label>
+              <p className={`text-sm max-w-xs ${cameraError ? "text-destructive" : "text-muted-foreground"}`}>
+                {cameraError ? t("barcode.cameraError") : t("barcode.turnOnCameraDesc")}
+              </p>
+              <Button onClick={startCamera} icon={<Camera />}>
+                {t("barcode.turnOnCamera")}
+              </Button>
             </div>
+          )
+        ) : (
+          <form onSubmit={handleManualSubmit} className="py-4 space-y-4 max-w-sm mx-auto">
+            <Field label={t("barcode.enterBarcode")} htmlFor="barcode-input" hint={t("barcode.manualHint")}>
+              <input
+                id="barcode-input"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={manualInput}
+                onChange={(e) => setManualInput(e.target.value.replace(/\D/g, ""))}
+                placeholder="883929106646"
+                maxLength={13}
+                className="input h-12 text-center text-lg font-mono tracking-widest"
+                autoFocus
+              />
+            </Field>
+            <Button
+              type="submit"
+              fullWidth
+              disabled={!isValidBarcode(manualInput)}
+              icon={batchMode ? <Plus /> : <Search />}
+            >
+              {batchMode ? t("barcode.addToList") : t("barcode.search")}
+            </Button>
+          </form>
+        )}
 
-            <AnimatePresence mode="wait">
-              {activeTab === "camera" && (
-                <motion.div
-                  key="camera"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex flex-col items-center flex-1"
-                >
-                  {!isCameraActive ? (
-                    <div className="flex flex-col items-center justify-center flex-1 py-10 min-h-[300px]">
-                      {cameraError ? (
-                        <div className="text-destructive flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
-                          <div className="p-4 bg-destructive/10 rounded-full border border-destructive/20">
-                            <X className="w-8 h-8" />
-                          </div>
-                          <p className="text-center max-w-xs">{cameraError}</p>
-                          <button
-                            onClick={startCamera}
-                            className="px-6 py-2 bg-destructive/10 hover:bg-destructive/20 border border-destructive/20 rounded-lg text-destructive transition-colors"
-                          >
-                            Try Again
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-6 text-center animate-in fade-in zoom-in duration-300">
-                          <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="p-4 sm:p-6 bg-gray-800/50 rounded-full border border-border shadow-xl"
-                          >
-                            <Camera className="w-12 h-12 text-muted-foreground" />
-                          </motion.div>
-                          <div className="space-y-2">
-                            <h3 className="text-lg font-medium text-foreground">
-                              Camera is Inactive
-                            </h3>
-                            <p className="text-sm text-muted-foreground max-w-xs">
-                              {t("add.barcodeScanDesc") ||
-                                "Tap the button below to start scanning."}
-                            </p>
-                          </div>
-                          <button
-                            onClick={startCamera}
-                            className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold shadow-lg shadow-purple-900/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
-                          >
-                            <Camera className="w-5 h-5" />
-                            Scan Barcode
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="relative w-full max-w-lg aspect-video bg-black rounded-2xl overflow-hidden border border-border shadow-2xl">
-                      {!cameraReady && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
-                          <LoaderCircle />
-                        </div>
-                      )}
-                      <video
-                        ref={videoRef}
-                        className="w-full h-full object-cover"
-                        muted
-                        playsInline
-                      />
-                      {/* Scanner Overlay */}
-                      {cameraReady && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-[80%] h-[60%] border border-purple-500/30 rounded-lg relative">
-                              <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-purple-400/40 -mt-0.5 -ml-0.5 rounded-tl"></div>
-                              <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-purple-400/40 -mt-0.5 -mr-0.5 rounded-tr"></div>
-                              <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-purple-400/40 -mb-0.5 -ml-0.5 rounded-bl"></div>
-                              <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-purple-400/40 -mb-0.5 -mr-0.5 rounded-br"></div>
-
-                              <motion.div
-                                animate={{ top: ["0%", "100%", "100%"] }}
-                                transition={{
-                                  duration: 3.5,
-                                  repeat: Infinity,
-                                  ease: "linear",
-                                }}
-                                className="absolute left-0 right-0 h-px bg-purple-500/40"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {activeTab === "manual" && (
-                <motion.div
-                  key="manual"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="flex-1 flex flex-col w-full max-w-md mx-auto justify-center"
-                >
-                  <div className="space-y-4 sm:space-y-6 bg-muted p-4 sm:p-8 rounded-3xl border border-border">
-                    <div className="text-center space-y-2">
-                      <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Keyboard className="w-6 h-6 text-primary" />
-                      </div>
-                      <h3 className="text-lg font-medium text-foreground">
-                        Manual Entry
-                      </h3>
-                      <p className="text-muted-foreground text-sm">
-                        Type the barcode number found on the case
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleManualSubmit} className="space-y-4">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={manualInput}
-                        onChange={(e) => {
-                          // Only allow numeric input
-                          const value = e.target.value.replace(/\D/g, "");
-                          setManualInput(value);
-                        }}
-                        placeholder="e.g. 883904245645"
-                        className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-ring text-center text-lg tracking-widest font-mono text-foreground transition-all placeholder:text-muted-foreground"
-                        autoFocus
-                      />
-                      <button
-                        type="submit"
-                        disabled={!manualInput.trim()}
-                        className="w-full py-3 bg-primary hover:bg-primary text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {isBatchMode ? (
-                          <Plus className="w-5 h-5" />
-                        ) : (
-                          <Search className="w-5 h-5" />
-                        )}
-                        {isBatchMode ? "Add to List" : "Search Barcode"}
-                      </button>
-                    </form>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Batch List - Showing items */}
-            <AnimatePresence>
-              {isBatchMode && scannedBarcodes.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-8 border-t border-gray-800 pt-6"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-purple-400" />
-                      Scanned Items ({scannedBarcodes.length})
-                    </h3>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setScannedBarcodes([])}
-                        className="text-xs text-destructive hover:text-destructive"
-                      >
-                        Clear All
-                      </button>
-                      <button
-                        onClick={handleFinishBatch}
-                        className="text-xs bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded-lg transition-colors"
-                      >
-                        Process Batch
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                    <AnimatePresence mode="popLayout">
-                      {scannedBarcodes.map((code, index) => (
-                        <motion.div
-                          key={code}
-                          layout
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl border border-border/50 group hover:border-purple-500/30 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-xs text-muted-foreground font-mono">
-                              {scannedBarcodes.length - index}
-                            </span>
-                            <span className="font-mono text-gray-200">
-                              {code}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() =>
-                              setScannedBarcodes((prev) =>
-                                prev.filter((c) => c !== code),
-                              )
-                            }
-                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+        {/* Batch mode */}
+        <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-accent/50 transition-colors">
+          <Layers className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-medium text-foreground">{t("barcode.batchMode")}</span>
+            <span className="block text-xs text-muted-foreground">{t("barcode.batchHint")}</span>
+          </span>
+          <input
+            type="checkbox"
+            role="switch"
+            checked={batchMode}
+            onChange={(e) => setBatchMode(e.target.checked)}
+            disabled={!!busy}
+            className="peer sr-only"
+          />
+          <span
+            aria-hidden
+            className="relative w-10 h-6 shrink-0 rounded-full bg-muted border border-border transition-colors peer-checked:bg-primary peer-checked:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40 after:absolute after:top-0.5 after:left-0.5 after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4"
+          />
+        </label>
       </div>
-    </>
+
+      {batchMode && batch.length > 0 && (
+        <section className="card p-3 sm:p-4 space-y-3 animate-fade-in">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-foreground">
+              {t("barcode.scannedCount", { count: batch.length })}
+            </h2>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" inline onClick={() => setBatch([])} disabled={!!busy} icon={<Trash2 />}>
+                {t("barcode.clearAll")}
+              </Button>
+              <Button size="sm" inline onClick={handleProcessBatch} loading={!!progress} icon={<Plus />}>
+                {t("barcode.addAll", { count: batch.length })}
+              </Button>
+            </div>
+          </div>
+          <ul className="divide-y divide-border max-h-72 overflow-y-auto">
+            {batch.map((code, index) => (
+              <li key={code} className="flex items-center gap-3 py-2">
+                <span className="w-6 text-xs text-muted-foreground tabular-nums">{batch.length - index}</span>
+                <span className="flex-1 font-mono text-sm tracking-wider">{code}</span>
+                <IconButton
+                  label={t("common.delete")}
+                  variant="danger"
+                  disabled={!!busy}
+                  onClick={() => setBatch((prev) => prev.filter((c) => c !== code))}
+                >
+                  <X />
+                </IconButton>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
   );
 }

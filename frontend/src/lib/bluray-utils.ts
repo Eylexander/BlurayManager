@@ -14,6 +14,12 @@ export const getLocalizedText = (
   return text[locale] || text["en-US"] || text["fr-FR"] || '';
 };
 
+/** A bluray's title in the user's language, falling back to its original title. */
+export const getTitle = (
+  bluray: { title: string; titles?: { "en-US"?: string; "fr-FR"?: string } },
+  locale: 'en-US' | 'fr-FR'
+): string => bluray.titles?.[locale] || bluray.title;
+
 export const getLocalizedTextArray = (
   textArray: { "en-US"?: string[]; "fr-FR"?: string[] } | undefined,
   locale: 'en-US' | 'fr-FR'

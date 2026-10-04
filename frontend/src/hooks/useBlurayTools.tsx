@@ -1,11 +1,12 @@
 import { useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { Trash2, Tag as TagIcon, ExternalLink } from "lucide-react";
 import { Bluray } from "@/types/bluray";
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/store/authStore";
+import { getTitle } from "@/lib/bluray-utils";
 import { useConfirm } from "@/components/common";
 import ContextMenu from "@/components/common/ContextMenu";
 import TagPickerModal from "@/components/modals/TagPickerModal";
@@ -17,12 +18,14 @@ import { ROUTES } from "./useRouteProtection";
  */
 export function useBlurayTools(initialBluray: Bluray, onUpdate?: () => void) {
   const t = useTranslations();
+  const locale = useLocale() as "en-US" | "fr-FR";
   const router = useRouter();
   const role = useAuthStore((s) => s.user?.role);
   const canModify = role === "admin" || role === "moderator";
   const { confirm, confirmDialog } = useConfirm();
 
   const [currentBluray, setCurrentBluray] = useState(initialBluray);
+  const title = getTitle(currentBluray, locale);
   const [showTagModal, setShowTagModal] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
@@ -30,7 +33,7 @@ export function useBlurayTools(initialBluray: Bluray, onUpdate?: () => void) {
 
   const handleDelete = async () => {
     const ok = await confirm({
-      title: t("details.deleteTitle", { title: currentBluray.title }),
+      title: t("details.deleteTitle", { title }),
       message: t("details.deleteWarning"),
       confirmLabel: t("common.delete"),
       danger: true,
@@ -79,7 +82,7 @@ export function useBlurayTools(initialBluray: Bluray, onUpdate?: () => void) {
       {showTagModal && (
         <TagPickerModal
           blurayId={currentBluray.id}
-          blurayTitle={currentBluray.title}
+          blurayTitle={title}
           initialSelectedTags={currentBluray.tags || []}
           onClose={() => setShowTagModal(false)}
           onSave={(tags) => {
@@ -92,5 +95,5 @@ export function useBlurayTools(initialBluray: Bluray, onUpdate?: () => void) {
     </>
   );
 
-  return { currentBluray, canModify, detailHref, openMenu, openTags: () => setShowTagModal(true), overlays };
+  return { currentBluray, title, canModify, detailHref, openMenu, openTags: () => setShowTagModal(true), overlays };
 }

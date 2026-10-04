@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Calendar, Euro, Save, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiClient } from '@/lib/api-client';
 import { Button, Field, Modal } from '@/components/common';
 import { Bluray } from '@/types/bluray';
-import { normalizePurchaseDateForInput } from '@/lib/bluray-utils';
+import { getTitle, normalizePurchaseDateForInput } from '@/lib/bluray-utils';
 
 interface PurchaseInfoModalProps {
   blurayId: string;
@@ -19,6 +19,7 @@ interface PurchaseInfoModalProps {
 /** Edit the purchase price and date of a bluray. */
 export default function PurchaseInfoModal({ blurayId, bluray, onClose, onSave }: PurchaseInfoModalProps) {
   const t = useTranslations();
+  const locale = useLocale() as 'en-US' | 'fr-FR';
   const [price, setPrice] = useState<number>(bluray.purchase_price || 0);
   const [date, setDate] = useState<string>(normalizePurchaseDateForInput(bluray.purchase_date));
   const [saving, setSaving] = useState(false);
@@ -46,7 +47,7 @@ export default function PurchaseInfoModal({ blurayId, bluray, onClose, onSave }:
       icon={<ShoppingBag />}
       tone="success"
       title={t('details.editPurchaseInfo')}
-      description={bluray.title}
+      description={getTitle(bluray, locale)}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>

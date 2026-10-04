@@ -40,9 +40,9 @@ import {
   isValidPurchaseDate,
   formatPurchaseDate,
   getJellyfinSearchUrl,
+  getTitle,
 } from "@/lib/bluray-utils";
-import { Button, IconButton, TagChip, useConfirm } from "@/components/common";
-import { LoaderCircle } from "@/components/common/LoaderCircle";
+import { Button, IconButton, Skeleton, TagChip, useConfirm } from "@/components/common";
 
 export default function BlurayDetailPage() {
   const router = useRouter();
@@ -100,7 +100,7 @@ export default function BlurayDetailPage() {
 
   const handleDelete = async () => {
     const ok = await confirm({
-      title: t("details.deleteTitle", { title: bluray?.title ?? "" }),
+      title: t("details.deleteTitle", { title: bluray ? getTitle(bluray, locale) : "" }),
       message: t("details.deleteWarning"),
       confirmLabel: t("common.delete"),
       danger: true,
@@ -157,6 +157,7 @@ export default function BlurayDetailPage() {
           tmdbData.title ||
           tmdbData.name ||
           bluray.title,
+        titles: { "en-US": tmdbData.title || tmdbData.name, "fr-FR": tmdbData.fr?.title },
         director: tmdbData.director || bluray.director,
         runtime:
           tmdbData.runtime || tmdbData.episode_run_time?.[0] || bluray.runtime,
@@ -220,7 +221,28 @@ export default function BlurayDetailPage() {
   };
 
   if (loading) {
-    return <LoaderCircle />;
+    // Mirrors the hero: backdrop, poster, then badges, title and director
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20" aria-busy>
+        <div className="py-6">
+          <Skeleton className="h-10 w-24" />
+        </div>
+        <div className="relative rounded-3xl overflow-hidden border border-border bg-card px-6 sm:px-12 pt-40 sm:pt-64 pb-12">
+          <div className="absolute inset-x-0 top-0 h-[450px] sm:h-[550px] bg-muted/60 noise" />
+          <div className="relative flex flex-col md:flex-row gap-10 items-center md:items-end">
+            <Skeleton className="w-44 sm:w-56 md:w-64 lg:w-72 aspect-[2/3] rounded-2xl shadow-xl" />
+            <div className="flex-1 w-full flex flex-col items-center md:items-start gap-4">
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-14" />
+              </div>
+              <Skeleton className="h-12 sm:h-16 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Floating actions over the hero backdrop
@@ -268,7 +290,7 @@ export default function BlurayDetailPage() {
               // Include tags created from the picker so they render right away
               setAllTags(available);
             }}
-            blurayTitle={bluray?.title}
+            blurayTitle={bluray ? getTitle(bluray, locale) : ""}
           />
         )}
 
@@ -278,7 +300,7 @@ export default function BlurayDetailPage() {
             onSave={handleSaveSeasons}
             currentSeasons={bluray?.seasons || []}
             tmdbId={bluray?.tmdb_id}
-            title={bluray?.title || ""}
+            title={bluray ? getTitle(bluray, locale) : ""}
           />
         )}
 
@@ -369,7 +391,7 @@ export default function BlurayDetailPage() {
               {bluray.backdrop_url ? (
                 <Image
                   src={bluray.backdrop_url}
-                  alt={bluray.title}
+                  alt={getTitle(bluray, locale)}
                   fill
                   className="object-cover opacity-50"
                   priority
@@ -391,7 +413,7 @@ export default function BlurayDetailPage() {
                   {bluray.cover_image_url ? (
                     <Image
                       src={bluray.cover_image_url}
-                      alt={bluray.title}
+                      alt={getTitle(bluray, locale)}
                       fill
                       className="object-cover"
                       priority
@@ -451,7 +473,7 @@ export default function BlurayDetailPage() {
                   </div>
 
                   <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-foreground leading-[1.1] tracking-tighter drop-shadow-2xl">
-                    {bluray.title}
+                    {getTitle(bluray, locale)}
                   </h1>
 
                   {bluray.director && (

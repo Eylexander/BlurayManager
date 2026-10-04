@@ -18,7 +18,10 @@ export interface Season {
 
 export interface Bluray {
   id: string;
+  /** Original title */
   title: string;
+  /** Localized titles shown in the UI; see getTitle */
+  titles?: I18nText;
   type: MediaType;
   release_year?: number;
   director?: string;
@@ -40,7 +43,10 @@ export interface Bluray {
 }
 
 export interface CreateBlurayRequest {
+  /** Original title */
   title: string;
+  /** Localized titles shown in the UI; see getTitle */
+  titles?: I18nText;
   type: MediaType;
   release_year?: number;
   director?: string;

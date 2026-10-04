@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import Navbar from "@/components/layout/Navbar";
@@ -8,6 +8,8 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import { LoaderCircle } from "@/components/common/LoaderCircle";
 import { ROUTES } from "@/hooks/useRouteProtection";
+
+const noopSubscribe = () => () => {};
 
 export default function DashboardLayout({
   children,
@@ -17,6 +19,13 @@ export default function DashboardLayout({
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
+  // False on the server and during hydration, where the persisted session
+  // isn't readable yet; true once running in the browser
+  const hydrated = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     const verifyAuth = async () => {
@@ -33,7 +42,9 @@ export default function DashboardLayout({
     }
   }, [isLoading, isAuthenticated, router]);
 
-  if (isLoading || !isAuthenticated) {
+  // A persisted session renders the app (and the page's skeletons) right
+  // away while checkAuth revalidates it; a failed check logs out and redirects.
+  if (!hydrated || !isAuthenticated) {
     return <LoaderCircle />;
   }
 

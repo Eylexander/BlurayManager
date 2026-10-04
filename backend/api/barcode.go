@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+	"eylexander/bluraymanager/controller"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,8 +19,13 @@ func (api *API) LookupBarcode(c *gin.Context) {
 
 	// Call controller to perform the lookup
 	items, err := api.ctrl.LookupBarcode(c.Request.Context(), barcode)
+	if errors.Is(err, controller.ErrBarcodeRateLimited) {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
+		return
+	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// The lookup service failed, not this server.
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
 

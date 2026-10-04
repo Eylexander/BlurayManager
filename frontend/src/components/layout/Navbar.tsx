@@ -9,7 +9,7 @@ import { Search, Bell, User, X, Film, Tv } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useNotifications, Notification } from "@/hooks/useNotification";
 import { ROUTES } from "@/hooks/useRouteProtection";
-import { getLocalizedTextArray } from "@/lib/bluray-utils";
+import { getLocalizedTextArray, getTitle } from "@/lib/bluray-utils";
 import { useLocale } from "next-intl";
 
 interface Bluray {
@@ -306,7 +306,7 @@ export default function Navbar() {
                         {bluray.cover_image_url ? (
                           <Image
                             src={bluray.cover_image_url}
-                            alt={bluray.title}
+                            alt={getTitle(bluray, locale)}
                             width={40}
                             height={56}
                             className="object-cover rounded"
@@ -322,7 +322,7 @@ export default function Navbar() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-foreground truncate">
-                            {bluray.title}
+                            {getTitle(bluray, locale)}
                           </p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span className="capitalize">{bluray.type}</span>

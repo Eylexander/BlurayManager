@@ -36,6 +36,7 @@ func (ds *MongoDatastore) UpdateBluray(ctx context.Context, bluray *models.Blura
 	// Build update document excluding created_at to preserve original creation time
 	update := bson.M{
 		"title":           bluray.Title,
+		"titles":          bluray.Titles,
 		"type":            bluray.Type,
 		"release_year":    bluray.ReleaseYear,
 		"director":        bluray.Director,
@@ -55,6 +56,13 @@ func (ds *MongoDatastore) UpdateBluray(ctx context.Context, bluray *models.Blura
 	}
 
 	_, err := ds.blurays.UpdateOne(ctx, bson.M{"_id": bluray.ID}, bson.M{"$set": update})
+	return err
+}
+
+// SetBlurayTitles updates only the localized titles, so it can't overwrite a
+// concurrent edit of the other fields.
+func (ds *MongoDatastore) SetBlurayTitles(ctx context.Context, id primitive.ObjectID, titles models.I18nText) error {
+	_, err := ds.blurays.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"titles": titles}})
 	return err
 }
 
@@ -90,7 +98,7 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 
 		switch f.Field {
 		case "title":
-			andConditions = append(andConditions, bson.M{"title": regexPattern})
+			andConditions = append(andConditions, bson.M{"$or": titleConditions(regexPattern)})
 		case "director":
 			andConditions = append(andConditions, bson.M{"director": regexPattern})
 		case "tag":
@@ -127,14 +135,13 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 	// Plain words search every text field, alone or next to filters.
 	if freeText != "" {
 		regexPattern := bson.M{"$regex": ContainsPattern(freeText)}
-		orConditions := []bson.M{
-			{"title": regexPattern},
-			{"director": regexPattern},
-			{"genre.en-US": regexPattern},
-			{"genre.fr-FR": regexPattern},
-			{"description.en-US": regexPattern},
-			{"description.fr-FR": regexPattern},
-		}
+		orConditions := append(titleConditions(regexPattern),
+			bson.M{"director": regexPattern},
+			bson.M{"genre.en-US": regexPattern},
+			bson.M{"genre.fr-FR": regexPattern},
+			bson.M{"description.en-US": regexPattern},
+			bson.M{"description.fr-FR": regexPattern},
+		)
 		tagIDs, err := ds.tagIDsMatching(ctx, freeText)
 		if err != nil {
 			return nil, err
@@ -161,6 +168,11 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 		return nil, err
 	}
 	return blurays, nil
+}
+
+// titleConditions matches the original title or any localized one.
+func titleConditions(pattern bson.M) []bson.M {
+	return []bson.M{{"title": pattern}, {"titles.en-US": pattern}, {"titles.fr-FR": pattern}}
 }
 
 // tagIDsMatching returns the IDs of tags whose name contains name.

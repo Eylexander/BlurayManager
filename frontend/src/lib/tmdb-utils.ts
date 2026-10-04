@@ -1,3 +1,6 @@
+import type { TMDBDetails } from '@/types/tmdb';
+import type { MediaType } from '@/types/bluray';
+
 /**
  * TMDB image base URLs
  */
@@ -29,68 +32,79 @@ export const extractYear = (dateString: string | undefined): number | undefined 
   return dateString ? parseInt(dateString.split('-')[0]) : undefined;
 };
 
+/** Words that start the retail part of a product title ("Inception Steelbook Blu-ray") */
+const MEDIA_WORDS =
+  "blu-?ray|dvd|uhd|4k|ultra hd|hd dvd|digital|steelbook|widescreen|full ?screen|collector'?s?|" +
+  "(?:ultimate|limited|special|deluxe|anniversary|director'?s cut) edition|[ée]dition|coffret|combo|box ?set|bonus|version longue|vf|vost";
+
 /**
- * Clean up a product title by removing common DVD/Blu-ray suffixes and format information
- * This helps improve TMDB search accuracy by removing physical media descriptors
+ * Splits a retail product title, as returned by the barcode lookup, into the
+ * title to search TMDB with and any year or season it mentions:
+ * "The Office: Season 2 [Blu-ray] [2006]" → { title: "The Office", year: "2006", season: 2 }
  */
-export const cleanProductTitle = (title: string): string => {
-  return title
-    .replace(/\([^)]*(?:Blu-ray|DVD|UHD|4K|Ultra HD|Digital|Bonus)[^)]*\)/gi, '')
-    .replace(/\[[^\]]*(?:Blu-ray|DVD|UHD|4K|Ultra HD|Digital|Bonus)[^\]]*\]/gi, '')
-    .replace(/\[Blu-ray\]|\[DVD\]|\[UHD\]|\[4K\]|\[Digital\]/gi, '')
-    .replace(/[-+]\s*(?:Blu-ray|DVD|UHD|4K Ultra HD|Digital|Bonus).*$/gi, '')
-    .replace(/\b(Science Fiction|Action|Drama|Comedy|Horror|Thriller|Adventure|Romance)\b.*$/gi, '')
-    .replace(/\s+/g, ' ')
+export const parseProductTitle = (raw: string): { title: string; year?: string; season?: number } => {
+  const year = raw.match(/[[(]((?:19|20)\d{2})[\])]/)?.[1];
+  const seasonMatch = raw.match(/\b(?:saison|season|s[ée]rie|series)\s*(\d{1,2})\b/i) || raw.match(/\bS(\d{1,2})\b/);
+
+  const title = raw
+    // Drop every [...] and (...) group after the start: formats, years,
+    // "(Widescreen)". A leading one is part of the title: "(500) Days of Summer"
+    .replace(/(?<=\S)\s*[[(][^\])]*[\])]/g, " ")
+    // Cut from the first season marker or retail word to the end
+    .replace(/\s*[-–:,/|]?\s*\b(?:saison|season|s[ée]rie|series)\s*\d{1,2}\b.*$/i, "")
+    .replace(/\s*[-–:,/|]?\s*\bS\d{1,2}\b.*$/, "")
+    .replace(new RegExp(`\\s*[-–:,/|+]?\\s*(?<!\\w)(?:${MEDIA_WORDS})(?![\\w'-]).*$`, "i"), "")
+    .replace(/[\s\-–:,/|]+$/, "")
+    .replace(/\s+/g, " ")
     .trim();
+
+  return { title: title || raw.trim(), year, season: seasonMatch ? parseInt(seasonMatch[1]) : undefined };
 };
 
-/**
- * Extract season number from DVDFr item data
- * Checks cover URL, title, and edition fields for season information
- * Option A: Auto-detect season from barcode scan
- */
-export const extractSeasonNumber = (dvdfrItem: any): number | null => {
-  if (!dvdfrItem) return null;
-
-  // Check cover URL: "saison_1", "season_1", "s1", etc.
-  if (dvdfrItem.cover) {
-    const coverMatch = dvdfrItem.cover.match(/(?:saison|season)[_\s-]?(\d+)/i);
-    if (coverMatch) return parseInt(coverMatch[1]);
-    
-    // Check for compact format: s1, s01, etc.
-    const compactMatch = dvdfrItem.cover.match(/[_\s-]s(\d{1,2})(?:[_\s-]|\.jpg)/i);
-    if (compactMatch) return parseInt(compactMatch[1]);
-  }
-
-  // Check title: "The Office - Saison 1", "Season 1", "S1", etc.
-  if (dvdfrItem.title) {
-    const titleMatch = dvdfrItem.title.match(/(?:saison|season|série)\s*(\d+)/i);
-    if (titleMatch) return parseInt(titleMatch[1]);
-    
-    // Check for format like "S1" or "S01"
-    const compactTitleMatch = dvdfrItem.title.match(/\bS(\d{1,2})\b/i);
-    if (compactTitleMatch) return parseInt(compactTitleMatch[1]);
-  }
-
-  // Check edition field if it exists
-  if (dvdfrItem.edition) {
-    const editionMatch = dvdfrItem.edition.match(/(?:saison|season)\s*(\d+)/i);
-    if (editionMatch) return parseInt(editionMatch[1]);
-  }
-
-  return null;
-};
+export interface PurchaseInfo {
+  purchaseDate?: string;
+  purchasePrice?: string;
+  tags?: string[];
+}
 
 /**
- * Clean series title by removing season information
- * Used to extract base series name from season-specific titles
+ * Builds the create request for a TMDB movie or series, from details fetched
+ * through our backend (which adds the French title, overview and genres
+ * under `fr`). Series get the given seasons, or all of them.
  */
-export const cleanSeriesTitle = (title: string): string => {
-  return title
-    .replace(/[-:]\s*(?:saison|season|série|series)\s*\d+/gi, '')
-    .replace(/\s*[-:]\s*S\d{1,2}\b/gi, '')
-    .replace(/\s*\(saison\s*\d+\)/gi, '')
-    .replace(/\s*\[saison\s*\d+\]/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+export const buildBlurayFromTMDB = (
+  details: TMDBDetails,
+  type: MediaType,
+  { purchaseDate, purchasePrice, tags = [] }: PurchaseInfo = {},
+  seasons?: number[],
+) => {
+  const names = (genres?: { name: string }[]) => genres?.map((g) => g.name) ?? [];
+  const allSeasons = (details.seasons ?? []).filter((s) => s.season_number > 0);
+  const picked = seasons?.length ? allSeasons.filter((s) => seasons.includes(s.season_number)) : allSeasons;
+
+  return {
+    title: details.original_title || details.original_name || details.title || details.name || "Unknown Title",
+    titles: { "en-US": details.title || details.name, "fr-FR": details.fr?.title },
+    type,
+    description: { "en-US": details.overview || "", "fr-FR": details.fr?.overview || "" },
+    director: details.director || "",
+    genre: { "en-US": names(details.genres), "fr-FR": names(details.fr?.genres) },
+    cover_image_url: buildPosterUrl(details.poster_path),
+    backdrop_url: buildBackdropUrl(details.backdrop_path),
+    purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
+    purchase_price: purchasePrice ? parseFloat(purchasePrice) : 0,
+    rating: details.vote_average || 0,
+    tags,
+    tmdb_id: details.id?.toString(),
+    release_year: extractYear(details.release_date || details.first_air_date),
+    ...(type === "movie"
+      ? { runtime: details.runtime || 0 }
+      : {
+          seasons: picked.map((s) => ({
+            number: s.season_number,
+            episode_count: s.episode_count || 0,
+            year: extractYear(s.air_date),
+          })),
+        }),
+  };
 };

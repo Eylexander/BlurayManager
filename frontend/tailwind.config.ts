@@ -68,6 +68,7 @@ const config: Config = {
         'slide-up': 'slide-up 0.3s ease-out',
         shimmer: 'shimmer 2s infinite linear',
         'grow-x': 'grow-x 0.6s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'scan-line': 'scan-line 1.8s ease-in-out infinite alternate',
       },
       keyframes: {
         'fade-in': {
@@ -93,6 +94,10 @@ const config: Config = {
         'grow-x': {
           '0%': { transform: 'scaleX(0)' },
           '100%': { transform: 'scaleX(1)' },
+        },
+        'scan-line': {
+          '0%': { top: '0%' },
+          '100%': { top: 'calc(100% - 2px)' },
         },
       },
       screens: {
