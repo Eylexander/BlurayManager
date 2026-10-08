@@ -12,12 +12,12 @@
     "check:product-title": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-product-title.mjs"
   },
   "dependencies": {
-    "@zxing/library": "^0.21.3",
+    "@zxing/library": "^0.23.0",
     "axios": "^1.20.0",
     "js-cookie": "^3.0.8",
-    "lucide-react": "^1.48.0",
+    "lucide-react": "^1.52.0",
     "next": "^15.5.26",
-    "next-intl": "^4.14.7",
+    "next-intl": "^4.14.9",
     "next-themes": "^0.4.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
@@ -25,7 +25,7 @@
     "zustand": "^4.5.7"
   },
   "devDependencies": {
-    "@swc/wasm": "^1.16.2",
+    "@swc/wasm": "^1.16.13",
     "@types/estree": "^1.0.9",
     "@types/js-cookie": "^3.0.6",
     "@types/json-schema": "^7.0.15",
@@ -34,7 +34,7 @@
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.6.1",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.6",
+    "eslint-config-next": "^16.3.8",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3"
