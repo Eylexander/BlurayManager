@@ -112,7 +112,7 @@ export default function Sidebar() {
           {canModify && (
             <Link
               href={ROUTES.DASHBOARD.ADD.ADD}
-              className="group !mt-6 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-sm shadow-primary/20 transition-colors duration-200 hover:bg-primary/90 active:scale-[0.98]"
+              className="group mt-6! flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-xs shadow-primary/20 transition-colors duration-200 hover:bg-primary/90 active:scale-[0.98]"
             >
               <Plus className="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
               <span>{t("nav.add")}</span>
@@ -125,7 +125,7 @@ export default function Sidebar() {
           <div className="border-t border-border mb-4 pt-4">
             <button
               onClick={logout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
             >
               <LogOut className="w-4 h-4 shrink-0" />
               {t("nav.logout")}

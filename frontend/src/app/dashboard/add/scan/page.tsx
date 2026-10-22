@@ -214,7 +214,7 @@ export default function AddScanPage() {
         if (value !== "camera") stopCamera();
       }}
       className={`flex-1 flex items-center justify-center gap-2 h-9 rounded-md text-sm font-medium transition-colors [&_svg]:w-4 [&_svg]:h-4 ${
-        tab === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+        tab === value ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon}
@@ -278,7 +278,7 @@ export default function AddScanPage() {
               >
                 <X />
               </IconButton>
-              <p className="absolute bottom-3 inset-x-0 text-center text-sm text-white/90 drop-shadow">
+              <p className="absolute bottom-3 inset-x-0 text-center text-sm text-white/90 drop-shadow-sm">
                 {batchMode ? t("barcode.batchScanning") : t("barcode.position")}
               </p>
             </div>
@@ -343,7 +343,7 @@ export default function AddScanPage() {
           />
           <span
             aria-hidden
-            className="relative w-10 h-6 shrink-0 rounded-full bg-muted border border-border transition-colors peer-checked:bg-primary peer-checked:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40 after:absolute after:top-0.5 after:left-0.5 after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4"
+            className="relative w-10 h-6 shrink-0 rounded-full bg-muted border border-border transition-colors peer-checked:bg-primary peer-checked:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40 after:absolute after:top-0.5 after:left-0.5 after:w-[18px] after:h-[18px] after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-4"
           />
         </label>
       </div>

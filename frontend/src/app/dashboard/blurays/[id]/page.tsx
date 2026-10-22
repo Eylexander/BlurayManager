@@ -167,10 +167,10 @@ export default function BlurayDetailPage() {
           "fr-FR": tmdbData.fr?.overview || tmdbData.overview || "",
         },
         genre: {
-          "en-US": tmdbData.genres?.map((g: any) => g.name) || [],
+          "en-US": tmdbData.genres?.map((g: { name: string }) => g.name) || [],
           "fr-FR":
-            tmdbData.fr?.genres?.map((g: any) => g.name) ||
-            tmdbData.genres?.map((g: any) => g.name) ||
+            tmdbData.fr?.genres?.map((g: { name: string }) => g.name) ||
+            tmdbData.genres?.map((g: { name: string }) => g.name) ||
             [],
         },
         cover_image_url: tmdbData.poster_path
@@ -230,7 +230,7 @@ export default function BlurayDetailPage() {
         <div className="relative rounded-3xl overflow-hidden border border-border bg-card px-6 sm:px-12 pt-40 sm:pt-64 pb-12">
           <div className="absolute inset-x-0 top-0 h-[450px] sm:h-[550px] bg-muted/60 noise" />
           <div className="relative flex flex-col md:flex-row gap-10 items-center md:items-end">
-            <Skeleton className="w-44 sm:w-56 md:w-64 lg:w-72 aspect-[2/3] rounded-2xl shadow-xl" />
+            <Skeleton className="w-44 sm:w-56 md:w-64 lg:w-72 aspect-2/3 rounded-2xl shadow-xl" />
             <div className="flex-1 w-full flex flex-col items-center md:items-start gap-4">
               <div className="flex gap-2">
                 <Skeleton className="h-6 w-20" />
@@ -247,7 +247,7 @@ export default function BlurayDetailPage() {
 
   // Floating actions over the hero backdrop
   const heroAction =
-    "rounded-lg bg-card/85 backdrop-blur border border-border shadow-sm transition-colors [&_svg]:w-[18px] [&_svg]:h-[18px]";
+    "rounded-lg bg-card/85 backdrop-blur-sm border border-border shadow-xs transition-colors [&_svg]:w-[18px] [&_svg]:h-[18px]";
   // Links can't use IconButton, so they carry its lg size themselves
   const heroLink =
     "inline-grid place-items-center w-10 h-10 shrink-0 text-muted-foreground hover:text-foreground";
@@ -272,8 +272,8 @@ export default function BlurayDetailPage() {
     <div className="relative min-h-screen text-foreground pb-20">
       {/* Background Ambient Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] opacity-50" />
-        <div className="absolute top-[40%] -left-[10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] opacity-50" />
+        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] opacity-50" />
+        <div className="absolute top-[40%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] opacity-50" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -400,16 +400,16 @@ export default function BlurayDetailPage() {
                 <div className="w-full h-full bg-muted noise" />
               )}
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/5 to-transparent pointer-events-none hidden md:block" />
+            <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-r from-background/80 via-background/5 to-transparent pointer-events-none hidden md:block" />
           </div>
 
           {/* Main Content */}
           <div className="relative z-20 px-6 sm:px-12 pt-40 sm:pt-64 pb-12">
             <div className="flex flex-col md:flex-row gap-10 items-center md:items-end">
               {/* Poster */}
-              <div className="flex-shrink-0 relative -mb-6 md:mb-0">
-                <div className="relative w-44 sm:w-56 md:w-64 lg:w-72 aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-border/20 transform transition-transform duration-500 md:hover:scale-[1.02] will-change-transform">
+              <div className="shrink-0 relative -mb-6 md:mb-0">
+                <div className="relative w-44 sm:w-56 md:w-64 lg:w-72 aspect-2/3 rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-border/20 transform transition-transform duration-500 md:hover:scale-[1.02] will-change-transform">
                   {bluray.cover_image_url ? (
                     <Image
                       src={bluray.cover_image_url}
@@ -554,7 +554,7 @@ export default function BlurayDetailPage() {
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
             {bluray.description && (
-              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-sm shadow-sm">
+              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-xs shadow-xs">
                 <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                   <div className="w-1 h-6 bg-primary rounded-full"></div>
                   {t("details.synopsis")}
@@ -569,7 +569,7 @@ export default function BlurayDetailPage() {
 
             {/* Seasons Section for Series */}
             {bluray.type === "series" && (
-              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-sm shadow-sm">
+              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-xs shadow-xs">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                     <div className="w-1 h-6 bg-purple-500 rounded-full"></div>

@@ -37,7 +37,7 @@ const SortDropdown = ({ sortBy, setSortBy }: SortDropdownProps) => {
     <div className="relative p-[0.1rem]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 appearance-none pl-3 pr-3 sm:pl-4 sm:pr-4 py-[0.45rem] sm:py-[0.65rem] bg-muted border border-border rounded-lg text-xs sm:text-sm font-medium text-foreground/80 md:hover:bg-accent md:focus:outline-none md:focus:ring-2 md:focus:ring-ring transition-colors cursor-pointer"
+        className="flex items-center gap-2 appearance-none pl-3 pr-3 sm:pl-4 sm:pr-4 py-[0.45rem] sm:py-[0.65rem] bg-muted border border-border rounded-lg text-xs sm:text-sm font-medium text-foreground/80 md:hover:bg-accent md:focus:outline-hidden md:focus:ring-2 md:focus:ring-ring transition-colors cursor-pointer"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -50,7 +50,7 @@ const SortDropdown = ({ sortBy, setSortBy }: SortDropdownProps) => {
 
       {/* DROPDOWN MENU */}
       {isOpen && (
-        <div className="absolute top-full mt-1 w-48 sm:right-[1px] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full mt-1 w-48 sm:right-px bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
           <ul role="listbox">
             {options.map((option) => (
               <li

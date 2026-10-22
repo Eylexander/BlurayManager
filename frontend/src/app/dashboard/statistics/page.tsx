@@ -107,7 +107,7 @@ const BarList = ({
             type="button"
             onClick={() => onSelect(d.name)}
             title={selectLabel(d.name)}
-            className="group w-full text-left rounded-md px-2 py-1.5 -mx-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
+            className="group w-full text-left rounded-md px-2 py-1.5 -mx-2 hover:bg-accent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
           >
             <div className="flex items-baseline justify-between gap-3 mb-1.5 text-sm">
               <span className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{d.name}</span>
@@ -144,7 +144,7 @@ const SplitBar = ({ data, onSelect }: { data: Datum[]; onSelect: (d: Datum) => v
             type="button"
             key={d.name}
             onClick={() => onSelect(d)}
-            className="group min-w-0 text-left rounded-md p-2 -m-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
+            className="group min-w-0 text-left rounded-md p-2 -m-2 hover:bg-accent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
           >
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${SPLIT_COLORS[index]}`} />
@@ -334,7 +334,7 @@ export default function StatisticsPage() {
 
       {/* Value, Storage & Runtime */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <div className="brand-gradient rounded-lg p-4 sm:p-6 text-white shadow-sm flex flex-col justify-between gap-4">
+        <div className="brand-gradient rounded-lg p-4 sm:p-6 text-white shadow-xs flex flex-col justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="grid place-items-center w-9 h-9 rounded-lg bg-white/15">
               <Euro className="w-5 h-5" />

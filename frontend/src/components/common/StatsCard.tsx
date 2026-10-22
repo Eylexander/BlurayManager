@@ -24,7 +24,7 @@ export default function StatsCard({ title, value, icon, color }: StatsCardProps)
       <div className="flex flex-row items-stretch justify-between h-full gap-3">
         
         {/* Left Side: Text Column */}
-        <div className="flex flex-col justify-between flex-grow">
+        <div className="flex flex-col justify-between grow">
           <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-muted-foreground leading-tight mb-4">
             {title}
           </p>

@@ -70,7 +70,7 @@ export default function ContextMenu({ x, y, options, onClose }: ContextMenuProps
   return (
     <div
       ref={menuRef}
-      className="fixed z-[100] min-w-[200px] bg-card text-card-foreground border border-border rounded-lg shadow-xl shadow-black/10 p-1 animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-100 min-w-[200px] bg-card text-card-foreground border border-border rounded-lg shadow-xl shadow-black/10 p-1 animate-in fade-in zoom-in-95 duration-100"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -90,7 +90,7 @@ export default function ContextMenu({ x, y, options, onClose }: ContextMenuProps
                 : 'text-foreground/80 hover:bg-accent hover:text-foreground'
             }`}
           >
-            {option.icon && <span className="w-4 h-4 flex-shrink-0">{option.icon}</span>}
+            {option.icon && <span className="w-4 h-4 shrink-0">{option.icon}</span>}
             <span className="flex-1">{option.label}</span>
           </button>
         </div>

@@ -183,7 +183,7 @@ export default function Navbar() {
         {/* Logo */}
         {/* <button
           onClick={() => router.push(ROUTES.DASHBOARD.HOME)}
-          className="flex items-center justify-center flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 px-2 py-1 rounded-lg lg:hover:scale-105 lg:hover:bg-accent sm:mb-3"
+          className="flex items-center justify-center shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 px-2 py-1 rounded-lg lg:hover:scale-105 lg:hover:bg-accent sm:mb-3"
           title="Go to home"
         >
           <Image
@@ -215,7 +215,7 @@ export default function Navbar() {
 
         <button
           onClick={() => router.push(ROUTES.DASHBOARD.HOME)}
-          className="flex items-center space-x-2 flex-shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 px-2 py-1 rounded-lg lg:hover:scale-[101%] lg:hover:bg-accent"
+          className="flex items-center space-x-2 shrink-0 group cursor-pointer transition-all duration-200 active:scale-95 px-2 py-1 rounded-lg lg:hover:scale-[101%] lg:hover:bg-accent"
           title="Go to home"
         >
           <Image
@@ -247,7 +247,7 @@ export default function Navbar() {
                   setShowSearchTips(true);
                 }
               }}
-              className="w-full pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 text-sm sm:text-base rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 text-sm sm:text-base rounded-lg border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
             />
 
             {/* Search Tips Dropdown */}
@@ -407,7 +407,7 @@ export default function Navbar() {
         </div>
 
         {/* User Section */}
-        <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
           <div className="relative" ref={notificationRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
@@ -428,7 +428,7 @@ export default function Navbar() {
             {/* Notifications Dropdown */}
             {showNotifications && (
               <div className="fixed sm:absolute right-0 sm:mt-3 left-0 sm:left-auto top-16 sm:top-auto w-full sm:w-96 max-w-md bg-card rounded-b-2xl sm:rounded-2xl shadow-2xl border-t sm:border border-border z-50 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[70vh] sm:max-h-96 overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border flex-shrink-0">
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border shrink-0">
                   <h3 className="font-semibold text-foreground text-base sm:text-lg">
                     {t("notifications.title")}
                   </h3>
@@ -464,7 +464,7 @@ export default function Navbar() {
                       >
                         <div className="flex items-start gap-2 sm:gap-3">
                           {!notification.read && (
-                            <div className="w-2 h-2 rounded-full bg-primary mt-1.5 sm:mt-2 flex-shrink-0 shadow-lg shadow-primary/50"></div>
+                            <div className="w-2 h-2 rounded-full bg-primary mt-1.5 sm:mt-2 shrink-0 shadow-lg shadow-primary/50"></div>
                           )}
                           <div className="flex-1 min-w-0">
                             <p
@@ -482,7 +482,7 @@ export default function Navbar() {
                   )}
                 </div>
 
-                <div className="p-3 sm:p-3 border-t border-border bg-background rounded-b-2xl sm:rounded-none flex-shrink-0">
+                <div className="p-3 sm:p-3 border-t border-border bg-background rounded-b-2xl sm:rounded-none shrink-0">
                   <button
                     onClick={markAllAsRead}
                     disabled={unreadCount === 0}

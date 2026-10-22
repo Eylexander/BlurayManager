@@ -107,7 +107,7 @@ export default function TagPickerModal({
                     type="button"
                     aria-pressed={active}
                     onClick={() => toggle(tag.id)}
-                    className="inline-flex items-center gap-2 h-9 px-3.5 rounded-full border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    className="inline-flex items-center gap-2 h-9 px-3.5 rounded-full border text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
                     style={
                       active
                         ? { backgroundColor: color, borderColor: color, color: '#fff' }
@@ -127,7 +127,7 @@ export default function TagPickerModal({
               <button
                 type="button"
                 onClick={() => setCreating(true)}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-dashed border-primary/50 text-sm font-medium text-primary hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-dashed border-primary/50 text-sm font-medium text-primary hover:bg-primary/10 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
               >
                 <Plus className="w-4 h-4" />
                 {t('add.addNewTag')}

@@ -14,4 +14,4 @@ export interface CreateTagRequest {
   description: string;
 }
 
-export interface UpdateTagRequest extends Partial<CreateTagRequest> {}
+export type UpdateTagRequest = Partial<CreateTagRequest>;

@@ -40,7 +40,7 @@ export default function RegisterPage() {
       } else {
         router.push(ROUTES.DASHBOARD.HOME);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(getApiError(error, t("auth.registerError")));
     } finally {
       setLoading(false);

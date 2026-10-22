@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
       await apiClient.requestPasswordReset(email.toLowerCase());
       toast.success(t("auth.resetLinkSent"));
       setSent(true);
-    } catch (error: any) {
+    } catch (error) {
       toast.error(getApiError(error, t("auth.resetLinkError")));
     } finally {
       setLoading(false);

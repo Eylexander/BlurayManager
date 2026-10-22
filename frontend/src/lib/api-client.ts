@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import Cookies from 'js-cookie';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useAuthStore } from '@/store/authStore';
+import type { CreateTagRequest, UpdateTagRequest } from '@/types/tag';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -134,7 +135,7 @@ class ApiClient {
     return response.data.bluray || response.data;
   }
 
-  async createBluray(data: any) {
+  async createBluray(data: unknown) {
     const response = await this.client.post('/blurays', data);
     
     // Trigger notification refresh
@@ -143,7 +144,7 @@ class ApiClient {
     return response.data;
   }
 
-  async updateBluray(id: string, data: any) {
+  async updateBluray(id: string, data: unknown) {
     const response = await this.client.put(`/blurays/${id}`, data);
     return response.data;
   }
@@ -198,14 +199,14 @@ class ApiClient {
    * Update series with new seasons (Option C: Incremental season management)
    * Merges new seasons with existing ones, avoiding duplicates
    */
-  async addSeasonsToSeries(id: string, newSeasons: any[], title: string) {
+  async addSeasonsToSeries(id: string, newSeasons: { number: number }[], title: string) {
     try {
       // Get current bluray data
       const current = await this.getBluray(id);
       
       // Merge seasons, avoiding duplicates
       const existingSeasonNumbers = new Set(
-        (current.seasons || []).map((s: any) => s.number)
+        (current.seasons || []).map((s: { number: number }) => s.number)
       );
       
       const seasonsToAdd = newSeasons.filter(
@@ -241,12 +242,12 @@ class ApiClient {
     return response.data;
   }
 
-  async createTag(data: any) {
+  async createTag(data: CreateTagRequest) {
     const response = await this.client.post('/tags', data);
     return response.data.tag;
   }
 
-  async updateTag(id: string, data: any) {
+  async updateTag(id: string, data: UpdateTagRequest) {
     const response = await this.client.put(`/tags/${id}`, data);
     return response.data.tag;
   }

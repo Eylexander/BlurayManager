@@ -33,7 +33,7 @@ export default function SeasonGrid({ seasons, isSelected, onToggle, detectedSeas
             type="button"
             aria-pressed={selected}
             onClick={() => onToggle(season.number)}
-            className={`relative p-3 sm:p-4 rounded-lg border text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
+            className={`relative p-3 sm:p-4 rounded-lg border text-left transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 ${
               selected ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-accent'
             }`}
           >

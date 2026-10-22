@@ -63,4 +63,4 @@ export interface CreateBlurayRequest {
   tmdb_id?: string;
 }
 
-export interface UpdateBlurayRequest extends Partial<CreateBlurayRequest> {}
+export type UpdateBlurayRequest = Partial<CreateBlurayRequest>;

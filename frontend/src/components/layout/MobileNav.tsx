@@ -101,18 +101,18 @@ export default function MobileNav() {
       {/* Backdrop with Blur */}
       {showMenu && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-md z-[60] transition-opacity duration-300"
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-md z-60 transition-opacity duration-300"
           onClick={closeMenu}
         />
       )}
 
       {/* Slide-up Drawer */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 right-0 z-[70] transition-transform duration-300 cubic-bezier(0.32, 0.72, 0, 1) ${
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-70 transition-transform duration-300 cubic-bezier(0.32, 0.72, 0, 1) ${
           showMenu ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="mx-6 mb-32 bg-card/95 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-border overflow-hidden">
+        <div className="mx-6 mb-32 bg-card/95 backdrop-blur-xl rounded-4xl shadow-2xl border border-border overflow-hidden">
           <div className="p-4 sm:p-8">
             
             {/* Header / User Profile */}
@@ -166,7 +166,7 @@ export default function MobileNav() {
       </div>
 
       {/* Floating Action Dock */}
-      <div className="lg:hidden fixed bottom-6 left-0 right-0 flex justify-center items-center z-[80] pointer-events-none px-6">
+      <div className="lg:hidden fixed bottom-6 left-0 right-0 flex justify-center items-center z-80 pointer-events-none px-6">
         <nav className="pointer-events-auto flex items-center bg-card/90 backdrop-blur-lg px-4 py-3 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-border gap-4">
           
           {/* Add Action (Only if permitted) */}

@@ -39,7 +39,7 @@ export default function LoginPage() {
       } else {
         router.push(ROUTES.DASHBOARD.HOME);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login error:", error);
       const errorMessage =
         getApiError(error, t("auth.loginError"));
@@ -63,7 +63,7 @@ export default function LoginPage() {
       } else {
         router.push(ROUTES.DASHBOARD.HOME);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Guest login error:", error);
       toast.error(t("auth.guestLoginError"));
     } finally {

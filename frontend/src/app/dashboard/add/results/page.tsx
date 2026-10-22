@@ -120,7 +120,7 @@ export default function AddResultsPage() {
           : t("add.addedToCollection", { title }),
       );
       router.push(ROUTES.DASHBOARD.HOME);
-    } catch (error: any) {
+    } catch (error) {
       toast.error(
         getApiError(error, t("add.failedToAddToCollection")),
       );
@@ -134,7 +134,7 @@ export default function AddResultsPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-8" aria-busy>
         <Skeleton className="h-9 w-40 rounded-full" />
         <div className="card p-6 sm:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12">
-          <Skeleton className="w-full sm:w-64 aspect-[2/3] mx-auto lg:mx-0 rounded-3xl" />
+          <Skeleton className="w-full sm:w-64 aspect-2/3 mx-auto lg:mx-0 rounded-3xl" />
           <div className="flex-1 space-y-4">
             <Skeleton className="h-12 w-3/4" />
             <div className="flex gap-3">
@@ -169,8 +169,8 @@ export default function AddResultsPage() {
           <div className="p-6 sm:p-10">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
               {/* Poster Section */}
-              <div className="flex-shrink-0 w-full sm:w-64 mx-auto lg:mx-0">
-                <div className="relative aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-border group">
+              <div className="shrink-0 w-full sm:w-64 mx-auto lg:mx-0">
+                <div className="relative aspect-2/3 rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-border group">
                   {details.poster_path ? (
                     <Image
                       src={`https://image.tmdb.org/t/p/w500${details.poster_path}`}

@@ -102,7 +102,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-100 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
       onMouseDown={(e) => {
         if (dismissible && e.target === e.currentTarget) onClose();
       }}
@@ -114,7 +114,7 @@ export function Modal({
         aria-labelledby={`${id}-title`}
         aria-describedby={description ? `${id}-description` : undefined}
         tabIndex={-1}
-        className={`w-full ${sizes[size]} max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-card text-card-foreground border border-border rounded-t-2xl sm:rounded-xl shadow-2xl shadow-black/20 outline-none animate-dialog-in`}
+        className={`w-full ${sizes[size]} max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-card text-card-foreground border border-border rounded-t-2xl sm:rounded-xl shadow-2xl shadow-black/20 outline-hidden animate-dialog-in`}
       >
         <div className="flex items-start gap-3 px-5 sm:px-6 pt-5 pb-4 border-b border-border">
           {icon && (

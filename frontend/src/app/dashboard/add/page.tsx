@@ -180,7 +180,7 @@ export default function AddBlurayPage() {
       aria-checked={type === value}
       onClick={() => setType(value)}
       className={`flex items-center gap-1.5 h-8 px-3 rounded-md text-sm font-medium transition-colors [&_svg]:w-4 [&_svg]:h-4 ${
-        type === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+        type === value ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon}
@@ -484,7 +484,7 @@ function ResultRow({
         disabled={disabled}
         aria-label={addLabel}
         title={addLabel}
-        className="relative z-10 w-11 h-11 !px-0 shrink-0"
+        className="relative z-10 w-11 h-11 px-0! shrink-0"
       >
         {!adding && <Plus />}
       </Button>

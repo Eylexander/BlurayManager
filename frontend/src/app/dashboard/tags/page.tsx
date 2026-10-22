@@ -110,7 +110,7 @@ export default function TagsPage() {
                 </div>
               </div>
 
-              <p className="flex-1 text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+              <p className="flex-1 text-sm text-muted-foreground line-clamp-2 min-h-10">
                 {tag.description || '—'}
               </p>
 

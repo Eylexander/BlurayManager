@@ -67,7 +67,7 @@ const OptionButton = ({
   >
     {icon}
     {label}
-    {isSelected && <Check className="!w-4 !h-4 absolute top-2 right-2" />}
+    {isSelected && <Check className="w-4! h-4! absolute top-2 right-2" />}
   </button>
 );
 
@@ -176,7 +176,7 @@ export default function SettingsPage() {
       }
 
       toast.success(t("settings.usernameUpdated"));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(
         getApiError(error, t("settings.usernameUpdateFailed")),
       );
@@ -212,7 +212,7 @@ export default function SettingsPage() {
       setConfirmPassword("");
 
       toast.success(t("settings.passwordUpdated"));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(
         getApiError(error, t("settings.passwordUpdateFailed")),
       );
@@ -234,7 +234,7 @@ export default function SettingsPage() {
       setJellyfinDraft(null);
 
       toast.success(t("settings.jellyfinSaved"));
-    } catch (error: any) {
+    } catch (error) {
       toast.error(getApiError(error, t("settings.jellyfinSaveFailed")));
     } finally {
       setJellyfinLoading(false);

@@ -3,14 +3,14 @@ export const Skeleton = ({ className = "", style }: { className?: string; style?
   <div
     aria-hidden
     style={style}
-    className={`rounded-md bg-muted bg-[length:200%_100%] bg-[linear-gradient(90deg,transparent_25%,hsl(var(--foreground)/0.06)_50%,transparent_75%)] animate-shimmer ${className}`}
+    className={`rounded-md bg-muted bg-size-[200%_100%] bg-[linear-gradient(90deg,transparent_25%,hsl(var(--foreground)/0.06)_50%,transparent_75%)] animate-shimmer ${className}`}
   />
 );
 
 /** Mirrors BlurayCard's layout. */
 export const BlurayCardSkeleton = () => (
   <div className="flex flex-col rounded-lg border border-border bg-card overflow-hidden">
-    <Skeleton className="aspect-[2/3] w-full rounded-none" />
+    <Skeleton className="aspect-2/3 w-full rounded-none" />
     <div className="p-3 sm:p-4 space-y-2">
       <Skeleton className="h-4 w-4/5" />
       <Skeleton className="h-3 w-1/2" />

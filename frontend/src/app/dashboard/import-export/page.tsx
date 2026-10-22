@@ -268,7 +268,7 @@ export default function MigrationPage() {
                 setDragging(false);
                 selectFile(e.dataTransfer.files?.[0]);
               }}
-              className={`my-5 flex-1 min-h-[7.5rem] flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
+              className={`my-5 flex-1 min-h-30 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 ${
                 dragging
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border text-muted-foreground hover:border-primary/50 hover:bg-accent/50"

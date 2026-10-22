@@ -33,7 +33,7 @@ export default function BlurayListItem({ bluray, onUpdate }: BlurayListItemProps
             active:scale-[0.99] active:bg-accent
           ">
             {/* Cover */}
-            <div className="relative w-16 h-24 sm:w-20 sm:h-28 flex-shrink-0 shadow-md overflow-hidden rounded-md bg-muted">
+            <div className="relative w-16 h-24 sm:w-20 sm:h-28 shrink-0 shadow-md overflow-hidden rounded-md bg-muted">
               {currentBluray.cover_image_url ? (
                 <Image
                   src={currentBluray.cover_image_url}

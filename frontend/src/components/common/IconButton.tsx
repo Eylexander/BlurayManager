@@ -28,7 +28,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       type={type}
       aria-label={label}
       title={label}
-      className={`inline-grid place-items-center ${sizes[size]} shrink-0 rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 disabled:pointer-events-none [&_svg]:w-[18px] [&_svg]:h-[18px] ${variants[variant]} ${className}`}
+      className={`inline-grid place-items-center ${sizes[size]} shrink-0 rounded-lg transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 disabled:pointer-events-none [&_svg]:w-[18px] [&_svg]:h-[18px] ${variants[variant]} ${className}`}
       {...props}
     >
       {children}

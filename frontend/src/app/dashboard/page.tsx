@@ -218,7 +218,7 @@ export default function DashboardPage() {
         <div aria-hidden className="absolute inset-0 noise opacity-60 mix-blend-overlay" />
         <div aria-hidden className="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-white/10 blur-2xl" />
         {/* Faint disc, echoing the logo */}
-        <div aria-hidden className="absolute -right-10 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full border-[28px] border-white/10" />
+        <div aria-hidden className="absolute -right-10 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full border-28 border-white/10" />
         <div className="relative">
           <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-2">
             {isGuest
@@ -234,7 +234,7 @@ export default function DashboardPage() {
       </section>
 
       {!isGuest && stats && (
-        <div className="grid grid-cols-2 gap-4 md:gap-6 !mt-0 sm:!mt-2 md:!mt-6">
+        <div className="grid grid-cols-2 gap-4 md:gap-6 mt-0! sm:mt-2! md:mt-6!">
           <Link href={`/dashboard?search=${encodeURIComponent("type:movie")}`}>
             <StatsCard
               title={t("statistics.totalMovies")}
@@ -270,7 +270,7 @@ export default function DashboardPage() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* View Mode Toggle */}
             <div className="hidden vsm:flex items-center gap-1 bg-muted rounded-lg p-0.5 sm:p-1 border border-border">
               <button

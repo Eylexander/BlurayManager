@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Soft brand glow behind the card */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full bg-primary/10 blur-3xl"
+        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 w-160 h-160 rounded-full bg-primary/10 blur-3xl"
       />
       <div className="relative max-w-md w-full animate-in">
         <div className="flex justify-center mb-8">
