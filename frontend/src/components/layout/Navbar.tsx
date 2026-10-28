@@ -11,6 +11,7 @@ import { useNotifications, Notification } from "@/hooks/useNotification";
 import { ROUTES } from "@/hooks/useRouteProtection";
 import { getLocalizedTextArray, getTitle } from "@/lib/bluray-utils";
 import { useLocale } from "next-intl";
+import { TagChip } from "@/components/common";
 
 interface Bluray {
   id: string;
@@ -67,10 +68,13 @@ export default function Navbar() {
     formatTime,
   } = useNotifications();
   const [searchResults, setSearchResults] = useState<Bluray[]>([]);
+  // Query the current results belong to; they lag behind the input while debouncing
+  const [resultsQuery, setResultsQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showSearchTips, setShowSearchTips] = useState(false);
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [searchFocused, setSearchFocused] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -80,11 +84,31 @@ export default function Navbar() {
     inputRef.current?.focus();
   };
 
+  // Suggest tag names while a "tag:" value is being typed at the end of the query
+  const tagMatch = searchQuery.match(/(?:^|\s)tag:([^:]*)$/i);
+  const tagPartial = tagMatch?.[1].trim().toLowerCase() ?? "";
+  const tagSuggestions = tagMatch
+    ? allTags
+        .filter((tag) => {
+          const name = tag.name.toLowerCase();
+          return name.includes(tagPartial) && name !== tagPartial;
+        })
+        .slice(0, 8)
+    : [];
+  const showTagSuggestions = searchFocused && tagSuggestions.length > 0;
+
+  const applyTag = (name: string) => {
+    setSearchQuery(
+      `${searchQuery.slice(0, searchQuery.length - tagMatch![1].length)}${name} `,
+    );
+    inputRef.current?.focus();
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       // If there's exactly one result, navigate directly to its detail page
-      if (searchResults.length === 1) {
+      if (resultsQuery === searchQuery && searchResults.length === 1) {
         router.push(
           ROUTES.DASHBOARD.BLURAYS.DETAIL.replace("[id]", searchResults[0].id),
         );
@@ -124,6 +148,7 @@ export default function Navbar() {
           const query = searchQuery.toLowerCase();
           const filtered = await apiClient.searchBlurays(query, 0, 8);
           setSearchResults(filtered);
+          setResultsQuery(searchQuery);
           setShowSearchResults(
             filtered.length > 0 && document.activeElement === inputRef.current,
           );
@@ -150,6 +175,7 @@ export default function Navbar() {
       ) {
         setShowSearchResults(false);
         setShowSearchTips(false);
+        setSearchFocused(false);
       }
     };
 
@@ -241,6 +267,7 @@ export default function Navbar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => {
+                setSearchFocused(true);
                 if (searchResults.length > 0) {
                   setShowSearchResults(true);
                 } else {
@@ -283,8 +310,24 @@ export default function Navbar() {
                 </div>
               )}
 
+            {/* Tag Suggestions Dropdown */}
+            {showTagSuggestions && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-lg shadow-2xl border border-border z-50 p-3 flex flex-wrap gap-2">
+                {tagSuggestions.map((tag) => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => applyTag(tag.name)}
+                    className="rounded-full hover:opacity-80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
+                  >
+                    <TagChip name={tag.name} color={tag.color} />
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Search Results Dropdown */}
-            {showSearchResults && searchResults.length > 0 && (
+            {showSearchResults && !showTagSuggestions && searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-lg shadow-2xl border border-border z-50 max-h-96 overflow-y-auto">
                 {searchLoading ? (
                   <div className="p-4 text-center text-muted-foreground">

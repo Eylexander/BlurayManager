@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Tag as TagIcon, Plus, Pencil, Trash2, Calendar } from 'lucide-react';
+import { Tag as TagIcon, Plus, Pencil, Trash2, Calendar, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiClient } from '@/lib/api-client';
-import useRouteProtection from '@/hooks/useRouteProtection';
+import useRouteProtection, { ROUTES } from '@/hooks/useRouteProtection';
 import { Tag } from '@/types/tag';
 import { Button, IconButton, PageHeader, SearchInput, TagChip, useConfirm } from '@/components/common';
 import { LoaderCircle } from '@/components/common/LoaderCircle';
@@ -15,6 +15,7 @@ import TagEditorModal from '@/components/modals/TagEditorModal';
 export default function TagsPage() {
   const t = useTranslations();
   const pathname = usePathname();
+  const router = useRouter();
   const { confirm, confirmDialog } = useConfirm();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +102,12 @@ export default function TagsPage() {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <TagChip name={tag.name} color={tag.color} className="text-sm" />
                 <div className="flex -mr-2 -mt-1">
+                  <IconButton
+                    label={t('details.searchForTag', { tag: tag.name })}
+                    onClick={() => router.push(`${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`tag:${tag.name}`)}`)}
+                  >
+                    <Search />
+                  </IconButton>
                   <IconButton label={t('tags.editTag')} onClick={() => setEditing(tag)}>
                     <Pencil />
                   </IconButton>
