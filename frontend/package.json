@@ -34,7 +34,7 @@
     "@types/react-dom": "^19.3.0",
     "@zxing/library": "^0.23.0",
     "axios": "^1.21.0",
-    "eslint": "^9.39.5",
+    "eslint": "^10.13.0",
     "eslint-config-next": "^16.4.3",
     "js-cookie": "^3.0.8",
     "lucide-react": "^1.63.0",
