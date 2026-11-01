@@ -1,5 +1,5 @@
 # Development Dockerfile for Next.js frontend
-FROM node:24-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 
