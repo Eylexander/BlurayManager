@@ -33,10 +33,10 @@ func (ds *MongoDatastore) GetUserNotifications(ctx context.Context, userID primi
 	return notifications, nil
 }
 
-func (ds *MongoDatastore) MarkNotificationAsRead(ctx context.Context, notificationID primitive.ObjectID) error {
+func (ds *MongoDatastore) MarkNotificationAsRead(ctx context.Context, notificationID, userID primitive.ObjectID) error {
 	_, err := ds.notifications.UpdateOne(
 		ctx,
-		bson.M{"_id": notificationID},
+		bson.M{"_id": notificationID, "user_id": userID},
 		bson.M{"$set": bson.M{"read": true}},
 	)
 	return err

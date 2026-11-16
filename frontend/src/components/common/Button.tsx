@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader } from 'lucide-react';
+import { Disc3 } from 'lucide-react';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'success' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -18,11 +18,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs shadow-primary/20',
-  secondary: 'bg-card text-foreground border border-border hover:bg-accent',
+  primary: 'bg-primary text-primary-foreground hover:brightness-110 key-edge',
+  secondary: 'bg-card text-foreground border border-input hover:border-foreground/40 key-edge',
   ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground',
-  success: 'bg-emerald-600 text-white hover:bg-emerald-600/90 shadow-xs shadow-emerald-600/20',
-  danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-xs shadow-destructive/20',
+  success: 'bg-emerald-600 text-white hover:brightness-110 key-edge',
+  danger: 'bg-destructive text-destructive-foreground hover:brightness-110 key-edge',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -50,7 +50,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const baseStyles =
-      'group inline-flex items-center justify-center gap-2 font-medium rounded-lg whitespace-nowrap transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 [&_svg]:w-4 [&_svg]:h-4 [&_svg]:shrink-0';
+      'group inline-flex items-center justify-center gap-2 font-semibold rounded-md whitespace-nowrap transition-[color,background-color,border-color,filter,transform,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:w-4 [&_svg]:h-4 [&_svg]:shrink-0';
     const widthStyles = fullWidth ? 'w-full' : inline ? '' : 'w-full sm:w-auto';
 
     return (
@@ -64,7 +64,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {loading ? (
           <>
-            <Loader className="animate-spin" />
+            <Disc3 className="animate-spin" />
             {loadingText ?? children}
           </>
         ) : (

@@ -1,13 +1,14 @@
 package api
 
 import (
+	"eylexander/bluraymanager/i18n"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (api *API) GetStatistics(c *gin.Context) {
-	stats, err := api.ctrl.GetStatistics(c.Request.Context(), c.GetHeader("Accept-Language"))
+	stats, err := api.ctrl.GetStatistics(c.Request.Context(), i18n.ParseAcceptLanguage(c.GetHeader("Accept-Language")))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

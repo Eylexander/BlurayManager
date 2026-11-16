@@ -6,6 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // statsItem is a bluray as projected by the statistics highlight facets.
@@ -230,7 +231,7 @@ func (ds *MongoDatastore) GetSimplifiedStatistics(ctx context.Context) (*models.
 	stats.TotalMovies = int(movieCount)
 	stats.TotalSeries = int(seriesCount)
 
-	cursor, err := ds.blurays.Find(ctx, bson.M{})
+	cursor, err := ds.blurays.Find(ctx, bson.M{}, options.Find().SetProjection(bson.M{"type": 1, "seasons": 1}))
 	if err != nil {
 		return nil, err
 	}

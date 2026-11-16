@@ -50,7 +50,11 @@ func (ds *MongoDatastore) UpdateTag(ctx context.Context, tag *models.Tag) error 
 }
 
 func (ds *MongoDatastore) DeleteTag(ctx context.Context, id primitive.ObjectID) error {
-	_, err := ds.tags.DeleteOne(ctx, bson.M{"_id": id})
+	if _, err := ds.tags.DeleteOne(ctx, bson.M{"_id": id}); err != nil {
+		return err
+	}
+	// Blurays reference tags by ID; drop the now-dangling reference.
+	_, err := ds.blurays.UpdateMany(ctx, bson.M{"tags": id.Hex()}, bson.M{"$pull": bson.M{"tags": id.Hex()}})
 	return err
 }
 

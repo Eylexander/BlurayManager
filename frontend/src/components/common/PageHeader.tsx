@@ -8,22 +8,22 @@ interface PageHeaderProps {
   actions?: ReactNode;
 }
 
-/** Title block shared by the dashboard pages. */
+/**
+ * Title block shared by the dashboard pages: the title set like the logo's
+ * wordmark, over a rule that starts in the brand blue.
+ */
 export function PageHeader({ title, description, icon, actions }: PageHeaderProps) {
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-        {icon && (
-          <div className="shrink-0 grid place-items-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary [&_svg]:w-5 [&_svg]:h-5 sm:[&_svg]:w-6 sm:[&_svg]:h-6">
-            {icon}
-          </div>
-        )}
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-          {description && <p className="mt-0.5 text-sm sm:text-base text-muted-foreground">{description}</p>}
-        </div>
+    <header className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-border animate-in">
+      <div className="min-w-0">
+        <h1 className="flex items-center gap-2.5 font-display italic uppercase text-3xl sm:text-4xl text-foreground [&_svg]:w-6 [&_svg]:h-6 sm:[&_svg]:w-7 sm:[&_svg]:h-7 [&_svg]:shrink-0 [&_svg]:text-primary">
+          {icon}
+          {title}
+        </h1>
+        {description && <p className="mt-2 text-sm sm:text-base text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 sm:gap-3 shrink-0">{actions}</div>}
+      <span aria-hidden className="absolute left-0 -bottom-px h-[3px] w-16 bg-primary" />
     </header>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -15,17 +15,30 @@ import StatsCard from "@/components/common/StatsCard";
 import SortDropdown from "@/components/common/SortDropdown";
 import { BlurayCardSkeleton, BlurayRowSkeleton, Skeleton } from "@/components/common";
 import { getTitle } from "@/lib/bluray-utils";
-import useRouteProtection, { ROUTES } from "@/hooks/useRouteProtection";
+import useRouteProtection from "@/hooks/useRouteProtection";
 
 type SortOption = "recent" | "name" | "release_date" | "rating";
 
+const ITEMS_PER_PAGE = 32;
+
 const GRID_CLASSES =
-  "w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 auto-rows-max gap-4 sm:gap-6 sm:p-4 md:p-2";
+  "w-full grid grid-cols-1 vsm:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 auto-rows-max gap-x-4 gap-y-7 sm:gap-x-6 sm:gap-y-9";
+
+// Below the grid's two-column breakpoint (`vsm`) a single huge cover per row
+// is useless, so the list is shown whatever the saved preference.
+const NARROW = "(max-width: 379px)";
+const subscribeNarrow = (onChange: () => void) => {
+  const query = window.matchMedia(NARROW);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
 
 export default function DashboardPage() {
   const t = useTranslations();
   const pathname = usePathname();
-  const { user, viewMode, setViewMode } = useAuthStore();
+  const { user, viewMode: savedViewMode, setViewMode } = useAuthStore();
+  const narrow = useSyncExternalStore(subscribeNarrow, () => window.matchMedia(NARROW).matches, () => false);
+  const viewMode = narrow ? "list" : savedViewMode;
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
   const locale = useLocale() as "en-US" | "fr-FR";
@@ -37,7 +50,6 @@ export default function DashboardPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const ITEMS_PER_PAGE = 32;
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // Use route protection
@@ -57,6 +69,7 @@ export default function DashboardPage() {
         bluraysData = await apiClient.getSimplifiedBlurays({
           limit: ITEMS_PER_PAGE,
           skip: 0,
+          sort: sortBy,
         });
         setHasMore(bluraysData.length === ITEMS_PER_PAGE);
       }
@@ -70,7 +83,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, sortBy]);
 
   // Load more items for infinite scroll
   const loadMoreItems = useCallback(async () => {
@@ -81,6 +94,7 @@ export default function DashboardPage() {
       const moreBlurays = await apiClient.getSimplifiedBlurays({
         limit: ITEMS_PER_PAGE,
         skip: page * ITEMS_PER_PAGE,
+        sort: sortBy,
       });
 
       if (moreBlurays.length < ITEMS_PER_PAGE) {
@@ -96,9 +110,9 @@ export default function DashboardPage() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, searchQuery, page]);
+  }, [loadingMore, hasMore, searchQuery, page, sortBy]);
 
-  // Fetch initial data when search changes
+  // Fetch initial data when the search or the sort order changes
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetch on mount
     fetchData();
@@ -131,27 +145,16 @@ export default function DashboardPage() {
     };
   }, [hasMore, loadingMore, loadMoreItems, searchQuery]);
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 380) {
-        setViewMode("list");
-      }
-    };
-
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [viewMode, setViewMode]);
-
   const handleUpdate = () => {
     // Refetch data when an item is updated or deleted
     setLoading(true);
     fetchData();
   };
 
-  // Sort blurays based on selected option
-  const sortedBlurays = [...recentBlurays].sort((a, b) => {
+  // The paged collection comes sorted from the server: sorting one page at a
+  // time would shuffle rows as more load. Search results arrive in one piece
+  // and unsorted, so those are ordered here.
+  const sortedBlurays = !searchQuery ? recentBlurays : [...recentBlurays].sort((a, b) => {
     switch (sortBy) {
       case "name":
         return getTitle(a, locale).localeCompare(getTitle(b, locale), locale);
@@ -186,7 +189,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="w-full space-y-4 sm:space-y-6 md:space-y-8" aria-busy>
-        <Skeleton className="hidden md:block h-36 rounded-xl" />
+        <Skeleton className="hidden md:block h-44 rounded-lg" />
         <div className="grid grid-cols-2 gap-4 md:gap-6">
           <Skeleton className="h-24 sm:h-28 rounded-lg" />
           <Skeleton className="h-24 sm:h-28 rounded-lg" />
@@ -199,7 +202,7 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="space-y-2 sm:space-y-3">
+          <div>
             {Array.from({ length: 6 }, (_, i) => (
               <BlurayRowSkeleton key={i} />
             ))}
@@ -213,19 +216,19 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full overflow-x-hidden space-y-4 sm:space-y-6 md:space-y-8">
-      {/* Welcome banner (desktop) */}
-      <section className="hidden md:block relative overflow-hidden rounded-xl brand-gradient text-white p-8">
-        <div aria-hidden className="absolute inset-0 noise opacity-60 mix-blend-overlay" />
-        <div aria-hidden className="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-white/10 blur-2xl" />
-        {/* Faint disc, echoing the logo */}
-        <div aria-hidden className="absolute -right-10 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full border-28 border-white/10" />
-        <div className="relative">
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-2">
-            {isGuest
-              ? t("welcome.guestGreeting")
-              : `${t("welcome.greeting", { username: user?.username || "" })} 👋`}
+      {/* Welcome banner (desktop): a flat slab of the brand blue, with a
+          disc turning slowly at its edge */}
+      <section className="hidden md:block relative overflow-hidden rounded-lg bg-brand text-white px-8 py-9 animate-in">
+        <div
+          aria-hidden
+          className="disc absolute -right-14 top-1/2 -mt-36 w-72 aspect-square opacity-90 motion-safe:animate-disc-slow"
+        />
+        <div className="relative max-w-[70%]">
+          <p className="label-caps text-white/70">{t("common.appName")}</p>
+          <h1 className="mt-2 font-display italic uppercase text-4xl lg:text-5xl">
+            {isGuest ? t("welcome.guestGreeting") : t("welcome.greeting", { username: user?.username || "" })}
           </h1>
-          <p className="text-base lg:text-lg text-white/85">
+          <p className="mt-3 text-base lg:text-lg text-white/85">
             {isGuest
               ? t("welcome.guestSubtitle", { movies: stats?.total_movies || 0, seasons: stats?.total_seasons || 0 })
               : t("welcome.subtitle", { count: stats?.total_blurays || 0 })}
@@ -234,12 +237,12 @@ export default function DashboardPage() {
       </section>
 
       {!isGuest && stats && (
-        <div className="grid grid-cols-2 gap-4 md:gap-6 mt-0! sm:mt-2! md:mt-6!">
+        <div className="grid grid-cols-2 gap-4 md:gap-6">
           <Link href={`/dashboard?search=${encodeURIComponent("type:movie")}`}>
             <StatsCard
               title={t("statistics.totalMovies")}
               value={stats.total_movies || 0}
-              icon={<Film className="w-6 h-6 sm:w-8 sm:h-8" />}
+              icon={<Film />}
               color="blue"
             />
           </Link>
@@ -247,7 +250,7 @@ export default function DashboardPage() {
             <StatsCard
               title={t("statistics.totalSeasons")}
               value={stats.total_seasons || 0}
-              icon={<Tv className="w-6 h-6 sm:w-8 sm:h-8" />}
+              icon={<Tv />}
               color="purple"
             />
           </Link>
@@ -256,9 +259,9 @@ export default function DashboardPage() {
 
       {/* Recent Blurays */}
       <div className="w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-5 sm:mb-7 pb-3 border-b border-border">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl sm:text-3xl font-bold truncate">
+            <h2 className="font-display italic uppercase text-2xl sm:text-3xl truncate">
               {getSectionTitle()}
             </h2>
             {searchQuery && (
@@ -272,13 +275,14 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* View Mode Toggle */}
-            <div className="hidden vsm:flex items-center gap-1 bg-muted rounded-lg p-0.5 sm:p-1 border border-border">
+            <div className="hidden vsm:flex items-center rounded-md border border-input overflow-hidden">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 sm:p-2 rounded transition-colors ${
+                aria-pressed={viewMode === "grid"}
+                className={`p-2 sm:p-2.5 transition-colors ${
                   viewMode === "grid"
-                    ? "bg-primary text-white"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:text-foreground"
                 }`}
                 title="Grid view"
               >
@@ -286,10 +290,11 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-1.5 sm:p-2 rounded transition-colors ${
+                aria-pressed={viewMode === "list"}
+                className={`p-2 sm:p-2.5 transition-colors ${
                   viewMode === "list"
-                    ? "bg-primary text-white"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:text-foreground"
                 }`}
                 title="List view"
               >
@@ -315,7 +320,8 @@ export default function DashboardPage() {
           </div>
         </div>
         {recentBlurays.length === 0 ? (
-          <div className="text-center py-8 sm:py-12 md:py-16">
+          <div className="flex flex-col items-center gap-5 py-12 sm:py-16 animate-in">
+            <div aria-hidden className="disc w-24 aspect-square opacity-60" />
             <p className="text-sm sm:text-base text-muted-foreground">
               {t("common.noResults")}
             </p>
@@ -324,22 +330,24 @@ export default function DashboardPage() {
           <>
             {viewMode === "grid" ? (
               <div className={GRID_CLASSES}>
-                {sortedBlurays.map((bluray) => (
+                {sortedBlurays.map((bluray, i) => (
                   <BlurayCard
                     key={bluray.id}
                     bluray={bluray}
                     onUpdate={handleUpdate}
+                    index={i % ITEMS_PER_PAGE}
                   />
                 ))}
                 {loadingMore && Array.from({ length: 6 }, (_, i) => <BlurayCardSkeleton key={`more-${i}`} />)}
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-3 p-0 sm:p-1">
-                {sortedBlurays.map((bluray) => (
+              <div>
+                {sortedBlurays.map((bluray, i) => (
                   <BlurayListItem
                     key={bluray.id}
                     bluray={bluray}
                     onUpdate={handleUpdate}
+                    index={i % ITEMS_PER_PAGE}
                   />
                 ))}
                 {loadingMore && Array.from({ length: 3 }, (_, i) => <BlurayRowSkeleton key={`more-${i}`} />)}

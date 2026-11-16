@@ -11,20 +11,13 @@ import {
   Film,
   Tv,
   Calendar,
-  DollarSign,
   Star,
-  MapPin,
-  Tag as TagIcon,
   Clock,
-  User,
   Edit,
   Trash2,
   ArrowLeft,
-  Check,
-  X,
   Plus,
   ExternalLink,
-  Hash,
   Euro,
   RefreshCw,
   Play,
@@ -77,7 +70,7 @@ export default function BlurayDetailPage() {
         setBluray(data);
       } catch (error) {
         console.error("Failed to fetch bluray:", error);
-        toast.error("Failed to load item details");
+        toast.error(t("details.notFound"));
       } finally {
         setLoading(false);
       }
@@ -96,6 +89,7 @@ export default function BlurayDetailPage() {
       fetchBluray();
       fetchAllTags();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only refetch for another item
   }, [params.id]);
 
   const handleDelete = async () => {
@@ -227,10 +221,10 @@ export default function BlurayDetailPage() {
         <div className="py-6">
           <Skeleton className="h-10 w-24" />
         </div>
-        <div className="relative rounded-3xl overflow-hidden border border-border bg-card px-6 sm:px-12 pt-40 sm:pt-64 pb-12">
+        <div className="relative rounded-lg overflow-hidden border border-border bg-card px-6 sm:px-12 pt-40 sm:pt-64 pb-12">
           <div className="absolute inset-x-0 top-0 h-[450px] sm:h-[550px] bg-muted/60 noise" />
           <div className="relative flex flex-col md:flex-row gap-10 items-center md:items-end">
-            <Skeleton className="w-44 sm:w-56 md:w-64 lg:w-72 aspect-2/3 rounded-2xl shadow-xl" />
+            <Skeleton className="w-44 sm:w-56 md:w-64 lg:w-72 aspect-2/3 rounded-md" />
             <div className="flex-1 w-full flex flex-col items-center md:items-start gap-4">
               <div className="flex gap-2">
                 <Skeleton className="h-6 w-20" />
@@ -247,7 +241,7 @@ export default function BlurayDetailPage() {
 
   // Floating actions over the hero backdrop
   const heroAction =
-    "rounded-lg bg-card/85 backdrop-blur-sm border border-border shadow-xs transition-colors [&_svg]:w-[18px] [&_svg]:h-[18px]";
+    "rounded-md bg-card border border-border shadow-md transition-colors [&_svg]:w-[18px] [&_svg]:h-[18px]";
   // Links can't use IconButton, so they carry its lg size themselves
   const heroLink =
     "inline-grid place-items-center w-10 h-10 shrink-0 text-muted-foreground hover:text-foreground";
@@ -270,12 +264,6 @@ export default function BlurayDetailPage() {
 
   return (
     <div className="relative min-h-screen text-foreground pb-20">
-      {/* Background Ambient Effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] opacity-50" />
-        <div className="absolute top-[40%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] opacity-50" />
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Modals */}
         {editingTags && (
@@ -331,7 +319,7 @@ export default function BlurayDetailPage() {
         </div>
 
         {/* Hero Section */}
-        <div className="relative group rounded-3xl overflow-hidden bg-card border border-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-12 transition-all duration-500 md:hover:border-border">
+        <div className="relative rounded-lg overflow-hidden bg-card border border-border mb-10 animate-in">
           {/* Action Buttons */}
           <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 flex gap-2">
             {jellyfinUrl && (
@@ -387,7 +375,7 @@ export default function BlurayDetailPage() {
 
           {/* Hero Backdrop Section */}
           <div className="absolute inset-0 h-[450px] sm:h-[550px] overflow-hidden">
-            <div className="relative w-full h-full transition-transform duration-1000 md:group-hover:scale-105 will-change-transform">
+            <div className="relative w-full h-full">
               {bluray.backdrop_url ? (
                 <Image
                   src={bluray.backdrop_url}
@@ -408,8 +396,12 @@ export default function BlurayDetailPage() {
           <div className="relative z-20 px-6 sm:px-12 pt-40 sm:pt-64 pb-12">
             <div className="flex flex-col md:flex-row gap-10 items-center md:items-end">
               {/* Poster */}
-              <div className="shrink-0 relative -mb-6 md:mb-0">
-                <div className="relative w-44 sm:w-56 md:w-64 lg:w-72 aspect-2/3 rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-border/20 transform transition-transform duration-500 md:hover:scale-[1.02] will-change-transform">
+              <div className="group shrink-0 relative -mb-6 md:mb-0 shelf-in">
+                <div
+                  aria-hidden
+                  className="disc absolute right-0 top-1/2 w-[84%] aspect-square -translate-y-1/2 transition-transform duration-700 ease-out md:group-hover:translate-x-[22%] md:group-hover:rotate-[140deg]"
+                />
+                <div className="relative w-44 sm:w-56 md:w-64 lg:w-72 aspect-2/3 rounded-md overflow-hidden case-shell shadow-[0_25px_40px_-18px_rgba(0,0,0,0.7)]">
                   {bluray.cover_image_url ? (
                     <Image
                       src={bluray.cover_image_url}
@@ -436,10 +428,10 @@ export default function BlurayDetailPage() {
                           `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`type:${bluray.type}`)}`,
                         )
                       }
-                      className={`px-3 py-[0.3rem] rounded-lg text-[10px] font-bold uppercase tracking-[0.15em] flex items-center gap-1.5 border transition-colors active:scale-95 ${
+                      className={`px-2.5 py-1.5 rounded-sm label-caps flex items-center gap-1.5 transition-[filter] hover:brightness-110 active:translate-y-px ${
                         bluray.type === "movie"
-                          ? "bg-primary/10 text-primary border-primary/30 hover:bg-primary/15"
-                          : "bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/30 hover:bg-violet-500/15"
+                          ? "bg-brand text-white"
+                          : "bg-sticker text-sticker-foreground"
                       }`}
                       title={t("details.searchForType", { type: t(`common.${bluray.type}`) })}
                     >
@@ -457,14 +449,14 @@ export default function BlurayDetailPage() {
                             `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`year:${bluray.release_year}`)}`,
                           )
                         }
-                        className="px-3 py-1 rounded-lg bg-muted/50 border border-border text-muted-foreground text-xs font-bold tracking-wide transition-all hover:scale-[1.02] active:scale-95 hover:bg-accent/50 hover:border-border"
+                        className="px-2.5 py-1 rounded-sm bg-card border border-border text-foreground text-xs font-bold tabular-nums transition-colors hover:border-foreground/40 active:translate-y-px"
                         title={t("details.searchForYear", { year: bluray.release_year })}
                       >
                         {bluray.release_year}
                       </button>
                     )}
                     {bluray.runtime && bluray.runtime > 0 && (
-                      <span className="px-3 py-1 rounded-lg bg-muted/50 border border-border text-muted-foreground text-xs font-bold flex items-center gap-1.5">
+                      <span className="px-2.5 py-1 rounded-sm bg-card border border-border text-foreground text-xs font-bold tabular-nums flex items-center gap-1.5">
                         <Clock className="w-3 h-3 text-muted-foreground" />
                         {Math.floor(bluray.runtime / 60)}h {bluray.runtime % 60}
                         m
@@ -472,12 +464,12 @@ export default function BlurayDetailPage() {
                     )}
                   </div>
 
-                  <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-foreground leading-[1.1] tracking-tighter drop-shadow-2xl">
+                  <h1 className="font-display uppercase text-4xl sm:text-5xl lg:text-7xl text-foreground">
                     {getTitle(bluray, locale)}
                   </h1>
 
                   {bluray.director && (
-                    <p className="text-lg sm:text-xl text-muted-foreground font-light tracking-wide">
+                    <p className="text-lg sm:text-xl text-muted-foreground">
                       {t("details.directedBy")}{" "}
                       <span className="text-foreground font-medium">
                         <button
@@ -486,7 +478,7 @@ export default function BlurayDetailPage() {
                               `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`director:${bluray.director}`)}`,
                             )
                           }
-                          className="underline decoration-gray-400 dark:decoration-slate-600 decoration-2 underline-offset-2 hover:decoration-blue-500 dark:hover:decoration-blue-400 hover:text-primary transition-all duration-200"
+                          className="underline decoration-border decoration-2 underline-offset-4 hover:decoration-primary hover:text-primary transition-colors"
                           title={t("details.searchForDirector", {
                             director: bluray.director,
                           })}
@@ -501,20 +493,20 @@ export default function BlurayDetailPage() {
                 <div className="flex flex-col md:flex-row items-center gap-6 pt-2">
                   {/* Rating */}
                   {bluray.rating != null && bluray.rating > 0 && (
-                    <div className="flex items-center gap-3 bg-muted/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border">
+                    <div className="flex items-center gap-3 bg-card px-3.5 py-2 rounded-md border border-border">
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-4 h-4 ${star <= Math.round(bluray.rating / 2) ? "text-yellow-400 fill-yellow-400" : "text-border"}`}
+                            className={`w-4 h-4 ${star <= Math.round(bluray.rating / 2) ? "text-amber-500 fill-amber-500" : "text-border"}`}
                           />
                         ))}
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-foreground font-black text-xl leading-none">
-                          {bluray.rating}
+                        <span className="font-display text-foreground text-2xl tabular-nums">
+                          {bluray.rating.toFixed(1)}
                         </span>
-                        <span className="text-muted-foreground text-xs font-bold uppercase tracking-tighter">
+                        <span className="text-muted-foreground text-xs font-bold">
                           / 10
                         </span>
                       </div>
@@ -534,7 +526,7 @@ export default function BlurayDetailPage() {
                                   `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`genre:${g}`)}`,
                                 )
                               }
-                              className="px-4 py-1.5 bg-muted hover:bg-border border border-border hover:border-border rounded-full text-xs font-medium text-foreground/80 transition-all hover:text-foreground hover:scale-[1.02] active:scale-95"
+                              className="px-2.5 py-1.5 bg-card border border-border rounded-sm text-xs font-semibold text-foreground/80 transition-colors hover:text-foreground hover:border-foreground/40 active:translate-y-px"
                               title={t("details.searchForGenre", { genre: g })}
                             >
                               {g}
@@ -554,12 +546,11 @@ export default function BlurayDetailPage() {
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
             {bluray.description && (
-              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-xs shadow-xs">
-                <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-primary rounded-full"></div>
+              <div className="card p-6 sm:p-8">
+                <h2 className="label-caps text-muted-foreground mb-4">
                   {t("details.synopsis")}
                 </h2>
-                <p className="text-foreground/80 leading-relaxed text-lg">
+                <p className="text-foreground/85 leading-relaxed text-lg max-w-[68ch]">
                   {typeof bluray.description === "string"
                     ? bluray.description
                     : getLocalizedText(bluray.description, locale)}
@@ -569,12 +560,11 @@ export default function BlurayDetailPage() {
 
             {/* Seasons Section for Series */}
             {bluray.type === "series" && (
-              <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 backdrop-blur-xs shadow-xs">
+              <div className="card p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+                  <h2 className="label-caps text-muted-foreground flex items-center gap-2">
                     {t("details.seasons")}
-                    <span className="ml-2 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                    <span className="px-1.5 py-0.5 rounded-sm bg-sticker text-sticker-foreground tabular-nums">
                       {bluray.seasons?.length || 0}
                     </span>
                   </h2>
@@ -587,27 +577,21 @@ export default function BlurayDetailPage() {
 
                 {bluray.seasons && bluray.seasons.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {bluray.seasons.map((season) => (
+                    {bluray.seasons.map((season, i) => (
                       <div
                         key={season.number}
-                        className="relative group bg-background hover:bg-accent border border-border rounded-xl p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-purple-500/10"
+                        style={{ "--i": i } as React.CSSProperties}
+                        className="group flex items-center gap-3 bg-background border border-border border-l-[3px] border-l-sticker rounded-md p-3 sm:p-4 transition-colors hover:border-sticker shelf-in"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-lg border border-purple-200 dark:border-purple-500/20 group-hover:border-purple-300 dark:group-hover:border-purple-500/50 transition-colors">
-                            {season.number}
-                          </div>
-                          {season.year && (
-                            <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded">
-                              {season.year}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground text-xs uppercase font-bold tracking-wider mb-1">
+                        <span className="font-display text-4xl text-sticker tabular-nums transition-transform duration-300 group-hover:-translate-y-0.5">
+                          {String(season.number).padStart(2, "0")}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="label-caps text-muted-foreground">
                             {t("details.season")}
+                            {season.year ? ` · ${season.year}` : ""}
                           </p>
-                          <p className="text-foreground text-sm font-medium flex items-center gap-1.5">
-                            <Film className="w-3.5 h-3.5 text-muted-foreground" />
+                          <p className="mt-1 text-foreground text-sm font-semibold truncate">
                             {season.episode_count} {t("details.episodes")}
                           </p>
                         </div>
@@ -624,10 +608,10 @@ export default function BlurayDetailPage() {
                 {bluray.seasons && bluray.seasons.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-border flex gap-6 text-sm text-muted-foreground">
                     <div>
-                      <span className="block text-xs uppercase font-bold text-muted-foreground mb-0.5">
+                      <span className="block label-caps text-muted-foreground mb-1">
                         {t("details.totalEpisodes")}
                       </span>
-                      <span className="text-foreground font-mono">
+                      <span className="font-display text-2xl text-foreground tabular-nums">
                         {bluray.seasons.reduce(
                           (acc, s) => acc + s.episode_count,
                           0,
@@ -644,12 +628,10 @@ export default function BlurayDetailPage() {
           <div className="space-y-4 sm:space-y-6">
             {/* Library Info Card */}
             {canModify && (
-              <div className="card rounded-xl p-4 sm:p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-muted rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
+              <div className="card p-4 sm:p-6">
 
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <Euro className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="label-caps text-muted-foreground">
                     {t("details.libraryInfo")}
                   </h3>
                   <IconButton label={t("details.editPurchaseInfo")} onClick={() => setEditingPurchaseInfo(true)} className="-mr-2">
@@ -657,14 +639,14 @@ export default function BlurayDetailPage() {
                   </IconButton>
                 </div>
 
-                <div className="space-y-5">
+                <div className="divide-y divide-border [&>div]:py-3 [&>div:first-child]:pt-0 [&>div:last-child]:pb-0">
                   {/* Price */}
                   <div className="flex items-center justify-between group">
                     <span className="text-muted-foreground text-sm flex items-center gap-2">
                       <Euro className="w-4 h-4 opacity-50" />
                       {t("details.purchasePrice")}
                     </span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-lg">
+                    <span className="font-display text-2xl text-foreground tabular-nums">
                       {bluray.purchase_price > 0
                         ? `€${bluray.purchase_price.toFixed(2)}`
                         : "-"}
@@ -688,10 +670,9 @@ export default function BlurayDetailPage() {
             )}
 
             {/* Tags Card */}
-            <div className="card rounded-xl p-4 sm:p-6">
+            <div className="card p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <TagIcon className="w-4 h-4 text-primary" />
+                <h3 className="label-caps text-muted-foreground">
                   {t("details.tags")}
                 </h3>
                 {canModify && (
@@ -716,7 +697,7 @@ export default function BlurayDetailPage() {
                             `${ROUTES.DASHBOARD.HOME}?search=${encodeURIComponent(`tag:${fullTag.name}`)}`,
                           )
                         }
-                        className="rounded-full transition-transform hover:scale-105 active:scale-95"
+                        className="rounded-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"
                         title={t("details.searchForTag", { tag: fullTag.name })}
                       >
                         <TagChip name={fullTag.name} color={fullTag.color} />

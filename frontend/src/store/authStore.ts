@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import Cookies from 'js-cookie';
-import { User } from '@/types/auth';
+import { User, UserSettings } from '@/types/auth';
 import { apiClient } from '@/lib/api-client';
 
 // Migrate legacy short locale codes (e.g. "en", "fr") to full BCP-47 tags
@@ -10,6 +10,16 @@ const LOCALE_MAP: Record<string, string> = {
   'fr': 'fr-FR',
 };
 const normalizeLocale = (lang: string): string => LOCALE_MAP[lang] ?? lang;
+
+/**
+ * Normalizes the user's language in place and mirrors it to the `locale`
+ * cookie, which is what the server reads to pick the messages.
+ */
+const syncLocale = (user: User) => {
+  if (!user.settings?.language) return;
+  user.settings.language = normalizeLocale(user.settings.language) as UserSettings['language'];
+  Cookies.set('locale', user.settings.language, { expires: 365 });
+};
 
 interface AuthState {
   user: User | null;
@@ -21,181 +31,86 @@ interface AuthState {
   logout: () => void;
   updateUser: (user: User) => void;
   checkAuth: () => Promise<void>;
-  setTheme: (theme: 'light' | 'dark' | 'system') => Promise<void>;
-  setLanguage: (language: 'en-US' | 'fr-FR') => Promise<void>;
+  /** Saves the given settings; the ones left out keep their value. */
+  updateSettings: (settings: Partial<UserSettings>) => Promise<void>;
   setViewMode: (viewMode: 'grid' | 'list') => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      viewMode: 'grid',
-
-      login: async (identifier: string, password: string) => {
-        const response = await apiClient.login(identifier, password);
-        
-        Cookies.set('auth_token', response.token, { 
-          expires: 7,
+    (set, get) => {
+      /** Stores the session returned by login and sign-up. */
+      const startSession = (response: { user: User; token: string }) => {
+        Cookies.set('auth_token', response.token, {
+          // Matches the token's own lifetime; see GenerateToken in the backend
+          expires: 1,
           sameSite: 'lax',
-          secure: false
+          secure: window.location.protocol === 'https:',
         });
-        
-        let languageChanged = false;
-        const currentLanguage = get().user?.settings?.language;
-        
-        if (response.user.settings?.language) {
-          const normalizedLocale = normalizeLocale(response.user.settings.language);
-          if (normalizedLocale !== currentLanguage) {
-            languageChanged = true;
-            Cookies.set('locale', normalizedLocale, { expires: 365 });
-          }
-          // Keep the stored user's language in normalized form
-          response.user.settings.language = normalizedLocale;
-        }
-        
-        if (response.user.settings?.theme) {
-          Cookies.set('theme', response.user.settings.theme, { expires: 365 });
-        }
-        
+
+        const previousLanguage = Cookies.get('locale');
+        syncLocale(response.user);
+        const language = response.user.settings?.language;
+
         set({ user: response.user, token: response.token, isAuthenticated: true });
-        return { languageChanged };
-      },
+        // The page was rendered in the previous language and needs a reload
+        return { languageChanged: !!language && language !== (previousLanguage ?? 'en-US') };
+      };
 
-      register: async (username: string, email: string, password: string) => {
-        const response = await apiClient.register(username, email, password);
-        
-        Cookies.set('auth_token', response.token, { 
-          expires: 7,
-          sameSite: 'lax',
-          secure: false
-        });
-        
-        let languageChanged = false;
-        const currentLanguage = get().user?.settings?.language;
-        
-        if (response.user.settings?.language) {
-          const normalizedLocale = normalizeLocale(response.user.settings.language);
-          if (normalizedLocale !== currentLanguage) {
-            languageChanged = true;
-            Cookies.set('locale', normalizedLocale, { expires: 365 });
+      return {
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        viewMode: 'grid',
+
+        login: async (identifier, password) => startSession(await apiClient.login(identifier, password)),
+
+        register: async (username, email, password) =>
+          startSession(await apiClient.register(username, email, password)),
+
+        logout: () => {
+          Cookies.remove('auth_token');
+          set({ user: null, token: null, isAuthenticated: false });
+        },
+
+        updateUser: (user) => set({ user }),
+
+        checkAuth: async () => {
+          const token = Cookies.get('auth_token');
+          if (!token) {
+            get().logout();
+            return;
           }
-          response.user.settings.language = normalizedLocale;
-        }
-        
-        if (response.user.settings?.theme) {
-          Cookies.set('theme', response.user.settings.theme, { expires: 365 });
-        }
-        
-        set({ user: response.user, token: response.token, isAuthenticated: true });
-        return { languageChanged };
-      },
-
-      logout: () => {
-        Cookies.remove('auth_token');
-        set({ user: null, token: null, isAuthenticated: false });
-      },
-
-      updateUser: (user: User) => {
-        set({ user });
-      },
-
-      checkAuth: async () => {
-        const token = Cookies.get('auth_token');
-        
-        if (token) {
           try {
             const user = await apiClient.getCurrentUser();
-            
-            if (user.settings?.theme) {
-              Cookies.set('theme', user.settings.theme, { expires: 365 });
-            }
-            
-            if (user.settings?.language) {
-              const normalizedLocale = normalizeLocale(user.settings.language);
-              Cookies.set('locale', normalizedLocale, { expires: 365 });
-              user.settings.language = normalizedLocale;
-            }
-            
+            syncLocale(user);
             set({ user, token, isAuthenticated: true });
           } catch (error) {
             console.error('[AuthStore] CheckAuth failed:', error);
-            Cookies.remove('auth_token');
-            set({ user: null, token: null, isAuthenticated: false });
+            get().logout();
           }
-        } else {
-          set({ user: null, token: null, isAuthenticated: false });
-        }
-      },
+        },
 
-      setTheme: async (theme: 'light' | 'dark' | 'system') => {
-        const user = get().user;
-        if (!user) return;
-        
-        try {
-          await apiClient.updateUserSettings({
-            theme,
-            language: user.settings.language,
-          });
-          
-          const updatedUser = {
-            ...user,
-            settings: {
-              ...user.settings,
-              theme,
-            },
-          };
-          
-          set({ user: updatedUser });
-          Cookies.set('theme', theme, { expires: 365 });
-        } catch (error) {
-          console.error('[AuthStore] Failed to update theme:', error);
-          throw error;
-        }
-      },
+        updateSettings: async (settings) => {
+          const { settings: saved } = await apiClient.updateUserSettings(settings);
+          const user = get().user;
+          if (!user) return;
+          const updated = { ...user, settings: { ...user.settings, ...saved } };
+          syncLocale(updated);
+          set({ user: updated });
+        },
 
-      setLanguage: async (language: 'en-US' | 'fr-FR') => {
-        const user = get().user;
-        if (!user) return;
-        
-        try {
-          await apiClient.updateUserSettings({
-            theme: user.settings.theme,
-            language,
-          });
-          
-          const updatedUser = {
-            ...user,
-            settings: {
-              ...user.settings,
-              language,
-            },
-          };
-          
-          set({ user: updatedUser });
-          Cookies.set('locale', language, { expires: 365 });
-        } catch (error) {
-          console.error('[AuthStore] Failed to update language:', error);
-          throw error;
-        }
-      },
-
-      setViewMode: (viewMode: 'grid' | 'list') => {
-        set({ viewMode });
-        Cookies.set('viewMode', viewMode, { expires: 365 });
-      },
-    }),
+        setViewMode: (viewMode) => set({ viewMode }),
+      };
+    },
     {
       name: 'auth-storage',
-      partialize: (state) => ({ 
-        user: state.user, 
-        token: state.token, 
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
         isAuthenticated: state.isAuthenticated,
         viewMode: state.viewMode,
       }),
-      skipHydration: false,
     }
   )
 );

@@ -4,46 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/store/authStore";
-import {
-  Home,
-  BarChart3,
-  Settings,
-  Plus,
-  LogOut,
-  Users,
-  FileDown,
-  TagIcon,
-  LucideIcon,
-} from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
 import { ROUTES } from "@/hooks/useRouteProtection";
 import { GithubIcon } from "@/components/common";
+import { navLinksFor, isActiveLink, NavLink } from "./navLinks";
 
-interface SidebarItemProps {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-}
-
-const SidebarItem = ({ href, icon: Icon, label }: SidebarItemProps) => {
+const SidebarItem = ({ href, icon: Icon, label }: NavLink) => {
   const t = useTranslations();
-  const pathname = usePathname();
-
-  const isActive =
-    pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+  const isActive = isActiveLink(href, usePathname());
 
   return (
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors duration-200 ${
+      className={`group relative flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-r-md text-sm transition-colors duration-150 before:absolute before:inset-y-1 before:left-0 before:w-[3px] before:bg-primary before:origin-center before:transition-transform before:duration-200 ${
         isActive
-          ? "bg-primary/10 text-primary font-semibold"
-          : "text-muted-foreground font-medium hover:bg-accent hover:text-foreground"
+          ? "text-foreground font-bold before:scale-y-100"
+          : "text-muted-foreground font-medium hover:text-foreground before:scale-y-0 hover:before:scale-y-50"
       }`}
     >
-      <Icon className="w-5 h-5 shrink-0" />
-      <span className="flex-1">{t(label)}</span>
-      {isActive && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+      <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? "text-primary" : ""}`} />
+      <span className="transition-transform duration-200 group-hover:translate-x-0.5">{t(label)}</span>
     </Link>
   );
 };
@@ -51,68 +32,20 @@ const SidebarItem = ({ href, icon: Icon, label }: SidebarItemProps) => {
 export default function Sidebar() {
   const t = useTranslations();
   const { user, logout } = useAuthStore();
-
-  const role = user?.role;
-  const isAdmin = role === "admin";
-  const isGuest = role === "guest";
-  const canModify = role === "admin" || role === "moderator";
-
-  // centralized Link Configuration
-  const navLinks = [
-    {
-      href: ROUTES.DASHBOARD.HOME,
-      label: "nav.home",
-      icon: Home,
-      show: true,
-    },
-    {
-      href: ROUTES.DASHBOARD.STATISTICS,
-      label: "nav.statistics",
-      icon: BarChart3,
-      show: !isGuest,
-    },
-    {
-      href: ROUTES.DASHBOARD.SETTINGS,
-      label: "nav.settings",
-      icon: Settings,
-      show: !isGuest,
-    },
-    {
-      href: ROUTES.DASHBOARD.USERS,
-      label: "nav.users",
-      icon: Users,
-      show: isAdmin,
-    },
-    {
-      href: ROUTES.DASHBOARD.TAGS,
-      label: "nav.tags",
-      icon: TagIcon,
-      show: isAdmin,
-    },
-    {
-      href: ROUTES.DASHBOARD.IMPORT_EXPORT,
-      label: "nav.importExport",
-      icon: FileDown,
-      show: isAdmin,
-    },
-  ];
+  const canModify = user?.role === "admin" || user?.role === "moderator";
 
   return (
     <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-background border-r border-border overflow-y-auto">
-      <nav className="p-4 h-full flex flex-col">
-        {/* Main Navigation Links */}
-        <div className="space-y-1 flex-1">
-          {navLinks
-            .filter((link) => link.show)
-            .map((link) => (
-              <SidebarItem key={link.href} {...link} />
-            ))}
+      <nav className="py-5 pr-4 h-full flex flex-col">
+        <div className="space-y-0.5 flex-1">
+          {navLinksFor(user?.role).map((link) => (
+            <SidebarItem key={link.href} {...link} />
+          ))}
 
-          {/* Add Button (Distinct Style) */}
           {canModify && (
             <Link
               href={ROUTES.DASHBOARD.ADD.ADD}
-              className="group mt-6! flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-xs shadow-primary/20 transition-colors duration-200 hover:bg-primary/90 active:scale-[0.98]"
+              className="group mt-6! ml-4 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold key-edge transition-[filter,transform,box-shadow] duration-150 hover:brightness-110"
             >
               <Plus className="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
               <span>{t("nav.add")}</span>
@@ -120,29 +53,26 @@ export default function Sidebar() {
           )}
         </div>
 
-        {/* Bottom Section (Logout & Footer) */}
-        <div>
+        <div className="pl-4">
           <div className="border-t border-border mb-4 pt-4">
             <button
               onClick={logout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border border-input text-sm font-medium text-muted-foreground transition-colors duration-150 hover:border-destructive hover:text-destructive"
             >
               <LogOut className="w-4 h-4 shrink-0" />
               {t("nav.logout")}
             </button>
           </div>
 
-          <div className="pb-4">
-            <a
-              href="https://github.com/Eylexander/BlurayManager"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 hover:text-foreground transition-colors"
-            >
-              <GithubIcon className="w-3.5 h-3.5" />
-              <span>Eylexander &copy; {new Date().getFullYear()}</span>
-            </a>
-          </div>
+          <a
+            href="https://github.com/Eylexander/BlurayManager"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 hover:text-foreground transition-colors"
+          >
+            <GithubIcon className="w-3.5 h-3.5" />
+            <span>Eylexander &copy; {new Date().getFullYear()}</span>
+          </a>
         </div>
       </nav>
     </aside>

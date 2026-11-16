@@ -31,7 +31,7 @@ export default function InstallPage() {
         } else {
           setLoading(false);
         }
-      } catch (err) {
+      } catch {
         toast.error(t("auth.installError"));
         setLoading(false);
       }

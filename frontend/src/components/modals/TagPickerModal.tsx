@@ -93,7 +93,7 @@ export default function TagPickerModal({
           {loading ? (
             <div className="flex flex-wrap gap-2">
               {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className="h-9 w-24 rounded-full bg-muted animate-pulse" />
+                <div key={i} className="h-9 w-24 rounded-sm bg-muted animate-pulse" />
               ))}
             </div>
           ) : (
@@ -107,7 +107,7 @@ export default function TagPickerModal({
                     type="button"
                     aria-pressed={active}
                     onClick={() => toggle(tag.id)}
-                    className="inline-flex items-center gap-2 h-9 px-3.5 rounded-full border text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
+                    className="inline-flex items-center gap-2 h-9 px-3 rounded-sm border text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
                     style={
                       active
                         ? { backgroundColor: color, borderColor: color, color: '#fff' }
@@ -117,7 +117,7 @@ export default function TagPickerModal({
                     {active ? (
                       <Check className="w-3.5 h-3.5" strokeWidth={3} />
                     ) : (
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                      <span className="w-2 h-2 rounded-xs" style={{ backgroundColor: color }} />
                     )}
                     <span className={active ? '' : 'text-foreground'}>{tag.name}</span>
                   </button>
@@ -127,7 +127,7 @@ export default function TagPickerModal({
               <button
                 type="button"
                 onClick={() => setCreating(true)}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-dashed border-primary/50 text-sm font-medium text-primary hover:bg-primary/10 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-sm border border-dashed border-primary/50 text-sm font-medium text-primary hover:bg-primary/10 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40"
               >
                 <Plus className="w-4 h-4" />
                 {t('add.addNewTag')}

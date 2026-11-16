@@ -14,7 +14,7 @@ import { LoaderCircle } from "@/components/common/LoaderCircle";
 import UserFormModal from "@/components/modals/UserFormModal";
 
 const roleStyles: Record<User["role"], string> = {
-  admin: "bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/30",
+  admin: "bg-sticker/10 text-sticker border-sticker/40",
   moderator: "bg-primary/10 text-primary border-primary/30",
   user: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
   guest: "bg-muted text-muted-foreground border-border",
@@ -34,7 +34,7 @@ function RoleBadge({ role }: { role: User["role"] }) {
 
 function UserAvatar({ name }: { name: string }) {
   return (
-    <div className="grid place-items-center w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary font-semibold">
+    <div className="grid place-items-center w-10 h-10 shrink-0 rounded-md bg-brand text-white font-display text-xl">
       {name.charAt(0).toUpperCase()}
     </div>
   );

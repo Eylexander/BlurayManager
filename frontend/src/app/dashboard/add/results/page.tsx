@@ -14,7 +14,6 @@ import {
   Calendar,
   Clock,
   Star,
-  Users,
   List,
 } from "lucide-react";
 import { TMDBDetails } from "@/types/tmdb";
@@ -132,14 +131,14 @@ export default function AddResultsPage() {
   if (loading || !details) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-8" aria-busy>
-        <Skeleton className="h-9 w-40 rounded-full" />
+        <Skeleton className="h-9 w-40 rounded-sm" />
         <div className="card p-6 sm:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12">
           <Skeleton className="w-full sm:w-64 aspect-2/3 mx-auto lg:mx-0 rounded-3xl" />
           <div className="flex-1 space-y-4">
             <Skeleton className="h-12 w-3/4" />
             <div className="flex gap-3">
-              <Skeleton className="h-7 w-20 rounded-full" />
-              <Skeleton className="h-7 w-24 rounded-full" />
+              <Skeleton className="h-7 w-20 rounded-sm" />
+              <Skeleton className="h-7 w-24 rounded-sm" />
             </div>
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
@@ -158,19 +157,19 @@ export default function AddResultsPage() {
         {/* Navigation */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all border border-border"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 rounded-md transition-colors border border-input"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>{t("add.backToResults")}</span>
         </button>
 
         {/* Main Content Card */}
-        <div className="bg-card backdrop-blur-2xl rounded-[2.5rem] border border-border overflow-hidden shadow-2xl">
+        <div className="card overflow-hidden animate-in">
           <div className="p-6 sm:p-10">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
               {/* Poster Section */}
               <div className="shrink-0 w-full sm:w-64 mx-auto lg:mx-0">
-                <div className="relative aspect-2/3 rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-border group">
+                <div className="relative aspect-2/3 rounded-md overflow-hidden case-shell shadow-[0_25px_40px_-18px_rgba(0,0,0,0.7)] group">
                   {details.poster_path ? (
                     <Image
                       src={`https://image.tmdb.org/t/p/w500${details.poster_path}`}
@@ -194,19 +193,19 @@ export default function AddResultsPage() {
                   </h1>
 
                   <div className="flex flex-wrap gap-4 text-sm font-medium">
-                    <span className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full border border-border">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-card rounded-sm border border-border">
                       <Calendar className="w-4 h-4 text-primary" />
                       {details.release_date?.split("-")[0] ||
                         details.first_air_date?.split("-")[0]}
                     </span>
                     {details.runtime && (
-                      <span className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full border border-border">
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-card rounded-sm border border-border">
                         <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         {details.runtime} {t("add.minutes")}
                       </span>
                     )}
                     {details.vote_average != null && details.vote_average > 0 && (
-                      <span className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 rounded-full border border-yellow-500/20">
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-card rounded-sm border border-border [&_svg]:text-amber-500 [&_svg]:fill-amber-500">
                         <Star className="w-4 h-4 fill-current" />
                         {details.vote_average.toFixed(1)}
                       </span>
@@ -223,7 +222,7 @@ export default function AddResultsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
                   {details.director && (
                     <div className="space-y-1">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold">
+                      <p className="label-caps text-muted-foreground">
                         {t("add.director")}
                       </p>
                       <p className="text-foreground font-medium">
@@ -233,7 +232,7 @@ export default function AddResultsPage() {
                   )}
                   {details.genres && details.genres.length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold">
+                      <p className="label-caps text-muted-foreground">
                         {t("add.genres")}
                       </p>
                       <p className="text-foreground font-medium">

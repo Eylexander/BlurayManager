@@ -1,14 +1,14 @@
-'use client';
-
 import { ReactNode } from 'react';
 
+// Colour of the card's spine and icon. The names are the callers'; they map
+// onto the two accents and a few fixed meanings (amber for ratings).
 const colorClasses = {
-  blue: 'bg-primary/10 text-primary',
-  purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-  green: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  yellow: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-  pink: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
-  indigo: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+  blue: 'before:bg-primary [&_svg]:text-primary',
+  indigo: 'before:bg-primary [&_svg]:text-primary',
+  purple: 'before:bg-sticker [&_svg]:text-sticker',
+  pink: 'before:bg-foreground [&_svg]:text-foreground',
+  yellow: 'before:bg-amber-500 [&_svg]:text-amber-500',
+  green: 'before:bg-emerald-500 [&_svg]:text-emerald-500',
 };
 
 interface StatsCardProps {
@@ -20,29 +20,14 @@ interface StatsCardProps {
 
 export default function StatsCard({ title, value, icon, color }: StatsCardProps) {
   return (
-    <div className="card p-4 sm:p-5 h-full transition-colors hover:border-primary/30">
-      <div className="flex flex-row items-stretch justify-between h-full gap-3">
-        
-        {/* Left Side: Text Column */}
-        <div className="flex flex-col justify-between grow">
-          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-muted-foreground leading-tight mb-4">
-            {title}
-          </p>
-          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
-            {value}
-          </p>
-        </div>
-
-        {/* Right Side: Icon Centered Vertically */}
-        <div className="flex items-center justify-center">
-          <div className={`p-3 sm:p-4 rounded-lg ${colorClasses[color]} flex items-center justify-center`}>
-            <div className="w-6 h-6 sm:w-8 sm:h-8">
-              {icon}
-            </div>
-          </div>
-        </div>
-
+    <div
+      className={`group card relative h-full overflow-hidden pl-5 pr-4 py-4 sm:pl-6 sm:pr-5 sm:py-5 transition-colors hover:border-foreground/30 before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:origin-bottom before:transition-transform before:duration-300 hover:before:scale-x-150 ${colorClasses[color]}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="label-caps text-muted-foreground">{title}</p>
+        <div className="shrink-0 [&_svg]:w-5! [&_svg]:h-5! opacity-80">{icon}</div>
       </div>
+      <p className="mt-3 font-display text-4xl sm:text-5xl text-foreground tabular-nums">{value}</p>
     </div>
   );
 }

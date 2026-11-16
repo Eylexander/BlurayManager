@@ -31,7 +31,7 @@ type Datum = { name: string; value: number; search?: string };
 
 // Two-slot categorical pair for the movies/seasons split, validated for CVD
 // separation and 3:1 contrast on the card surface in both themes.
-const SPLIT_COLORS = ["bg-primary", "bg-[#eb6834] dark:bg-[#d95926]"];
+const SPLIT_COLORS = ["bg-primary", "bg-sticker"];
 
 const TOP_N = 8;
 
@@ -61,7 +61,7 @@ const Panel = ({
 }) => (
   <section className={`card p-4 sm:p-6 flex flex-col min-w-0 ${className}`}>
     <header className="mb-5">
-      <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground [&_svg]:w-4 [&_svg]:h-4 [&_svg]:text-primary">
+      <h3 className="flex items-center gap-2 label-caps text-muted-foreground [&_svg]:w-4 [&_svg]:h-4 [&_svg]:text-primary">
         {icon}
         {title}
       </h3>
@@ -116,9 +116,9 @@ const BarList = ({
                 <span className="ml-1.5 text-xs">{percent(d.value, total)}%</span>
               </span>
             </div>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div className="h-2 rounded-xs bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-primary origin-left motion-safe:animate-grow-x"
+                className="h-full bg-primary origin-left motion-safe:animate-grow-x"
                 style={{
                   width: `${Math.max((d.value / max) * 100, 2)}%`,
                   animationDelay: `${index * 40}ms`,
@@ -147,10 +147,10 @@ const SplitBar = ({ data, onSelect }: { data: Datum[]; onSelect: (d: Datum) => v
             className="group min-w-0 text-left rounded-md p-2 -m-2 hover:bg-accent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
           >
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${SPLIT_COLORS[index]}`} />
+              <span className={`w-2.5 h-2.5 rounded-xs shrink-0 ${SPLIT_COLORS[index]}`} />
               <span className="truncate">{d.name}</span>
             </div>
-            <p className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight tabular-nums">
+            <p className="mt-1 font-display text-4xl sm:text-5xl tabular-nums">
               {percent(d.value, total)}
               <span className="text-base font-semibold text-muted-foreground">%</span>
             </p>
@@ -159,13 +159,13 @@ const SplitBar = ({ data, onSelect }: { data: Datum[]; onSelect: (d: Datum) => v
         ))}
       </div>
 
-      <div className="flex gap-0.5 h-3 rounded-full overflow-hidden bg-muted">
+      <div className="flex gap-0.5 h-3 rounded-xs overflow-hidden bg-muted">
         {total > 0 &&
           data.map((d, index) =>
             d.value > 0 ? (
               <div
                 key={d.name}
-                className={`h-full rounded-sm origin-left motion-safe:animate-grow-x ${SPLIT_COLORS[index]}`}
+                className={`h-full origin-left motion-safe:animate-grow-x ${SPLIT_COLORS[index]}`}
                 style={{ width: `${(d.value / total) * 100}%` }}
               />
             ) : null,
@@ -175,7 +175,7 @@ const SplitBar = ({ data, onSelect }: { data: Datum[]; onSelect: (d: Datum) => v
   );
 };
 
-/** Compact metric card: icon chip, label, big value and a caption. */
+/** Compact metric card: icon, label, big value and a caption. */
 const MetricCard = ({
   icon,
   label,
@@ -189,13 +189,11 @@ const MetricCard = ({
 }) => (
   <div className="card p-4 sm:p-6 flex flex-col justify-between gap-4">
     <div className="flex items-center gap-3">
-      <div className="grid place-items-center w-9 h-9 rounded-lg bg-primary/10 text-primary [&_svg]:w-5 [&_svg]:h-5">
-        {icon}
-      </div>
-      <h4 className="text-sm font-semibold text-muted-foreground">{label}</h4>
+      <div className="text-primary [&_svg]:w-5 [&_svg]:h-5">{icon}</div>
+      <h4 className="label-caps text-muted-foreground">{label}</h4>
     </div>
     <div>
-      <p className="text-3xl font-bold tracking-tight tabular-nums">{value}</p>
+      <p className="font-display text-4xl sm:text-5xl tabular-nums">{value}</p>
       <p className="mt-1 text-sm text-muted-foreground">{caption}</p>
     </div>
   </div>
@@ -265,25 +263,25 @@ export default function StatisticsPage() {
         <StatsCard
           title={t("statistics.totalBlurays")}
           value={totalBlurays}
-          icon={<Package className="w-6 h-6 sm:w-8 sm:h-8" />}
+          icon={<Package  />}
           color="blue"
         />
         <StatsCard
           title={t("statistics.totalMovies")}
           value={stats.total_movies || 0}
-          icon={<Film className="w-6 h-6 sm:w-8 sm:h-8" />}
+          icon={<Film  />}
           color="purple"
         />
         <StatsCard
           title={t("statistics.totalSeasons")}
           value={stats.total_seasons || 0}
-          icon={<Tv className="w-6 h-6 sm:w-8 sm:h-8" />}
+          icon={<Tv  />}
           color="pink"
         />
         <StatsCard
           title={t("statistics.averageRating")}
           value={(stats.average_rating || 0).toFixed(1)}
-          icon={<Star className="w-6 h-6 sm:w-8 sm:h-8" />}
+          icon={<Star  />}
           color="yellow"
         />
       </div>
@@ -334,15 +332,14 @@ export default function StatisticsPage() {
 
       {/* Value, Storage & Runtime */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <div className="brand-gradient rounded-lg p-4 sm:p-6 text-white shadow-xs flex flex-col justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="grid place-items-center w-9 h-9 rounded-lg bg-white/15">
-              <Euro className="w-5 h-5" />
-            </div>
-            <h4 className="text-sm font-semibold text-white/80">{t("statistics.estimatedValue")}</h4>
+        <div className="relative overflow-hidden bg-brand rounded-lg p-4 sm:p-6 text-white flex flex-col justify-between gap-4">
+          <div aria-hidden className="disc absolute -right-10 -bottom-10 w-36 aspect-square opacity-80" />
+          <div className="relative flex items-center gap-3">
+            <Euro className="w-5 h-5" />
+            <h4 className="label-caps text-white/80">{t("statistics.estimatedValue")}</h4>
           </div>
-          <div>
-            <p className="text-3xl sm:text-4xl font-bold tracking-tight tabular-nums">
+          <div className="relative">
+            <p className="font-display text-4xl sm:text-5xl tabular-nums">
               €{(stats.total_spent || 0).toFixed(2)}
             </p>
             <p className="mt-1 text-sm text-white/80 flex items-center">
@@ -389,12 +386,12 @@ export default function StatisticsPage() {
                 className="group flex items-center justify-between gap-4 w-full text-left py-3 first:pt-0 last:pb-0"
               >
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+                  <p className="label-caps text-muted-foreground mb-1">{label}</p>
                   <p className="font-semibold truncate group-hover:text-primary transition-colors">
                     {item ? getTitle(item, locale) : "—"}
                   </p>
                 </div>
-                <span className="shrink-0 text-2xl sm:text-3xl font-black tabular-nums text-muted-foreground/70">
+                <span className="shrink-0 font-display text-4xl tabular-nums text-muted-foreground/60 transition-colors group-hover:text-primary">
                   {item?.release_year || ""}
                 </span>
               </button>
@@ -411,15 +408,15 @@ export default function StatisticsPage() {
                     onClick={() => openBluray(item.id)}
                     className="group flex items-center gap-3 w-full text-left rounded-lg px-2 py-2 -mx-2 hover:bg-accent transition-colors"
                   >
-                    <span className="shrink-0 w-5 text-xs font-bold tabular-nums text-muted-foreground">
+                    <span className="shrink-0 w-6 font-display text-xl tabular-nums text-muted-foreground">
                       {index + 1}
                     </span>
                     <span className="flex-1 min-w-0 font-medium truncate group-hover:text-primary transition-colors">
                       {getTitle(item, locale)}
                     </span>
-                    <span className="shrink-0 flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-md">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs font-bold tabular-nums text-yellow-700 dark:text-yellow-500">
+                    <span className="shrink-0 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                      <span className="text-sm font-bold tabular-nums text-foreground">
                         {item.rating?.toFixed(1)}
                       </span>
                     </span>

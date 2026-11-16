@@ -5,6 +5,7 @@ import (
 	"errors"
 	"eylexander/bluraymanager/models"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -55,7 +56,10 @@ func (ds *MongoDatastore) UpdateBluray(ctx context.Context, bluray *models.Blura
 		"updated_at":      bluray.UpdatedAt,
 	}
 
-	_, err := ds.blurays.UpdateOne(ctx, bson.M{"_id": bluray.ID}, bson.M{"$set": update})
+	res, err := ds.blurays.UpdateOne(ctx, bson.M{"_id": bluray.ID}, bson.M{"$set": update})
+	if err == nil && res.MatchedCount == 0 {
+		return errors.New("bluray not found")
+	}
 	return err
 }
 
@@ -121,7 +125,7 @@ func (ds *MongoDatastore) SearchBlurays(ctx context.Context, query string, skip,
 				andConditions = append(andConditions, bson.M{"release_year": year})
 			}
 		case "type":
-			andConditions = append(andConditions, bson.M{"type": f.Value})
+			andConditions = append(andConditions, bson.M{"type": strings.ToLower(f.Value)})
 		case "description":
 			andConditions = append(andConditions, bson.M{
 				"$or": []bson.M{
@@ -188,9 +192,38 @@ func (ds *MongoDatastore) tagIDsMatching(ctx context.Context, name string) ([]st
 	return ids, nil
 }
 
-func (ds *MongoDatastore) ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.SimplifiedBluray, error) {
-	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
-	cursor, err := ds.blurays.Find(ctx, filters, opts)
+// SimplifiedSort builds the sort stages for ListSimplifiedBlurays. sortBy is
+// "name", "release_date", "rating" or anything else for most recent first.
+// Sorting happens here rather than in the client because the list is paged:
+// sorting one page at a time interleaves the pages. Every order ends on _id
+// so ties (equal ratings, same year) can't repeat or skip rows across pages.
+func SimplifiedSort(sortBy, lang string) []bson.M {
+	switch sortBy {
+	case "name":
+		if lang != "fr-FR" {
+			lang = "en-US"
+		}
+		// The title as displayed: localized, falling back to the original.
+		shown := bson.M{"$ifNull": bson.A{"$titles." + lang, "$title"}}
+		return []bson.M{
+			{"$addFields": bson.M{"sort_title": bson.M{"$toLower": shown}}},
+			{"$sort": bson.D{{Key: "sort_title", Value: 1}, {Key: "_id", Value: 1}}},
+		}
+	case "release_date":
+		return []bson.M{{"$sort": bson.D{{Key: "release_year", Value: -1}, {Key: "_id", Value: -1}}}}
+	case "rating":
+		return []bson.M{{"$sort": bson.D{{Key: "rating", Value: -1}, {Key: "_id", Value: -1}}}}
+	}
+	return []bson.M{{"$sort": bson.D{{Key: "created_at", Value: -1}, {Key: "_id", Value: -1}}}}
+}
+
+func (ds *MongoDatastore) ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, sortBy, lang string, skip, limit int) ([]*models.SimplifiedBluray, error) {
+	pipeline := append([]bson.M{{"$match": filters}}, SimplifiedSort(sortBy, lang)...)
+	pipeline = append(pipeline, bson.M{"$skip": max(skip, 0)})
+	if limit > 0 { // $limit rejects 0, which Find treats as "no limit"
+		pipeline = append(pipeline, bson.M{"$limit": limit})
+	}
+	cursor, err := ds.blurays.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}

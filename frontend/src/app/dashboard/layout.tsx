@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/authStore";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -18,6 +19,8 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
+  const savedTheme = useAuthStore((s) => s.user?.settings?.theme);
+  const { setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   // False on the server and during hydration, where the persisted session
   // isn't readable yet; true once running in the browser
@@ -35,6 +38,12 @@ export default function DashboardLayout({
 
     verifyAuth();
   }, [checkAuth]);
+
+  // The theme is an account setting: follow it on every device, not only on
+  // the one where it was picked.
+  useEffect(() => {
+    if (savedTheme) setTheme(savedTheme);
+  }, [savedTheme, setTheme]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

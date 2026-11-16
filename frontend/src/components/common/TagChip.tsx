@@ -3,15 +3,14 @@ export const TAG_COLORS = [
   '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6',
 ];
 
-/** Coloured tag pill, shared wherever a tag is displayed. */
+/** Tag label with its colour on the edge, shared wherever a tag is displayed. */
 export function TagChip({ name, color, className = '' }: { name: string; color?: string; className?: string }) {
   const c = color || TAG_COLORS[0];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${className}`}
-      style={{ backgroundColor: `${c}1f`, borderColor: `${c}59`, color: c }}
+      className={`inline-flex items-center px-2 py-1 rounded-sm border-l-[3px] text-xs font-semibold text-foreground ${className}`}
+      style={{ backgroundColor: `${c}24`, borderLeftColor: c }}
     >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c }} />
       {name}
     </span>
   );

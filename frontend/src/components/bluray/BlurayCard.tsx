@@ -1,45 +1,62 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Star, Calendar, Tag as TagIcon, MoreVertical, Film } from "lucide-react";
+import { Star, Tag as TagIcon, MoreVertical, Film } from "lucide-react";
 import { Bluray } from "@/types/bluray";
 import { useBlurayTools } from "@/hooks/useBlurayTools";
 
 interface BlurayCardProps {
   bluray: Bluray;
   onUpdate?: () => void;
+  /** Position in the grid, used to stagger the entrance */
+  index?: number;
 }
 
-export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
+/**
+ * A bluray as it sits on the shelf: the case with its coloured top band
+ * (blue for movies, orange for series), and a caption underneath. On hover
+ * the case lifts and the disc slides out of it.
+ */
+export default function BlurayCard({ bluray, onUpdate, index = 0 }: BlurayCardProps) {
   const t = useTranslations();
   const { currentBluray, title, canModify, detailHref, openMenu, openTags, overlays } = useBlurayTools(bluray, onUpdate);
+  const isMovie = currentBluray.type === "movie";
 
   return (
     <>
       <div
         onContextMenu={openMenu}
-        className="relative group h-full w-full"
+        style={{ "--i": index } as CSSProperties}
+        className="relative group h-full w-full shelf-in"
       >
-        <Link
-          href={detailHref}
-          className="block h-full w-full"
-        >
-          <div
-            className="
-            relative flex flex-col h-full w-full
-            bg-card border border-border rounded-lg overflow-hidden
-            transition-all duration-300 ease-out
-            md:group-hover:-translate-y-1 md:group-hover:border-primary/40
-            md:group-hover:shadow-lg md:group-hover:shadow-primary/10
-            active:scale-[0.98]
-          "
-          >
-            {/* Image Container */}
-            <div className="relative aspect-2/3 w-full overflow-hidden bg-muted">
-              {/* Motion Wrapper: Both image and gradient live here */}
-              <div className="relative w-full h-full transition-transform duration-500 ease-out md:group-hover:scale-105">
+        <Link href={detailHref} className="block h-full w-full rounded-md">
+          <div className="relative transition-transform duration-300 ease-out md:group-hover:-translate-y-1.5 group-active:scale-[0.98]">
+            {/* The disc, hidden behind the case until it is hovered */}
+            <div
+              aria-hidden
+              className="disc absolute right-0 top-1/2 w-[84%] aspect-square -translate-y-1/2 transition-transform duration-500 ease-out md:group-hover:translate-x-[15%] md:group-hover:rotate-[100deg]"
+            />
+
+            {/* The case */}
+            <div className="relative overflow-hidden rounded-md bg-muted case-shell">
+              <div
+                className={`flex items-center justify-between h-5 px-2 label-caps text-[0.625rem] ${
+                  isMovie ? "bg-brand text-white" : "bg-sticker text-sticker-foreground"
+                }`}
+              >
+                <span>{isMovie ? t("common.movie") : t("common.series")}</span>
+                {currentBluray.rating > 0 && (
+                  <span className="flex items-center gap-0.5 tabular-nums">
+                    <Star className="w-2.5 h-2.5 fill-current" />
+                    {currentBluray.rating.toFixed(1)}
+                  </span>
+                )}
+              </div>
+
+              <div className="relative aspect-2/3 w-full">
                 {currentBluray.cover_image_url ? (
                   <Image
                     src={currentBluray.cover_image_url}
@@ -49,83 +66,49 @@ export default function BlurayCard({ bluray, onUpdate }: BlurayCardProps) {
                     sizes="(max-width: 640px) 50vw, 20vw"
                   />
                 ) : (
-                  <div className="w-full h-full noise flex items-center justify-center text-muted-foreground/40">
-                    <Film className="w-10 h-10" />
+                  <div className="w-full h-full noise flex flex-col items-center justify-center gap-3 p-3 text-muted-foreground/60">
+                    <Film className="w-8 h-8" />
+                    <span className="font-display uppercase text-center text-lg line-clamp-3">{title}</span>
                   </div>
                 )}
-
-                {/* Bottom shade so the badge and actions read on any cover */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
-              </div>
-
-              {/* Floating Badge (Top Left) */}
-              <div className="absolute top-3 left-3">
-                <span
-                  className={`
-                  px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest rounded-full backdrop-blur-md border border-white/15 text-white
-                  ${currentBluray.type === "movie" ? "bg-primary/80" : "bg-violet-600/80"}
-                `}
-                >
-                  {currentBluray.type === "movie"
-                    ? t("common.movie")
-                    : t("common.series")}
-                </span>
-              </div>
-
-              {/* Quick Actions: Outside the scaling wrapper so they don't grow with the image */}
-              {canModify && (
-                <div className="hidden md:flex absolute top-3 right-3 flex-col gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out z-10">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      openTags();
-                    }}
-                    aria-label={t("tags.manageTags")}
-                    className="p-2.5 bg-black/60 backdrop-blur-xl hover:bg-primary text-white rounded-lg border border-white/15 shadow-lg transition-colors"
-                  >
-                    <TagIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Details Section */}
-            <div className="p-3 sm:p-4 flex-1 flex flex-col">
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm sm:text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                  {title}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                  {currentBluray.director || t("common.unknownDirector")}
-                </p>
-              </div>
-
-              {/* Bottom Meta Row */}
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                <div className="flex items-center gap-3">
-                  {currentBluray.rating > 0 && (
-                    <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
-                      <Star className="w-3 h-3 fill-current" />
-                      <span>{currentBluray.rating.toFixed(1)}</span>
-                    </div>
-                  )}
-                  {currentBluray.release_year && (
-                    <div className="flex items-center gap-1 text-muted-foreground text-[11px]">
-                      <Calendar className="w-3 h-3" />
-                      <span>{currentBluray.release_year}</span>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
+
+            {/* Quick action, on the case but outside its clipping */}
+            {canModify && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  openTags();
+                }}
+                aria-label={t("tags.manageTags")}
+                title={t("tags.manageTags")}
+                className="hidden md:grid absolute top-7 right-2 place-items-center w-8 h-8 rounded-sm bg-black/75 text-white opacity-0 translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 focus-visible:opacity-100 hover:bg-primary"
+              >
+                <TagIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Caption */}
+          <div className="pt-3 pr-6 md:pr-0">
+            <h3 className="font-semibold text-sm sm:text-[0.9375rem] leading-snug text-foreground line-clamp-1 [font-stretch:88%] transition-colors md:group-hover:text-primary">
+              {title}
+            </h3>
+            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+              {[currentBluray.release_year, currentBluray.director || t("common.unknownDirector")]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           </div>
         </Link>
+
         {/* Mobile More Trigger */}
         {canModify && (
           <button
             onClick={(e) => openMenu(e, -100)}
             aria-label={t("common.moreOptions")}
-            className="md:hidden absolute bottom-1.5 right-1 p-2 text-muted-foreground z-20 active:text-foreground transition-colors"
+            className="md:hidden absolute bottom-0 -right-1.5 p-2 text-muted-foreground active:text-foreground transition-colors"
           >
             <MoreVertical className="w-4 h-4" />
           </button>

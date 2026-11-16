@@ -16,9 +16,10 @@ func (c *Controller) CreateBluray(ctx context.Context, bluray *models.Bluray) er
 		return errors.New(i18n.T("bluray.titleRequired"))
 	}
 
-	// Check for duplicate TMDB ID
+	// Check for duplicate TMDB ID. Movie and TV IDs are separate namespaces on
+	// TMDB, so the same number can be a movie and a series.
 	if bluray.TMDBID != "" {
-		existingBlurays, err := c.ds.ListBlurays(ctx, map[string]interface{}{"tmdb_id": bluray.TMDBID}, 0, 1)
+		existingBlurays, err := c.ds.ListBlurays(ctx, map[string]interface{}{"tmdb_id": bluray.TMDBID, "type": bluray.Type}, 0, 1)
 		if err != nil {
 			return err
 		}
@@ -64,6 +65,6 @@ func (c *Controller) SearchBlurays(ctx context.Context, query string, skip, limi
 	return c.ds.SearchBlurays(ctx, query, skip, limit)
 }
 
-func (c *Controller) ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.SimplifiedBluray, error) {
-	return c.ds.ListSimplifiedBlurays(ctx, filters, skip, limit)
+func (c *Controller) ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, sortBy, lang string, skip, limit int) ([]*models.SimplifiedBluray, error) {
+	return c.ds.ListSimplifiedBlurays(ctx, filters, sortBy, lang, skip, limit)
 }

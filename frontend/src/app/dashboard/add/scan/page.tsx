@@ -285,8 +285,8 @@ export default function AddScanPage() {
           ) : (
             <div className="py-10 flex flex-col items-center text-center gap-4">
               <div
-                className={`grid place-items-center w-16 h-16 rounded-full ${
-                  cameraError ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                className={`grid place-items-center w-16 h-16 rounded-md border ${
+                  cameraError ? "border-destructive/40 text-destructive" : "border-border text-primary"
                 }`}
               >
                 {cameraError ? <CameraOff className="w-7 h-7" /> : <Camera className="w-7 h-7" />}

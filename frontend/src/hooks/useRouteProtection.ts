@@ -98,18 +98,11 @@ export function useRouteProtection(pathname: string, isPublicPage: boolean = fal
       } else {
         // Try pattern matching for dynamic routes
         for (const [pattern, patternConfig] of Object.entries(ROUTE_CONFIGS)) {
-          if (pattern.includes('[') && pattern.includes(']')) {
-            // Convert pattern to regex
-            const regexPattern = pattern
-              .replace(/\[.*?\]/g, '[^/]+')
-              .replace(/\//g, '\\/')
-              .replace(/\[/g, '(')
-              .replace(/\]/g, ')');
-            
-            if (new RegExp(`^${regexPattern}$`).test(pathname)) {
-              config = patternConfig;
-              break;
-            }
+          // "/blurays/[id]" matches any single segment in place of "[id]"
+          const regex = new RegExp(`^${pattern.replace(/\[[^\]]+\]/g, '[^/]+')}$`);
+          if (pattern.includes('[') && regex.test(pathname)) {
+            config = patternConfig;
+            break;
           }
         }
       }

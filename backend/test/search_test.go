@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"regexp"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestParseSearchQuery(t *testing.T) {
@@ -44,5 +46,22 @@ func TestContainsPatternIsLiteral(t *testing.T) {
 	}
 	if re.MatchString("JaJa Abrams 2009") {
 		t.Error("regex metacharacters in user input must be escaped")
+	}
+}
+
+// Every order must end on _id: without a tiebreaker, rows with equal sort
+// values repeat or go missing between pages.
+func TestSimplifiedSortIsStable(t *testing.T) {
+	for _, sortBy := range []string{"", "recent", "name", "release_date", "rating", "bogus"} {
+		stages := datastore.SimplifiedSort(sortBy, "fr-FR")
+		keys, ok := stages[len(stages)-1]["$sort"].(bson.D)
+		if !ok || len(keys) != 2 || keys[1].Key != "_id" {
+			t.Errorf("SimplifiedSort(%q) = %v; want a $sort ending on _id", sortBy, stages)
+		}
+	}
+	// Name order uses the title as displayed, in a supported language only.
+	shown := datastore.SimplifiedSort("name", "de-DE")[0]["$addFields"].(bson.M)["sort_title"].(bson.M)["$toLower"].(bson.M)["$ifNull"].(bson.A)
+	if shown[0] != "$titles.en-US" || shown[1] != "$title" {
+		t.Errorf("name sort reads %v; want $titles.en-US then $title", shown)
 	}
 }

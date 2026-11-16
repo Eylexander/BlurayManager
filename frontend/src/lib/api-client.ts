@@ -37,8 +37,11 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Clear token but don't redirect - let components handle it
-          Cookies.remove('auth_token');
+          // The session is gone (expired token, deleted account). Signing out
+          // of the store is what sends the dashboard layout back to login;
+          // removing only the cookie left the UI "logged in" with every
+          // request failing.
+          useAuthStore.getState().logout();
         }
         return Promise.reject(error);
       }
@@ -125,7 +128,7 @@ class ApiClient {
     return response.data.blurays || [];
   }
 
-  async getSimplifiedBlurays(params?: { type?: string; tags?: string[]; skip?: number; limit?: number }) {
+  async getSimplifiedBlurays(params?: { type?: string; sort?: string; skip?: number; limit?: number }) {
     const response = await this.client.get('/blurays/simplified', { params });
     return response.data.blurays || [];
   }
@@ -187,7 +190,7 @@ class ApiClient {
     if (data.type === 'series' && data.tmdb_id) {
       const existing = await this.findSeriesByTmdbId(data.tmdb_id);
       if (existing) {
-        const { addedSeasons } = await this.addSeasonsToSeries(existing.id, data.seasons || [], data.title);
+        const { addedSeasons } = await this.addSeasonsToSeries(existing.id, data.seasons || []);
         return { merged: true, addedSeasons };
       }
     }
@@ -199,7 +202,7 @@ class ApiClient {
    * Update series with new seasons (Option C: Incremental season management)
    * Merges new seasons with existing ones, avoiding duplicates
    */
-  async addSeasonsToSeries(id: string, newSeasons: { number: number }[], title: string) {
+  async addSeasonsToSeries(id: string, newSeasons: { number: number }[]) {
     try {
       // Get current bluray data
       const current = await this.getBluray(id);

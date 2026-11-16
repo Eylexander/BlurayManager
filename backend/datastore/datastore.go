@@ -34,7 +34,7 @@ type Datastore interface {
 	DeleteBluray(ctx context.Context, id primitive.ObjectID) error
 	ListBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.Bluray, error)
 	SearchBlurays(ctx context.Context, query string, skip, limit int) ([]*models.Bluray, error)
-	ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, skip, limit int) ([]*models.SimplifiedBluray, error)
+	ListSimplifiedBlurays(ctx context.Context, filters map[string]interface{}, sortBy, lang string, skip, limit int) ([]*models.SimplifiedBluray, error)
 
 	// Tag operations
 	CreateTag(ctx context.Context, tag *models.Tag) error
@@ -51,7 +51,7 @@ type Datastore interface {
 	// Notification operations
 	CreateNotification(ctx context.Context, notification *models.Notification) error
 	GetUserNotifications(ctx context.Context, userID primitive.ObjectID, limit int) ([]*models.Notification, error)
-	MarkNotificationAsRead(ctx context.Context, notificationID primitive.ObjectID) error
+	MarkNotificationAsRead(ctx context.Context, notificationID, userID primitive.ObjectID) error
 	MarkAllNotificationsAsRead(ctx context.Context, userID primitive.ObjectID) error
 
 	// Password reset operations

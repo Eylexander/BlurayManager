@@ -188,7 +188,7 @@ export default function MigrationPage() {
         {/* Export */}
         <section className="card p-5 sm:p-6 flex flex-col">
           <div className="flex items-start gap-3">
-            <div className="grid place-items-center w-10 h-10 shrink-0 rounded-lg bg-primary/10 text-primary">
+            <div className="grid place-items-center w-10 h-10 shrink-0 rounded-md border border-border text-primary">
               <Download className="w-5 h-5" />
             </div>
             <div>

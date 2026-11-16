@@ -119,7 +119,7 @@ func (s *Server) setupRoutes() {
 				blurays.GET("/simplified", s.api.ListSimplifiedBlurays)
 				blurays.GET("/search", s.api.SearchBlurays)
 				blurays.GET("/:id", s.api.GetBluray)
-				blurays.GET("/export", s.api.ExportBlurays)
+				blurays.GET("/export", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.ExportBlurays)
 
 				// Only admins and moderators can create/update/delete
 				blurays.POST("", s.ctrl.RequireRole(models.RoleAdmin, models.RoleModerator), s.api.CreateBluray)

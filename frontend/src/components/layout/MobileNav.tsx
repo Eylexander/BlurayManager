@@ -1,40 +1,30 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/authStore';
-import { Home, BarChart3, Settings, Plus, Users, LogOut, MoreHorizontal, X, TagIcon, FileDown, LucideIcon } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, LogOut, Menu, X } from 'lucide-react';
 import { ROUTES } from '@/hooks/useRouteProtection';
 import { GithubIcon } from '@/components/common';
+import { navLinksFor, isActiveLink, NavLink } from './navLinks';
 
-interface MobileLinkProps {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  onClick: () => void;
-}
-
-const MobileLink = ({ href, icon: Icon, label, onClick }: MobileLinkProps) => {
+const MobileLink = ({ href, icon: Icon, label, onClick }: NavLink & { onClick: () => void }) => {
   const t = useTranslations();
-  const pathname = usePathname();
-  
-  // Strict check for home, partial check for sub-routes
-  const active = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
-  
-  const baseStyles = "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all active:scale-95";
-  const activeStyles = "bg-primary/10 text-primary";
-  const idleStyles = "hover:bg-accent text-foreground/80";
+  const active = isActiveLink(href, usePathname());
 
   return (
     <Link
       href={href}
       onClick={onClick}
-      className={`${baseStyles} ${active ? activeStyles : idleStyles}`}
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-center gap-4 px-4 py-3.5 border-l-[3px] text-sm transition-colors active:bg-accent ${
+        active ? 'border-primary text-foreground font-bold' : 'border-transparent text-muted-foreground font-medium'
+      }`}
     >
-      <Icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
-      <span className="font-semibold text-sm">{t(label)}</span>
+      <Icon className={`w-5 h-5 ${active ? 'text-primary' : ''}`} />
+      {t(label)}
     </Link>
   );
 };
@@ -43,162 +33,82 @@ export default function MobileNav() {
   const t = useTranslations();
   const { user, logout } = useAuthStore();
   const [showMenu, setShowMenu] = useState(false);
-  
-  const role = user?.role;
-  const isAdmin = role === 'admin';
-  const canModify = role === 'admin' || role === 'moderator';
-  const isGuest = role === 'guest';
+  const canModify = user?.role === 'admin' || user?.role === 'moderator';
 
   const closeMenu = () => setShowMenu(false);
 
-  const handleLogout = () => {
-    setShowMenu(false);
-    logout();
-  };
-
-  // Centralized Link Configuration
-  const navLinks = [
-    { 
-      href: ROUTES.DASHBOARD.HOME, 
-      label: 'nav.home', 
-      icon: Home, 
-      show: true 
-    },
-    { 
-      href: ROUTES.DASHBOARD.STATISTICS, 
-      label: 'nav.statistics', 
-      icon: BarChart3, 
-      show: !isGuest 
-    },
-    { 
-      href: ROUTES.DASHBOARD.SETTINGS, 
-      label: 'nav.settings', 
-      icon: Settings, 
-      show: !isGuest 
-    },
-    { 
-      href: ROUTES.DASHBOARD.USERS, 
-      label: 'nav.users', 
-      icon: Users, 
-      show: isAdmin 
-    },
-    { 
-      href: ROUTES.DASHBOARD.TAGS, 
-      label: 'nav.tags', 
-      icon: TagIcon, 
-      show: isAdmin 
-    },
-    { 
-      href: ROUTES.DASHBOARD.IMPORT_EXPORT, 
-      label: 'nav.importExport', 
-      icon: FileDown, 
-      show: isAdmin 
-    },
-  ];
-
   return (
     <>
-      {/* Backdrop with Blur */}
-      {showMenu && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-md z-60 transition-opacity duration-300"
-          onClick={closeMenu}
-        />
-      )}
+      {showMenu && <div className="lg:hidden fixed inset-0 bg-black/60 z-60 animate-fade-in" onClick={closeMenu} />}
 
-      {/* Slide-up Drawer */}
+      {/* Slide-up sheet */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 right-0 z-70 transition-transform duration-300 cubic-bezier(0.32, 0.72, 0, 1) ${
-          showMenu ? 'translate-y-0' : 'translate-y-full'
+        aria-hidden={!showMenu}
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-70 transition-[transform,visibility] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          showMenu ? 'translate-y-0' : 'translate-y-full invisible'
         }`}
       >
-        <div className="mx-6 mb-32 bg-card/95 backdrop-blur-xl rounded-4xl shadow-2xl border border-border overflow-hidden">
-          <div className="p-4 sm:p-8">
-            
-            {/* Header / User Profile */}
-            <div className="flex items-center gap-4 mb-6 px-2">
-              <div className="w-12 h-12 rounded-2xl brand-gradient flex items-center justify-center text-white shadow-lg shadow-primary/30">
-                <span className="text-lg font-bold">{user?.username?.charAt(0).toUpperCase()}</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-base font-bold text-foreground leading-tight">{user?.username}</h3>
-                <p className="text-xs font-medium text-muted-foreground capitalize tracking-wider">{role}</p>
-              </div>
+        <div className="mx-4 mb-28 bg-card rounded-lg shadow-2xl border border-border border-t-4 border-t-primary overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
+            <div className="grid place-items-center w-11 h-11 rounded-md bg-brand text-white font-display text-2xl">
+              {user?.username?.charAt(0).toUpperCase()}
             </div>
-
-            {/* Navigation Links Grid */}
-            <div className="grid grid-cols-1 gap-2">
-              {navLinks
-                .filter(link => link.show)
-                .map((link) => (
-                  <MobileLink 
-                    key={link.href}
-                    {...link}
-                    onClick={closeMenu}
-                  />
-                ))}
-
-              <div className="my-1 border-t border-border" />
-
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-destructive/30 bg-destructive/5 text-destructive text-sm font-semibold transition-all active:scale-95 active:bg-destructive/15"
-              >
-                <LogOut className="w-4 h-4" />
-                {t('nav.logout')}
-              </button>
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-foreground leading-tight truncate">{user?.username}</h3>
+              <p className="label-caps text-muted-foreground mt-0.5">{user?.role}</p>
             </div>
+          </div>
 
-            {/* Footer */}
-            <div className="mt-4 flex justify-center">
-              <a
-                href="https://github.com/Eylexander/BlurayManager"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity"
-              >
-                <GithubIcon className="w-4 h-4" />
-                <span className="text-[10px] font-medium tracking-tight">Eylexander © {new Date().getFullYear()}</span>
-              </a>
-            </div>
+          <div className="py-2">
+            {navLinksFor(user?.role).map((link) => (
+              <MobileLink key={link.href} {...link} onClick={closeMenu} />
+            ))}
+          </div>
+
+          <div className="px-4 pb-4 pt-2 border-t border-border">
+            <button
+              onClick={() => {
+                closeMenu();
+                logout();
+              }}
+              className="w-full flex items-center justify-center gap-2 mt-2 px-4 py-3 rounded-md border border-destructive/40 text-destructive text-sm font-semibold transition-colors active:bg-destructive/10"
+            >
+              <LogOut className="w-4 h-4" />
+              {t('nav.logout')}
+            </button>
+            <a
+              href="https://github.com/Eylexander/BlurayManager"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-center gap-2 text-[11px] text-muted-foreground"
+            >
+              <GithubIcon className="w-3.5 h-3.5" />
+              Eylexander © {new Date().getFullYear()}
+            </a>
           </div>
         </div>
       </div>
 
-      {/* Floating Action Dock */}
-      <div className="lg:hidden fixed bottom-6 left-0 right-0 flex justify-center items-center z-80 pointer-events-none px-6">
-        <nav className="pointer-events-auto flex items-center bg-card/90 backdrop-blur-lg px-4 py-3 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.18)] border border-border gap-4">
-          
-          {/* Add Action (Only if permitted) */}
-          {!isGuest && canModify && (
+      {/* Floating dock, inverted like a remote control */}
+      <div className="lg:hidden fixed bottom-5 left-0 right-0 flex justify-center z-80 pointer-events-none px-6 pb-[env(safe-area-inset-bottom)]">
+        <nav className="pointer-events-auto flex items-stretch bg-foreground text-background rounded-lg shadow-[0_10px_30px_rgba(0,0,0,0.35)] overflow-hidden">
+          {canModify && (
             <Link
               href={ROUTES.DASHBOARD.ADD.ADD}
-              className="w-12 h-12 flex items-center justify-center bg-primary hover:bg-primary/90 text-white rounded-full transition-all active:scale-90 shadow-lg shadow-primary/40"
+              aria-label={t('nav.add')}
+              className="grid place-items-center w-14 bg-primary text-primary-foreground transition-[filter] active:brightness-90"
             >
               <Plus className="w-6 h-6" strokeWidth={2.5} />
             </Link>
           )}
 
-          {/* Vertical Divider (Only if Add button exists) */}
-          {!isGuest && canModify && (
-            <div className="w-px h-6 bg-border" />
-          )}
-
-          {/* Menu Toggle */}
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all active:scale-95 ${
-              showMenu ? 'text-primary' : 'text-foreground'
-            }`}
+            aria-expanded={showMenu}
+            className="flex items-center gap-2 px-5 py-3.5 text-sm font-bold transition-opacity active:opacity-70"
           >
-            {showMenu ? (
-              <X className="w-6 h-6 animate-in fade-in zoom-in duration-300" />
-            ) : (
-              <MoreHorizontal className="w-6 h-6" />
-            )}
-            <span className="text-sm font-bold pr-1">
-              {showMenu ? t("common.close") : t("common.menu")}
-            </span>
+            {showMenu ? <X className="w-5 h-5 animate-in" /> : <Menu className="w-5 h-5" />}
+            {showMenu ? t('common.close') : t('common.menu')}
           </button>
         </nav>
       </div>

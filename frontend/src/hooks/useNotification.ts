@@ -16,7 +16,6 @@ export interface Notification {
 export function useNotifications() {
   const t = useTranslations();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
   const { shouldRefresh, resetRefresh } = useNotificationStore();
 
   const fetchNotifications = useCallback(async () => {
@@ -44,7 +43,7 @@ export function useNotifications() {
       await apiClient.markAllNotificationsAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       toast.success(t('notifications.markedAsReadSuccess'));
-    } catch (error) {
+    } catch {
       toast.error(t('notifications.markedAsReadError'));
     }
   };
@@ -85,7 +84,6 @@ export function useNotifications() {
   return {
     notifications,
     unreadCount,
-    loading,
     markAsRead,
     markAllAsRead,
     refresh: fetchNotifications,

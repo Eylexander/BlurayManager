@@ -189,13 +189,13 @@ export default function AddBlurayPage() {
   );
 
   const chip = (label: string, onRemove: () => void) => (
-    <span className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+    <span className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-sm bg-primary/10 text-primary text-xs font-semibold">
       {label}
       <button
         type="button"
         onClick={onRemove}
         aria-label={t("add.removeFilter", { filter: label })}
-        className="grid place-items-center w-5 h-5 rounded-full hover:bg-primary/15"
+        className="grid place-items-center w-5 h-5 rounded-sm hover:bg-primary/15"
       >
         <X className="w-3 h-3" />
       </button>
@@ -261,7 +261,7 @@ export default function AddBlurayPage() {
         {!canSearch ? (
           !imdbId && (
             <div className="card p-8 sm:p-12 text-center">
-              <div className="mx-auto mb-4 grid place-items-center w-14 h-14 rounded-full bg-primary/10 text-primary">
+              <div className="mx-auto mb-4 grid place-items-center w-14 h-14 rounded-md border border-border text-primary">
                 <Film className="w-7 h-7" />
               </div>
               <h2 className="font-semibold text-foreground">{t("add.emptyTitle")}</h2>
@@ -317,7 +317,7 @@ export default function AddBlurayPage() {
           aria-expanded={showPurchase}
           className="w-full flex items-center gap-3 p-4 text-left"
         >
-          <div className="grid place-items-center w-9 h-9 rounded-lg bg-primary/10 text-primary shrink-0">
+          <div className="grid place-items-center w-9 h-9 rounded-md border border-border text-primary shrink-0">
             <ShoppingBag className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
@@ -407,7 +407,7 @@ function IdRow({ label, onClick }: { label: string; onClick: () => void }) {
       onClick={onClick}
       className="card w-full flex items-center gap-3 p-3 sm:p-4 text-left hover:border-primary/40 hover:bg-accent/50 transition-colors"
     >
-      <div className="grid place-items-center w-9 h-9 rounded-lg bg-primary/10 text-primary shrink-0">
+      <div className="grid place-items-center w-9 h-9 rounded-md border border-border text-primary shrink-0">
         <Hash className="w-4 h-4" />
       </div>
       <span className="flex-1 font-medium">{label}</span>

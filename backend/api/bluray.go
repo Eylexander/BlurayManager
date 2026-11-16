@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"eylexander/bluraymanager/i18n"
 	"eylexander/bluraymanager/models"
 	"fmt"
 	"io"
@@ -362,7 +363,8 @@ func (api *API) ListSimplifiedBlurays(c *gin.Context) {
 		filters["tmdb_id"] = tmdbID
 	}
 
-	blurays, err := api.ctrl.ListSimplifiedBlurays(c.Request.Context(), filters, skip, limit)
+	lang := i18n.ParseAcceptLanguage(c.GetHeader("Accept-Language"))
+	blurays, err := api.ctrl.ListSimplifiedBlurays(c.Request.Context(), filters, c.Query("sort"), lang, skip, limit)
 	if err != nil {
 		log.Printf("ERROR ListBlurays: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -34,8 +34,11 @@ export default function ToasterProvider() {
       toastOptions={{
         duration: 3000,
         style: {
-          background: '#363636',
-          color: '#fff',
+          background: 'hsl(var(--foreground))',
+          color: 'hsl(var(--background))',
+          borderRadius: 'var(--radius)',
+          fontWeight: 600,
+          fontSize: '0.875rem',
         },
         success: {
           duration: 3000,

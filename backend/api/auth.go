@@ -242,7 +242,8 @@ func (api *API) UpdatePassword(c *gin.Context) {
 
 	// Verify current password
 	if err := api.ctrl.VerifyPassword(user, req.CurrentPassword); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T("api.invalidCurrentPassword")})
+		// Not a 401: the session is valid, and clients sign out on 401.
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T("api.invalidCurrentPassword")})
 		return
 	}
 

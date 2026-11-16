@@ -38,7 +38,9 @@ func (api *API) MarkNotificationRead(c *gin.Context) {
 		return
 	}
 
-	if err := api.ctrl.MarkNotificationAsRead(c.Request.Context(), id); err != nil {
+	// Scoped to the caller so one user can't mark another's notifications.
+	userID, _ := primitive.ObjectIDFromHex(c.GetString("userID"))
+	if err := api.ctrl.MarkNotificationAsRead(c.Request.Context(), id, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

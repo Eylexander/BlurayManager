@@ -38,7 +38,7 @@ export default function SeasonGrid({ seasons, isSelected, onToggle, detectedSeas
             }`}
           >
             <span
-              className={`absolute top-2.5 right-2.5 grid place-items-center w-5 h-5 rounded-full border transition-colors ${
+              className={`absolute top-2.5 right-2.5 grid place-items-center w-5 h-5 rounded-sm border transition-colors ${
                 selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
               }`}
             >

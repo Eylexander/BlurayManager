@@ -9,6 +9,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const errOwnAccount = "you cannot delete or demote your own account"
+
+// isSelf reports whether id is the caller's own account. Admins can't delete
+// or demote themselves: only admins reach these routes, so this guarantees one
+// always remains, and with no admin left the public setup endpoint would let
+// anyone create a new one.
+func isSelf(c *gin.Context, id primitive.ObjectID) bool {
+	return c.GetString("userID") == id.Hex()
+}
+
 func (api *API) ListUsers(c *gin.Context) {
 	skip, _ := strconv.Atoi(c.DefaultQuery("skip", "0"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -102,6 +112,10 @@ func (api *API) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
 		return
 	}
+	if req.Role != "" && req.Role != models.RoleAdmin && isSelf(c, id) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errOwnAccount})
+		return
+	}
 
 	user, err := api.ctrl.GetUserByID(c.Request.Context(), id)
 	if err != nil {
@@ -142,6 +156,11 @@ func (api *API) DeleteUser(c *gin.Context) {
 		return
 	}
 
+	if isSelf(c, id) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errOwnAccount})
+		return
+	}
+
 	if err := api.ctrl.DeleteUser(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -167,6 +186,10 @@ func (api *API) UpdateUserRole(c *gin.Context) {
 	}
 	if !req.Role.Valid() {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
+		return
+	}
+	if req.Role != models.RoleAdmin && isSelf(c, id) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": errOwnAccount})
 		return
 	}
 

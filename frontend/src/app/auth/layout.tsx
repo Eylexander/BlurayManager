@@ -8,10 +8,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-10 overflow-hidden">
-      {/* Soft brand glow behind the card */}
+      {/* A disc resting at the corner of the page, turning slowly */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 w-160 h-160 rounded-full bg-primary/10 blur-3xl"
+        className="pointer-events-none absolute -right-[18vmin] -bottom-[18vmin] w-[70vmin] aspect-square disc opacity-40 dark:opacity-25 motion-safe:animate-disc-slow"
       />
       <div className="relative max-w-md w-full animate-in">
         <div className="flex justify-center mb-8">
@@ -33,9 +33,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           />
         </div>
 
-        <div className="card p-6 sm:p-8 shadow-lg shadow-black/5">
-          {children}
-        </div>
+        <div className="card border-t-4 border-t-primary p-6 sm:p-8 shadow-xl shadow-black/10">{children}</div>
       </div>
     </div>
   );

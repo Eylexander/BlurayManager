@@ -7,7 +7,6 @@ import { useAuthStore } from "@/store/authStore";
 import { apiClient, getApiError } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { Sun, Moon, Monitor, Globe, User, Lock, Check, Settings, Play } from "lucide-react";
-import Cookies from "js-cookie";
 import { useRouter, usePathname } from "next/navigation";
 import useRouteProtection from "@/hooks/useRouteProtection";
 import { Button, Input, PageHeader } from "@/components/common";
@@ -30,7 +29,7 @@ const SettingsCard = ({
     <div className="flex items-center gap-3 mb-5">
       <div
         className={`grid place-items-center w-10 h-10 shrink-0 rounded-lg [&_svg]:w-5 [&_svg]:h-5 ${
-          tone === "danger" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+          tone === "danger" ? "border border-destructive/40 text-destructive" : "border border-border text-primary"
         }`}
       >
         {icon}
@@ -77,7 +76,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { user, updateUser, setLanguage } = useAuthStore();
+  const { user, updateUser, updateSettings } = useAuthStore();
   // Unsaved picks; until the user chooses, fall back to the live values so the
   // form stays in sync with the theme/locale/user as they load.
   const [themeChoice, setSelectedTheme] = useState<string | null>(null);
@@ -110,29 +109,13 @@ export default function SettingsPage() {
     setLoading(true);
 
     try {
-      // Update theme
+      // One request for both fields: saving them separately raced, and the
+      // slower call wrote back the other field's old value.
+      await updateSettings({
+        theme: selectedTheme as "light" | "dark" | "system",
+        language: selectedLanguage as "en-US" | "fr-FR",
+      });
       setTheme(selectedTheme);
-
-      // Update language
-      setLanguage(selectedLanguage as "en-US" | "fr-FR");
-
-      // Save to backend if user is logged in
-      if (user) {
-        await apiClient.updateUserSettings({
-          theme: selectedTheme,
-          language: selectedLanguage,
-        });
-
-        // Update user in store
-        updateUser({
-          ...user,
-          settings: {
-            ...user.settings,
-            theme: selectedTheme as "light" | "dark",
-            language: selectedLanguage as "en-US" | "fr-FR",
-          },
-        });
-      }
 
       toast.success(t("settings.saved"));
 
@@ -140,7 +123,7 @@ export default function SettingsPage() {
       setTimeout(() => {
         router.refresh();
       }, 500);
-    } catch (error) {
+    } catch {
       toast.error(t("settings.saveFailed"));
     } finally {
       setLoading(false);
