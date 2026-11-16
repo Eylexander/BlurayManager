@@ -16,9 +16,9 @@ interface BlurayCardProps {
 }
 
 /**
- * A bluray as it sits on the shelf: the case with its coloured top band
- * (blue for movies, orange for series), and a caption underneath. On hover
- * the case lifts and the disc slides out of it.
+ * A bluray as its cover, with the type and rating as chips on it and a
+ * caption underneath. On hover the cover lifts, its own colours bloom behind
+ * it and the disc slides out.
  */
 export default function BlurayCard({ bluray, onUpdate, index = 0 }: BlurayCardProps) {
   const t = useTranslations();
@@ -34,6 +34,19 @@ export default function BlurayCard({ bluray, onUpdate, index = 0 }: BlurayCardPr
       >
         <Link href={detailHref} className="block h-full w-full rounded-md">
           <div className="relative transition-transform duration-300 ease-out md:group-hover:-translate-y-1.5 group-active:scale-[0.98]">
+            {/* The cover's own colours, blurred into a glow behind it. Same
+                src and sizes as the cover, so it is one download. */}
+            {currentBluray.cover_image_url && (
+              <Image
+                src={currentBluray.cover_image_url}
+                alt=""
+                aria-hidden
+                fill
+                sizes="(max-width: 640px) 50vw, 20vw"
+                className="object-cover translate-y-3 scale-95 blur-xl saturate-150 opacity-0 transition-opacity duration-500 md:group-hover:opacity-70"
+              />
+            )}
+
             {/* The disc, hidden behind the case until it is hovered */}
             <div
               aria-hidden
@@ -41,21 +54,7 @@ export default function BlurayCard({ bluray, onUpdate, index = 0 }: BlurayCardPr
             />
 
             {/* The case */}
-            <div className="relative overflow-hidden rounded-md bg-muted case-shell">
-              <div
-                className={`flex items-center justify-between h-5 px-2 label-caps text-[0.625rem] ${
-                  isMovie ? "bg-brand text-white" : "bg-sticker text-sticker-foreground"
-                }`}
-              >
-                <span>{isMovie ? t("common.movie") : t("common.series")}</span>
-                {currentBluray.rating > 0 && (
-                  <span className="flex items-center gap-0.5 tabular-nums">
-                    <Star className="w-2.5 h-2.5 fill-current" />
-                    {currentBluray.rating.toFixed(1)}
-                  </span>
-                )}
-              </div>
-
+            <div className="relative overflow-hidden rounded-lg bg-muted case-shell">
               <div className="relative aspect-2/3 w-full">
                 {currentBluray.cover_image_url ? (
                   <Image
@@ -68,10 +67,21 @@ export default function BlurayCard({ bluray, onUpdate, index = 0 }: BlurayCardPr
                 ) : (
                   <div className="w-full h-full noise flex flex-col items-center justify-center gap-3 p-3 text-muted-foreground/60">
                     <Film className="w-8 h-8" />
-                    <span className="font-display uppercase text-center text-lg line-clamp-3">{title}</span>
+                    <span className="font-display text-center text-lg line-clamp-3">{title}</span>
                   </div>
                 )}
               </div>
+
+              <span className="absolute top-2 left-2 flex items-center gap-1.5 h-5 px-2 rounded-full bg-black/65 text-white label-caps text-[0.625rem]">
+                <span aria-hidden className={`w-1.5 h-1.5 rounded-full ${isMovie ? "bg-[#6f83ff]" : "bg-[#ff9a5a]"}`} />
+                {isMovie ? t("common.movie") : t("common.series")}
+              </span>
+              {currentBluray.rating > 0 && (
+                <span className="absolute top-2 right-2 flex items-center gap-0.5 h-5 px-2 rounded-full bg-black/65 text-white label-caps text-[0.625rem] tabular-nums">
+                  <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                  {currentBluray.rating.toFixed(1)}
+                </span>
+              )}
             </div>
 
             {/* Quick action, on the case but outside its clipping */}
@@ -83,7 +93,7 @@ export default function BlurayCard({ bluray, onUpdate, index = 0 }: BlurayCardPr
                 }}
                 aria-label={t("tags.manageTags")}
                 title={t("tags.manageTags")}
-                className="hidden md:grid absolute top-7 right-2 place-items-center w-8 h-8 rounded-sm bg-black/75 text-white opacity-0 translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 focus-visible:opacity-100 hover:bg-primary"
+                className="hidden md:grid absolute top-9 right-2 place-items-center w-8 h-8 rounded-full bg-black/75 text-white opacity-0 translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 focus-visible:opacity-100 hover:bg-primary"
               >
                 <TagIcon className="w-4 h-4" />
               </button>

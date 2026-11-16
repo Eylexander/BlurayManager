@@ -17,10 +17,10 @@ const SidebarItem = ({ href, icon: Icon, label }: NavLink) => {
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={`group relative flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-r-md text-sm transition-colors duration-150 before:absolute before:inset-y-1 before:left-0 before:w-[3px] before:bg-primary before:origin-center before:transition-transform before:duration-200 ${
+      className={`group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors duration-150 ${
         isActive
-          ? "text-foreground font-bold before:scale-y-100"
-          : "text-muted-foreground font-medium hover:text-foreground before:scale-y-0 hover:before:scale-y-50"
+          ? "bg-primary/10 text-foreground font-bold"
+          : "text-muted-foreground font-medium hover:bg-accent hover:text-foreground"
       }`}
     >
       <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? "text-primary" : ""}`} />
@@ -35,8 +35,8 @@ export default function Sidebar() {
   const canModify = user?.role === "admin" || user?.role === "moderator";
 
   return (
-    <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-background border-r border-border overflow-y-auto">
-      <nav className="py-5 pr-4 h-full flex flex-col">
+    <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-background/60 backdrop-blur-xl border-r border-border overflow-y-auto">
+      <nav className="py-5 px-3 h-full flex flex-col">
         <div className="space-y-0.5 flex-1">
           {navLinksFor(user?.role).map((link) => (
             <SidebarItem key={link.href} {...link} />
@@ -45,7 +45,7 @@ export default function Sidebar() {
           {canModify && (
             <Link
               href={ROUTES.DASHBOARD.ADD.ADD}
-              className="group mt-6! ml-4 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold key-edge transition-[filter,transform,box-shadow] duration-150 hover:brightness-110"
+              className="group mt-6! flex items-center justify-center gap-2 px-3 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold key-edge [--glow:hsl(var(--primary)/0.65)] transition-[filter,transform,box-shadow] duration-150 hover:brightness-110"
             >
               <Plus className="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
               <span>{t("nav.add")}</span>
@@ -53,7 +53,7 @@ export default function Sidebar() {
           )}
         </div>
 
-        <div className="pl-4">
+        <div>
           <div className="border-t border-border mb-4 pt-4">
             <button
               onClick={logout}

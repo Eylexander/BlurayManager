@@ -41,8 +41,8 @@
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
-  /* Second accent: the orange of a price sticker. Marks series and the
-     "other" slot wherever two things are told apart. */
+  /* Second accent, warm against the blue. Marks series and the "other"
+     slot wherever two things are told apart. */
   --color-sticker: hsl(var(--sticker));
   --color-sticker-foreground: hsl(var(--sticker-foreground));
 
@@ -50,15 +50,14 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  /* Corners stay tight, like the cases on the shelf. The larger steps are
-     pulled in too so no page can drift back to pill-shaped panels. */
-  --radius-sm: calc(var(--radius) - 3px);
-  --radius-md: calc(var(--radius) - 1px);
+  /* Soft, generous corners: one scale, proportional to --radius. */
+  --radius-sm: calc(var(--radius) * 0.45);
+  --radius-md: calc(var(--radius) * 0.7);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 2px);
-  --radius-2xl: calc(var(--radius) + 4px);
-  --radius-3xl: calc(var(--radius) + 6px);
-  --radius-4xl: calc(var(--radius) + 8px);
+  --radius-xl: calc(var(--radius) * 1.3);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: calc(var(--radius) * 2.4);
 
   --animate-fade-in: fade-in 0.2s ease-out;
   --animate-dialog-in: dialog-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -179,75 +178,89 @@
   }
 }
 
+/* A surface floating just above the page: hairline border, a lit top edge
+   and a long soft shadow. */
 @utility card {
   @apply rounded-lg border border-border bg-card text-card-foreground;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 1px 2px rgb(10 14 40 / 0.05),
+    0 16px 32px -20px rgb(10 14 40 / 0.28);
 }
 
 @utility input {
-  @apply w-full min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-md border border-input bg-card text-foreground placeholder:text-muted-foreground transition-colors duration-150 focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary;
+  @apply w-full min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-md border border-input bg-card text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] duration-150 focus:outline-hidden focus:border-primary focus:ring-4 focus:ring-primary/20;
 }
 
-/* Headline face: Archivo squeezed and heavy, after the wordmark in the logo. */
+/* Headline face: Archivo heavy and tightly tracked. */
 @utility font-display {
-  font-stretch: 70%;
+  font-stretch: 95%;
   font-weight: 800;
-  letter-spacing: -0.005em;
-  line-height: 1;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
 }
 
-/* Small caps label, as printed on a case spine: section names, column
-   heads, the type band of a cover. */
+/* Small caps label: section names, column heads, the type chip of a cover. */
 @utility label-caps {
-  font-stretch: 82%;
+  font-stretch: 90%;
   font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.1em;
   line-height: 1.2;
   text-transform: uppercase;
 }
 
-/* The playing side of a disc: silver with a blue cast, a clamping ring and a
-   spindle hole showing the page through. Size it with width + aspect-square. */
+/* The playing side of a disc, iridescent under the light, with a clamping
+   ring and a spindle hole showing the surface behind (set --disc-hole when
+   that is not the page). Size it with width + aspect-square. */
 @utility disc {
   border-radius: 9999px;
   background:
     radial-gradient(
       circle,
-      hsl(var(--background)) 0 7%,
+      var(--disc-hole, hsl(var(--background))) 0 7%,
       rgb(0 0 0 / 0.4) 7% 8%,
       rgb(255 255 255 / 0.55) 8% 16.5%,
       rgb(0 0 0 / 0.22) 16.5% 17.2%,
       transparent 17.2%
     ),
     repeating-radial-gradient(circle, transparent 0 3px, rgb(0 0 0 / 0.035) 3px 4px),
-    conic-gradient(from 25deg, #a9afc2, #eef0f6, #8a9eff, #eef0f6, #a9afc2, #f1cfae, #eef0f6, #a9afc2);
+    conic-gradient(from 25deg, #b7bdd6, #f4f6ff, #6f83ff, #7fe3ff, #f4f6ff, #b7bdd6, #ffc79a, #f4f6ff, #b7bdd6);
   box-shadow:
     inset 0 0 0 1px rgb(0 0 0 / 0.28),
-    0 3px 8px rgb(0 0 0 / 0.28);
+    0 6px 18px rgb(0 0 0 / 0.3);
 }
 
-/* A cover standing on the shelf: the top highlight and side shade of the
-   plastic case, and the shadow it casts on the board. */
+/* The light a disc throws back: blue through cyan to a warm edge. For
+   hairlines and short accent bars only. */
+@utility holo {
+  background: linear-gradient(90deg, #2f46ff, #5ad1ff 45%, #fff3c4 70%, #ff9a5a);
+}
+
+/* A cover: a hairline of light around the edge and a deep soft shadow. */
 @utility case-shell {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.28),
-    inset 2px 0 0 rgb(0 0 0 / 0.14),
-    0 1px 0 hsl(var(--border)),
-    0 10px 14px -10px rgb(0 0 0 / 0.45);
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 18px 28px -18px rgb(0 0 0 / 0.55);
 }
 
-/* Items arrive on the shelf one after the other; set --i to the position. */
+/* Items arrive one after the other; set --i to the position. */
 @utility shelf-in {
   animation: shelf-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   animation-delay: calc(min(var(--i, 0), 16) * 30ms);
 }
 
-/* The physical edge under a button; it flattens when pressed. */
+/* Raised buttons: a lit top edge and a soft shadow, tinted by --glow where
+   the button has a colour worth casting. Pressing sinks them. */
 @utility key-edge {
-  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.22);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 1px 2px rgb(0 0 0 / 0.15),
+    0 10px 20px -10px var(--glow, rgb(0 0 0 / 0.3));
   &:active:not(:disabled) {
-    box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.22);
-    transform: translateY(1px);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22);
+    transform: scale(0.97);
   }
 }
 
@@ -256,8 +269,8 @@
 }
 
 @utility noise {
-  /* Subtle paper grain for large surfaces */
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  /* Subtle film grain for large surfaces */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.3' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.07'/%3E%3C/svg%3E");
 }
 
 @utility animate-in {
@@ -278,67 +291,67 @@
      the @theme block above). Same system as eylexander.fr, with the primary set
      to the Bluray Manager logo blue. */
   :root {
-    /* Core: warm paper, ink the blue-black of the wordmark */
-    --background: 42 36% 95%;
-    --foreground: 230 28% 11%;
+    /* Core: cool daylight, ink the blue-black of the wordmark */
+    --background: 230 30% 97%;
+    --foreground: 232 45% 9%;
 
     /* Primary: the logo's electric blue */
-    --primary: 232 100% 45%;
+    --primary: 232 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Burnt orange, dark enough to carry small text on paper */
-    --sticker: 17 86% 41%;
+    /* Burnt orange, dark enough to carry small text */
+    --sticker: 17 90% 43%;
     --sticker-foreground: 0 0% 100%;
 
-    --secondary: 42 28% 91%;
-    --secondary-foreground: 230 20% 22%;
+    --secondary: 230 25% 93%;
+    --secondary-foreground: 232 22% 22%;
 
-    --muted: 42 24% 89%;
-    --muted-foreground: 230 9% 40%;
+    --muted: 230 22% 92%;
+    --muted-foreground: 230 10% 40%;
 
-    --card: 44 42% 98%;
-    --card-foreground: 230 28% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 232 45% 9%;
 
-    --accent: 42 28% 90%;
-    --accent-foreground: 230 20% 22%;
+    --accent: 230 30% 93%;
+    --accent-foreground: 232 22% 22%;
 
-    --border: 40 18% 82%;
-    --input: 40 16% 76%;
-    --ring: 232 100% 45%;
+    --border: 230 20% 88%;
+    --input: 230 16% 80%;
+    --ring: 232 100% 50%;
 
     --destructive: 0 72% 46%;
     --destructive-foreground: 0 0% 98%;
 
-    --radius: 0.375rem;
+    --radius: 0.875rem;
   }
 
   .dark {
-    /* Core: the black of a player's front panel, leaning blue */
-    --background: 230 24% 7%;
-    --foreground: 220 25% 96%;
+    /* Core: a dark room, leaning blue */
+    --background: 234 32% 5%;
+    --foreground: 220 30% 97%;
 
     /* Lifted so it keeps contrast on the dark surfaces */
-    --primary: 230 100% 67%;
+    --primary: 232 100% 69%;
     --primary-foreground: 0 0% 100%;
 
-    --sticker: 22 92% 60%;
-    --sticker-foreground: 230 24% 7%;
+    --sticker: 22 95% 60%;
+    --sticker-foreground: 234 32% 5%;
 
-    --secondary: 230 20% 12%;
+    --secondary: 234 22% 11%;
     --secondary-foreground: 220 20% 85%;
 
-    --muted: 230 18% 14%;
-    --muted-foreground: 225 14% 66%;
+    --muted: 234 20% 13%;
+    --muted-foreground: 228 14% 66%;
 
-    --card: 230 22% 10%;
-    --card-foreground: 220 25% 96%;
+    --card: 234 26% 8%;
+    --card-foreground: 220 30% 97%;
 
-    --accent: 230 20% 15%;
-    --accent-foreground: 220 25% 96%;
+    --accent: 234 22% 14%;
+    --accent-foreground: 220 30% 97%;
 
-    --border: 230 18% 19%;
-    --input: 230 16% 26%;
-    --ring: 230 100% 67%;
+    --border: 234 20% 15%;
+    --input: 234 18% 24%;
+    --ring: 232 100% 69%;
 
     --destructive: 0 70% 56%;
     --destructive-foreground: 0 0% 98%;
@@ -356,13 +369,36 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Headings are set condensed everywhere, so a long French title still
-     fits where the English one did. */
+  /* The room's light: a blue wash from the top right and a faint warm one
+     opposite, fixed behind the page. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60rem 32rem at 85% -8%, hsl(var(--primary) / 0.14), transparent 65%),
+      radial-gradient(44rem 26rem at -5% 105%, hsl(var(--sticker) / 0.07), transparent 65%);
+  }
+
+  /* Film grain over the whole page, covers included. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    @apply noise;
+  }
+
+  /* Headings are set slightly narrow and tight everywhere, so a long French
+     title still fits where the English one did. */
   h1,
   h2,
   h3 {
-    font-stretch: 78%;
-    letter-spacing: -0.01em;
+    font-stretch: 92%;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
 

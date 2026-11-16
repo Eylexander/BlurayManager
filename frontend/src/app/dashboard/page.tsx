@@ -189,7 +189,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="w-full space-y-4 sm:space-y-6 md:space-y-8" aria-busy>
-        <Skeleton className="hidden md:block h-44 rounded-lg" />
+        <Skeleton className="hidden md:block h-52 rounded-2xl" />
         <div className="grid grid-cols-2 gap-4 md:gap-6">
           <Skeleton className="h-24 sm:h-28 rounded-lg" />
           <Skeleton className="h-24 sm:h-28 rounded-lg" />
@@ -216,19 +216,25 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full overflow-x-hidden space-y-4 sm:space-y-6 md:space-y-8">
-      {/* Welcome banner (desktop): a flat slab of the brand blue, with a
-          disc turning slowly at its edge */}
-      <section className="hidden md:block relative overflow-hidden rounded-lg bg-brand text-white px-8 py-9 animate-in">
+      {/* Welcome banner (desktop): a dark stage in both themes. A disc turns
+          slowly at its edge, lit from behind by the blue of the laser. */}
+      <section className="hidden md:block relative isolate overflow-hidden rounded-2xl bg-[#060818] text-white px-8 py-10 lg:px-10 lg:py-12 [--disc-hole:#0a0f3a] animate-in">
+        <div aria-hidden className="absolute -z-10 -right-24 -top-40 w-136 aspect-square rounded-full bg-brand opacity-70 blur-[90px]" />
+        <div aria-hidden className="absolute -z-10 right-48 -bottom-56 w-80 aspect-square rounded-full bg-sticker opacity-25 blur-[90px]" />
         <div
           aria-hidden
-          className="disc absolute -right-14 top-1/2 -mt-36 w-72 aspect-square opacity-90 motion-safe:animate-disc-slow"
+          className="disc absolute -z-10 -right-20 top-1/2 -mt-44 w-88 aspect-square motion-safe:animate-disc-slow"
         />
-        <div className="relative max-w-[70%]">
-          <p className="label-caps text-white/70">{t("common.appName")}</p>
-          <h1 className="mt-2 font-display italic uppercase text-4xl lg:text-5xl">
+        <span aria-hidden className="holo absolute inset-x-0 top-0 h-px opacity-70" />
+        <div className="max-w-[62%]">
+          <p className="label-caps flex items-center gap-2 text-white/70">
+            <span className="w-1.5 h-1.5 rounded-full bg-sticker motion-safe:animate-pulse" />
+            {t("common.appName")}
+          </p>
+          <h1 className="mt-3 font-display text-4xl lg:text-6xl">
             {isGuest ? t("welcome.guestGreeting") : t("welcome.greeting", { username: user?.username || "" })}
           </h1>
-          <p className="mt-3 text-base lg:text-lg text-white/85">
+          <p className="mt-4 text-base lg:text-lg text-white/75">
             {isGuest
               ? t("welcome.guestSubtitle", { movies: stats?.total_movies || 0, seasons: stats?.total_seasons || 0 })
               : t("welcome.subtitle", { count: stats?.total_blurays || 0 })}
@@ -259,9 +265,10 @@ export default function DashboardPage() {
 
       {/* Recent Blurays */}
       <div className="w-full">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-5 sm:mb-7 pb-3 border-b border-border">
+        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-5 sm:mb-7 pb-3 border-b border-border">
+          <span aria-hidden className="holo absolute left-0 -bottom-0.5 h-[3px] w-20 rounded-full" />
           <div className="flex-1 min-w-0">
-            <h2 className="font-display italic uppercase text-2xl sm:text-3xl truncate">
+            <h2 className="font-display text-2xl sm:text-3xl truncate">
               {getSectionTitle()}
             </h2>
             {searchQuery && (
@@ -275,7 +282,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* View Mode Toggle */}
-            <div className="hidden vsm:flex items-center rounded-md border border-input overflow-hidden">
+            <div className="hidden vsm:flex items-center rounded-full border border-input overflow-hidden">
               <button
                 onClick={() => setViewMode("grid")}
                 aria-pressed={viewMode === "grid"}

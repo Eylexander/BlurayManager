@@ -208,7 +208,7 @@ export default function Navbar() {
   }, [showNotifications]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-background/75 backdrop-blur-xl border-b border-border z-50">
       <div className="h-full px-3 sm:px-6 flex items-center justify-between">
         <button
           onClick={() => router.push(ROUTES.DASHBOARD.HOME)}
@@ -222,7 +222,7 @@ export default function Navbar() {
             height={48}
             className="w-[40px] h-auto object-contain transition-transform duration-500 ease-out lg:group-hover:rotate-[-12deg]"
           />
-          <span className="hidden sm:block font-display italic uppercase text-2xl text-foreground lg:group-hover:text-primary transition-colors">
+          <span className="hidden sm:block font-display text-2xl text-foreground lg:group-hover:text-primary transition-colors">
             {t('common.appName')}
           </span>
         </button>
@@ -230,7 +230,7 @@ export default function Navbar() {
         {/* Search Bar - Always visible */}
         <div className="flex flex-1 max-w-2xl mx-2 sm:mx-8" ref={searchRef}>
           <form onSubmit={handleSearch} className="relative w-full">
-            <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            <Search className="absolute left-3 sm:left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             <input
               ref={inputRef}
               type="text"
@@ -245,7 +245,7 @@ export default function Navbar() {
                   setShowSearchTips(true);
                 }
               }}
-              className="w-full pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 text-sm sm:text-base rounded-md border border-input bg-card placeholder:text-muted-foreground transition-colors focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 text-sm sm:text-base rounded-full border border-transparent bg-muted placeholder:text-muted-foreground transition-[border-color,box-shadow,background-color] focus:outline-hidden focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/20"
             />
 
             {/* Search Tips Dropdown */}
